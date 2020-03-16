@@ -396,6 +396,7 @@ var GameController = (function () {
                 var url_cfg = null;
                 if (url_data && url_data.length > -1) {
                     try {
+                        url_data = decodeURIComponent(atob(url_data));
                         url_cfg = JSON.parse(url_data);
                     }
                     catch (e) {
@@ -440,7 +441,7 @@ var GameController = (function () {
                     var cfg = _this.m_board.getConfig();
                     var str = JSON.stringify(cfg);
                     var url = location.origin + location.pathname;
-                    history.replaceState({}, "board", url + "?board=" + str);
+                    history.replaceState({}, "board", url + "?board=" + btoa(encodeURIComponent(str)));
                 }
             };
             _this.m_renderer.on("POINTER_DOWN", function (data) {

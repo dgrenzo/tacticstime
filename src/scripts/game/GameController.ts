@@ -117,8 +117,8 @@ export class GameController {
 
         let cfg = this.m_board.getConfig();
         let str = JSON.stringify(cfg);
-        
-        history.replaceState({}, "board", location.origin + "/?board=" + str);
+        let url =  location.origin + location.pathname ;
+        history.replaceState({}, "board", url + "?board=" + str);
       }
     }
 

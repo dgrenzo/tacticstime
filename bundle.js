@@ -396,8 +396,11 @@ var GameController = (function () {
                 var url_cfg = null;
                 if (url_data && url_data.length > -1) {
                     try {
-                        url_data = decodeURIComponent(atob(url_data));
-                        url_cfg = JSON.parse(url_data);
+                        var strings = (url_data).match(/.{2}/g);
+                        url_cfg = [];
+                        _.forEach(strings, function (str) {
+                            url_cfg.push(parseInt(str));
+                        });
                     }
                     catch (e) {
                     }
@@ -439,9 +442,8 @@ var GameController = (function () {
                     tile.setTileType(type);
                     _this.m_renderer.getRenderable(tile.id).setSprite(assets_1.default.getTile(tile.getAssetInfo().name));
                     var cfg = _this.m_board.getConfig();
-                    var str = JSON.stringify(cfg);
                     var url = location.origin + location.pathname;
-                    history.replaceState({}, "board", url + "?board=" + btoa(encodeURIComponent(str)));
+                    history.replaceState({}, "board", url + "?board=" + cfg);
                 }
             };
             _this.m_renderer.on("POINTER_DOWN", function (data) {
@@ -565,10 +567,11 @@ var ChessBoard = (function (_super) {
             cfg.push(_this.height);
             for (var y = 0; y < _this.height; y++) {
                 for (var x = 0; x < _this.width; x++) {
-                    cfg.push(_this.getTileAt({ x: x, y: y }).type);
+                    var type = _this.getTileAt({ x: x, y: y }).type;
+                    cfg.push(type);
                 }
             }
-            return cfg;
+            return cfg.join('');
         };
         return _this;
     }

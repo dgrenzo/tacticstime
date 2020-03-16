@@ -38,10 +38,11 @@ var ChessBoard = (function (_super) {
             cfg.push(_this.height);
             for (var y = 0; y < _this.height; y++) {
                 for (var x = 0; x < _this.width; x++) {
-                    cfg.push(_this.getTileAt({ x: x, y: y }).type);
+                    var type = _this.getTileAt({ x: x, y: y }).type;
+                    cfg.push(type);
                 }
             }
-            return cfg;
+            return cfg.join('');
         };
         return _this;
     }

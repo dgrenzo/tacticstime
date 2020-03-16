@@ -439,7 +439,8 @@ var GameController = (function () {
                     _this.m_renderer.getRenderable(tile.id).setSprite(assets_1.default.getTile(tile.getAssetInfo().name));
                     var cfg = _this.m_board.getConfig();
                     var str = JSON.stringify(cfg);
-                    history.replaceState({}, "board", location.origin + "/?board=" + str);
+                    var url = location.origin + location.pathname;
+                    history.replaceState({}, "board", url + "?board=" + str);
                 }
             };
             _this.m_renderer.on("POINTER_DOWN", function (data) {

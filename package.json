@@ -1,0 +1,65 @@
+{
+  "name": "tacticstime",
+  "version": "0.0.1",
+  "description": "a tactics game",
+  "scripts": {
+    "build": "gulp bundle && gulp copy",
+    "clean": "gulp clean",
+    "clean:all": "gulp clean:all",
+    "compile": "gulp compile",
+    "rebuild": "gulp clean && gulp bundle && gulp copy",
+    "serve": "gulp serve",
+    "watch": "gulp watch",
+    "deploy": "npm run rebuild && cd dist && git add --all && git commit -m \"gh-pages build\" && git push"
+  },
+  "author": "davdd",
+  "license": "",
+  "devDependencies": {
+    "browser-sync": "^2.26.7",
+    "browserify": "^16.5.0",
+    "browserify-incremental": "^3.1.1",
+    "del": "^5.1.0",
+    "gulp": "^4.0.2",
+    "gulp-changed": "^4.0.2",
+    "gulp-if": "^3.0.0",
+    "gulp-sourcemaps": "^2.6.5",
+    "gulp-tape": "^1.0.0",
+    "gulp-typescript": "^5.0.1",
+    "gulp-uglify-es": "^2.0.0",
+    "howler": "^2.1.3",
+    "merge2": "^1.3.0",
+    "pixi.js": "5.1.6",
+    "run-sequence": "^2.2.1",
+    "tape": "^4.13.2",
+    "through2": "^3.0.1",
+    "typescript": "^3.8.3",
+    "vinyl-buffer": "^1.0.1",
+    "vinyl-source-stream": "^2.0.0",
+    "yargs": "15.1.0"
+  },
+  "dependencies": {
+    "@types/howler": "^2.1.2",
+    "@types/lodash": "^4.14.149",
+    "fs": "0.0.1-security",
+    "lodash": "^4.17.15"
+  },
+  "settings": {
+    "debug": false,
+    "tsconfig": {
+      "debug": "tsconfig.debug.json",
+      "release": "tsconfig.json"
+    },
+    "paths": {
+      "src": "./src/",
+      "srcScripts": "./src/scripts/",
+      "srcAssets": "./src/assets/",
+      "release": "./dist/",
+      "debug": "./debug/",
+      "tgtScripts": "./",
+      "tgtAssets": "assets/"
+    },
+    "main": "main.js",
+    "bundle": "bundle.js",
+    "port": 8080
+  }
+}

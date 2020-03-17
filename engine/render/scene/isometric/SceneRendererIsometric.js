@@ -26,6 +26,7 @@ var SceneRendererIsometric = (function (_super) {
         _this.HALF_TILE_HEIGHT = TILE_HEIGHT / 2;
         _this.screenToTilePos = function (global) {
             var point = _this.m_container.toLocal(global);
+            point.y -= 3;
             var game_x = Math.round(point.y / _this.TILE_HEIGHT + point.x / _this.TILE_WIDTH) - 1;
             var game_y = Math.round(point.y / _this.TILE_HEIGHT - point.x / _this.TILE_WIDTH);
             return {
@@ -48,7 +49,7 @@ var SceneRendererIsometric = (function (_super) {
         _this.getElementDepth = function (element) {
             return (element.x + element.y) + element.GetInfo().depth;
         };
-        _this.m_container.position.set(500, 100);
+        _this.m_container.position.set(500, 50);
         _this.m_container.scale.set(4);
         pixi.renderer.plugins.interaction.on('pointermove', function (evt) {
             _this.m_eventManager.emit("POINTER_MOVE", _this.screenToTilePos(evt.data.global));

@@ -34,12 +34,12 @@ var ChessBoard = (function (_super) {
         };
         _this.getConfig = function () {
             var cfg = [];
-            cfg.push(_this.width);
-            cfg.push(_this.height);
+            cfg.push(String.fromCharCode(_this.width));
+            cfg.push(String.fromCharCode(_this.height));
             for (var y = 0; y < _this.height; y++) {
                 for (var x = 0; x < _this.width; x++) {
                     var type = _this.getTileAt({ x: x, y: y }).type;
-                    cfg.push(type);
+                    cfg.push(String.fromCharCode(type));
                 }
             }
             return cfg.join('');

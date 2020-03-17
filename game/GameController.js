@@ -77,7 +77,7 @@ var GameController = (function () {
                     _this.m_renderer.getRenderable(tile.id).setSprite(assets_1.default.getTile(tile.getAssetInfo().name));
                     var cfg = _this.m_board.getConfig();
                     var url = location.origin + location.pathname;
-                    history.replaceState({}, "board", url + "?board=" + cfg);
+                    history.replaceState({}, "board", url + "?board=" + atob(cfg));
                 }
             };
             _this.m_renderer.on("POINTER_DOWN", function (data) {

@@ -78,15 +78,16 @@ export class ChessBoard extends Scene {
 
   public getConfig = () => {
     let cfg = [];
-    cfg.push(this.width);
-    cfg.push(this.height);
+    cfg.push(String.fromCharCode(this.width));
+    cfg.push(String.fromCharCode(this.height));
 
     for (let y = 0; y < this.height; y ++) {
       for (let x = 0; x < this.width; x ++) {
-        cfg.push(this.getTileAt({x : x, y : y}).type)
+        let type : number = this.getTileAt({x : x, y : y}).type;
+        cfg.push(String.fromCharCode(type))
       }
     }
-    return cfg;
+    return cfg.join('');
   }
 
 }

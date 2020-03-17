@@ -15,7 +15,7 @@ export class SceneRendererIsometric extends SceneRenderer {
 
   constructor (pixi : PIXI.Application) {
     super(pixi);
-    this.m_container.position.set(500, 100);
+    this.m_container.position.set(500, 50);
     this.m_container.scale.set(4);
 
     pixi.renderer.plugins.interaction.on('pointermove', (evt : PIXI.interaction.InteractionEvent) => {
@@ -32,6 +32,7 @@ export class SceneRendererIsometric extends SceneRenderer {
 
   public screenToTilePos = (global : PIXI.Point) : {x : number, y : number} => {
     let point = this.m_container.toLocal(global);
+    point.y -= 3;
     let game_x = Math.round(point.y / this.TILE_HEIGHT + point.x / this.TILE_WIDTH) - 1;
     let game_y = Math.round(point.y / this.TILE_HEIGHT - point.x / this.TILE_WIDTH);
     return {

@@ -63,7 +63,11 @@ export class GameController {
         let url_cfg : number[] = null;
         if (url_data && url_data.length > -1) {
           try {
-            url_cfg = JSON.parse(url_data);
+            let strings = (url_data).match(/.{2}/g);
+            url_cfg = [];
+            _.forEach(strings, str => {
+              url_cfg.push(parseInt(str));
+            })
           } catch (e) {
           }
         }
@@ -116,9 +120,8 @@ export class GameController {
         this.m_renderer.getRenderable(tile.id).setSprite(AssetManager.getTile(tile.getAssetInfo().name));
 
         let cfg = this.m_board.getConfig();
-        let str = JSON.stringify(cfg);
         let url =  location.origin + location.pathname ;
-        history.replaceState({}, "board", url + "?board=" + str);
+        history.replaceState({}, "board", url + "?board=" + atob(cfg));
       }
     }
 

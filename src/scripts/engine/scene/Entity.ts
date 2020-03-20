@@ -1,4 +1,5 @@
 import { AssetInfo } from "../../assets";
+import { EventManager } from "../listener/event";
 
 let id_ticker = 0;
 
@@ -8,24 +9,29 @@ export interface IEntityInfo {
   id : number,
 }
 
+export interface IAssetInfo {
+  type : "SPRITE" | "ANIMATED_SPRITE",
+  name : string;
+}
+
 export abstract class Entity {
-  public readonly id = id_ticker ++;
+
+  private m_event_manager : EventManager<string>;
+  private readonly m_id = id_ticker ++;
+
   protected readonly depth_offset : number = 0;
 
   constructor (public x : number, public y : number) {
+    this.m_event_manager = new EventManager();
   }
 
-  public GetInfo() : IEntityInfo {
-    return {
-      asset : this.getAssetInfo(),
-      depth : this.depth_offset,
-      id : this.id
-    };
+  public abstract getCurrentAsset() : IAssetInfo; 
+  
+  public get depthOffset() : number {
+    return 0;
   }
 
-  protected getAssetInfo() : AssetInfo {
-    return {
-      name : 'grass_empty.png'
-    }
+  public get id() {
+    return this.m_id;
   }
 }

@@ -1,4 +1,4 @@
-import { Entity } from "../../engine/scene/Entity";
+import { Entity, IAssetInfo } from "../../engine/scene/Entity";
 
 import {factionToString, AssetInfo} from '../../assets';
 
@@ -44,14 +44,19 @@ export class Tile extends Entity {
     this.m_tile_name = GetTileName(def);
   }
 
-  public getAssetInfo = () : AssetInfo => {
+  public getCurrentAsset = () : IAssetInfo => {
     return {
+      type : "SPRITE",
       name : this.m_tile_name,
     }
-  } 
+  }
   
   public get type() : TILE_DEF {
     return this.m_definition;
+  }
+
+  public get tile_name() : string {
+    return this.m_tile_name;
   }
 
 }

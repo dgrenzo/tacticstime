@@ -1,15 +1,19 @@
 import * as _ from 'lodash';
 
 import * as PIXI from 'pixi.js';
-import { ChessBoard, ITilePos, IBoardConfig } from "./board/GameBoard";
+import { GameBoard, ITilePos, IBoardConfig } from "./board/GameBoard";
 import { RenderMode, CreateRenderer } from '../engine/render/render';
 import { FSM } from '../engine/FSM';
 import { SceneRenderer } from '../engine/render/scene/SceneRenderer';
 import { EventManager } from '../engine/listener/event';
 import TileHighlighter from './extras/TileHighlighter';
-import { Tile, TILE_DEF } from './board/Tile';
-import AssetManager from './assets';
-import { TilePalette } from './interface/tile_palette';
+import { LoadBoard } from './board/Loader';
+import { Tile } from './board/Tile';
+import { Unit } from './board/Unit';
+import { PlayerTurn } from './play/PlayerTurn';
+import { ActionStack, IGameAction, GameEvent } from './play/ActionStack';
+import { GetMoveOptions } from './pathfinding';
+import { RENDER_PLUGIN } from './extras/plugins';
 
 export type GameConfig = {
   pixi_app : PIXI.Application,
@@ -29,65 +33,38 @@ export type TileData = {
   y : number
 };
 
-export type GameSignal = "PIECE_CLICKED" | "TILE_CLICKED";
+
+export type PlaySignal = "TILE_SELECTED";
+
+export type RenderSignal = "SET_PLUGIN";
+
+export type GameSignal = GameEvent | PlaySignal | RenderSignal | "TILE_CLICKED";
 
 
 export class GameController {
 
   private m_fsm : FSM;
-  private m_board : ChessBoard;
+
+  private m_board : GameBoard;
   private m_renderer : SceneRenderer;
-  private m_eventManager = new EventManager<GameSignal>();
+  private m_event_manager = new EventManager<GameSignal>();
+  private m_action_stack : ActionStack;
 
   constructor(private m_config : GameConfig) {
     this.m_fsm = new FSM();
     m_config.pixi_app.ticker.add(this.m_fsm.update);
     
-    this.m_board = new ChessBoard();
+    this.m_board = new GameBoard();
     this.m_renderer = CreateRenderer(this.m_config);
+    this.m_action_stack = new ActionStack(this);
 
-
-    this.loadBoard();
+    LoadBoard('assets/data/boards/coast.json').then(board_data => {
+      this.m_board.init(board_data);
+      this.m_renderer.initializeScene(this.m_board);
+      this.onSetupComplete();
+    })
   }
 
-  private loadBoard = () => {
-
-    let default_path : string = 'assets/data/boards/default.json';
-    let board_json : string = default_path;
-
-    new PIXI.Loader()
-      .add(board_json)
-      .load((loader : PIXI.Loader, resources : PIXI.IResourceDictionary) => {
-
-        let url_data = location.search.split("board=")[1];
-        let url_cfg : number[] = null;
-        if (url_data && url_data.length > -1) {
-          try {
-            let strings = (url_data).match(/.{2}/g);
-            url_cfg = [];
-            _.forEach(strings, str => {
-              url_cfg.push(parseInt(str));
-            })
-          } catch (e) {
-          }
-        }
-
-        let board_config : number[] = url_cfg ? url_cfg : resources[board_json].data;
-
-        let parsed_def : IBoardConfig = {
-          layout : {
-            width : board_config.shift(),
-            height : board_config.shift(),
-            tiles : board_config
-          },
-          entities : [],
-        }
-
-        this.m_board.init(parsed_def);
-        this.m_renderer.initializeScene(this.m_board);
-        this.onSetupComplete();
-      });
-  }
 
   private onSetupComplete = () => {
     this.m_config.pixi_app.stage.addChild(this.m_renderer.stage);
@@ -98,77 +75,47 @@ export class GameController {
     this.m_config.pixi_app.ticker.add(() => {
       this.m_renderer.renderScene(this.m_board);
     });
-
+    
+    let player = new PlayerTurn(this);
 
     this.m_renderer.on("POINTER_DOWN", this.tileClicked);
 
-    
-    let p = new TilePalette();
-
-    let brush : TILE_DEF = TILE_DEF.GRASS_EMPTY;
-    let painting : boolean = false;
-
-    p.on("TILE_SELECTED", data => {
-      brush = data.def;
-    })
-    
-    let paintTile = (pos : ITilePos, type : TILE_DEF) => {
-      let tile = this.m_board.getTileAt(pos);
-      if (!tile) { return; }
-      if (tile.type !== type) {
-        tile.setTileType(type);
-        this.m_renderer.getRenderable(tile.id).setSprite(AssetManager.getTile(tile.getAssetInfo().name));
-
-        let cfg = this.m_board.getConfig();
-        let url =  location.origin + location.pathname ;
-        history.replaceState({}, "board", url + "?board=" + atob(cfg));
-      }
-    }
-
-    this.m_renderer.on("POINTER_DOWN", (data) => {
-      painting = true;
-      paintTile(data, brush);
-    })
-    this.m_renderer.on("POINTER_MOVE", (data) => {
-      if (painting) {
-        paintTile(data, brush);
-      }
-    })
-    this.m_renderer.on("POINTER_UP", (data) => {
-      painting = false;
-    })
-
-
-    this.m_config.pixi_app.stage.addChild(p.container);
-
-  }
-
-  public getTileAt = (pos : { x : number, y : number }) : Tile => {
-    return this.m_board.getTileAt(pos);
-  }
-  
-  public highlightTile = (pos: ITilePos, highlight : boolean) => {
-    let tile = this.getTileAt(pos);
-    if (!tile) {
-      return;
-    }
-    this.m_renderer.getRenderable(tile.id).setFilter({highlight : highlight});
-  }
-
-  public highlightTiles = (coords:ITilePos[], highlight : boolean) => {
-    _.forEach(coords, pos => {
-      this.highlightTile(pos, highlight);
+    this.on("SET_PLUGIN", (data : { id : number, plugin : RENDER_PLUGIN}) => {
+      this.m_renderer.getRenderable(data.id).setPlugin(data.plugin);
     });
   }
 
+  public sendAction = (action : IGameAction | IGameAction[]) => {
+    this.m_action_stack.push(action);
+    this.m_action_stack.execute().then( () => {
+      let player = new PlayerTurn(this);
+    });
+  }
+
+
+  public getMoveOptions = (unit : Unit) => {
+    return GetMoveOptions(unit, this.m_board);
+  }
+
+  public getTile = (pos : { x : number, y : number }) : Tile => {
+    return this.m_board.getTile(pos);
+  }
+  public getUnit = (pos : ITilePos) : Unit => {
+    return this.m_board.getUnit(pos);
+  }
+  
   public on = (event_name : GameSignal, cb : (data:any) => void) => {
-    this.m_eventManager.add(event_name, cb);
+    this.m_event_manager.add(event_name, cb);
   }
   public off = (event_name : GameSignal, cb : (data:any) => void) => {
-    this.m_eventManager.remove(event_name, cb);
+    this.m_event_manager.remove(event_name, cb);
+  }
+
+  public emit = (event_name : GameSignal, data ?: any) => {
+    this.m_event_manager.emit(event_name, data);
   }
 
   private tileClicked = (data : TileData) => {
-    this.m_eventManager.emit("TILE_CLICKED", data);
+    this.m_event_manager.emit("TILE_CLICKED", data);
   }
 }

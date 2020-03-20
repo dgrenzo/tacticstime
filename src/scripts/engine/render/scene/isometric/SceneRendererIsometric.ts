@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js'
-import { REntity } from '../REntity';
+import { RenderEntity } from '../RenderEntity';
 import { SceneRenderer } from '../SceneRenderer';
 import { Entity } from '../../../scene/Entity';
 
@@ -19,20 +19,20 @@ export class SceneRendererIsometric extends SceneRenderer {
     this.m_container.scale.set(4);
 
     pixi.renderer.plugins.interaction.on('pointermove', (evt : PIXI.interaction.InteractionEvent) => {
-      this.m_eventManager.emit("POINTER_MOVE", this.screenToTilePos(evt.data.global));
+      this.m_event_manager.emit("POINTER_MOVE", this.screenToTilePos(evt.data.global));
     })
 
     pixi.renderer.plugins.interaction.on('pointerdown', (evt : PIXI.interaction.InteractionEvent) => {
-      this.m_eventManager.emit("POINTER_DOWN", this.screenToTilePos(evt.data.global));
+      this.m_event_manager.emit("POINTER_DOWN", this.screenToTilePos(evt.data.global));
     })
     pixi.renderer.plugins.interaction.on('pointerup', (evt : PIXI.interaction.InteractionEvent) => {
-      this.m_eventManager.emit("POINTER_UP", this.screenToTilePos(evt.data.global));
+      this.m_event_manager.emit("POINTER_UP", this.screenToTilePos(evt.data.global));
     })
   }
 
   public screenToTilePos = (global : PIXI.Point) : {x : number, y : number} => {
     let point = this.m_container.toLocal(global);
-    point.y -= 3;
+    point.y -= 2;
     let game_x = Math.round(point.y / this.TILE_HEIGHT + point.x / this.TILE_WIDTH) - 1;
     let game_y = Math.round(point.y / this.TILE_HEIGHT - point.x / this.TILE_WIDTH);
     return {
@@ -41,7 +41,7 @@ export class SceneRendererIsometric extends SceneRenderer {
     }
   }
 
-  public positionElement = (element : REntity, x : number, y : number) => {
+  public positionElement = (element : RenderEntity, x : number, y : number) => {
     element.setPosition(
       (x - y) * this.HALF_TILE_WIDTH,
       (x + y) * this.HALF_TILE_HEIGHT
@@ -59,6 +59,6 @@ export class SceneRendererIsometric extends SceneRenderer {
   }
 
   public getElementDepth = (element : Entity) : number => {
-    return (element.x + element.y) + element.GetInfo().depth;
+    return (element.x + element.y) + element.depthOffset;
   }
 }

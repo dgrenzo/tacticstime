@@ -1,5 +1,5 @@
 import { SceneRenderer } from "../../engine/render/scene/SceneRenderer";
-import { ChessBoard } from "../board/GameBoard";
+import { GameBoard } from "../board/GameBoard";
 import { Entity } from "../../engine/scene/Entity";
 
 
@@ -8,7 +8,7 @@ export default class TileHighlighter {
   private m_last_pos : {x : number, y : number};
   private m_current_pos : {x : number, y : number};
 
-  constructor (private m_renderer : SceneRenderer, private m_board : ChessBoard) {
+  constructor (private m_renderer : SceneRenderer, private m_board : GameBoard) {
     this.m_renderer.on('POINTER_MOVE', this.onPointerMove);
   }
 

@@ -1,8 +1,8 @@
 import * as _ from 'lodash';
-import {FACTION} from '../../types'
 import { Tile, TILE_DEF } from './Tile';
 import { Scene } from '../../engine/scene/Scene';
 import { Entity } from '../../engine/scene/Entity';
+import { Unit } from './Unit';
 
 export interface IBoardConfig {
   layout : {
@@ -18,7 +18,7 @@ export interface ITilePos {
   y : number,
 }
 
-export class ChessBoard extends Scene {
+export class GameBoard extends Scene {
 
   private width : number;
   private height : number;
@@ -44,7 +44,19 @@ export class ChessBoard extends Scene {
       let x : number = index % board_config.layout.width;
       let y : number = Math.floor(index / board_config.layout.width);
       this.addTile(x, y, tile);
-    })
+    });
+
+    this.addUnit(new Unit(7,10, {asset : "dwarf"}))
+    this.addUnit(new Unit(8,13, {asset : "lizard"}))
+    this.addUnit(new Unit(9,11, {asset : "guard"}))
+    this.addUnit(new Unit(10,9, {asset : "monk"}))
+    this.addUnit(new Unit(11,8, {asset : "oldman"}))
+    this.addUnit(new Unit(3,6, {asset : "rhino"}))
+    this.addUnit(new Unit(10,3, {asset : "wizard"}))
+  }
+
+  private addUnit = (unit : Unit) => {
+    this.addElement(unit);
   }
 
   private addTile = (x : number, y : number, def : TILE_DEF) => {
@@ -64,8 +76,20 @@ export class ChessBoard extends Scene {
     return elements;
   }
 
+  public getUnit = (pos : ITilePos) : Unit => {
+    let unit = null;
+    _.forEach(this.getElementsAt(pos), element => {
+      if (element instanceof Unit) {
+        unit = element;
+        return false;
+      }
+      return true;
+    })
+    return unit;
+  }
+
   
-  public getTileAt = (pos : ITilePos) : Tile => {
+  public getTile = (pos : ITilePos) : Tile => {
     if (!this.m_tiles[pos.x] || !this.m_tiles[pos.x][pos.y]) {
       return null;
     }
@@ -73,7 +97,7 @@ export class ChessBoard extends Scene {
   }
 
   private tileExists = (pos) : boolean => {
-    return this.getTileAt(pos) !== null;
+    return this.getTile(pos) !== null;
   }
 
   public getConfig = () => {
@@ -83,7 +107,7 @@ export class ChessBoard extends Scene {
 
     for (let y = 0; y < this.height; y ++) {
       for (let x = 0; x < this.width; x ++) {
-        let type : number = this.getTileAt({x : x, y : y}).type;
+        let type : number = this.getTile({x : x, y : y}).type;
         cfg.push(String.fromCharCode(type))
       }
     }

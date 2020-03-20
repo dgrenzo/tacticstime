@@ -1,41 +1,36 @@
 import * as PIXI from 'pixi.js';
 import * as _ from 'lodash';
-import { EventManager } from '../../engine/listener/event';
-import { TILE_DEF, GetTileName } from '../board/Tile';
-import AssetManager from '../assets';
-
-type PALETTE_EVENT = "TILE_SELECTED" | "BASE_SELECTED" | "TYPE_SELECTED"
+import { TILE_DEF, GetTileName } from '../../board/Tile';
+import AssetManager from '../../assets';
 
 export class TilePalette {
   
   private m_container : PIXI.Container;
 
-  private m_btns : PIXI.Sprite[];
-  private m_eventManager : EventManager<PALETTE_EVENT>;
+  private m_brushIcon : PIXI.Sprite;
+  private m_activeBrush : TILE_DEF = TILE_DEF.GRASS_EMPTY;
 
   constructor() {
-    this.m_eventManager = new EventManager();
     this.m_container = new PIXI.Container();
     this.m_container.interactive = this.m_container.interactiveChildren = true;
     this.init();
+    this.setBrush(TILE_DEF.GRASS_EMPTY);
   }
 
+  public get brush() : TILE_DEF {
+    return this.m_activeBrush;
+  }
 
   public get container() : PIXI.Container {
     return this.m_container;
   }
 
-  public on = (event : "TILE_SELECTED", cb : (data : { def:TILE_DEF } )=>void ) : void => {
-    this.m_eventManager.add(event, cb);
-  }
-
   private init = () => {
 
-    let brush_icon = new PIXI.Sprite();
-    brush_icon.texture = AssetManager.getTile(GetTileName(TILE_DEF.GRASS_EMPTY));
-    brush_icon.position.set(5, 30);
-    brush_icon.scale.set(2);
-    this.m_container.addChild(brush_icon);
+    let brush = this.m_brushIcon = new PIXI.Sprite();
+    brush.position.set(5, 30);
+    brush.scale.set(2);
+    this.m_container.addChild(brush);
     
 
     _.forEach(_.values(TILE_DEF), tile_type => {
@@ -54,9 +49,13 @@ export class TilePalette {
       btn.buttonMode = btn.interactive = true;
 
       btn.on('pointerdown', () => {
-        this.m_eventManager.emit("TILE_SELECTED", { def : tile_type });
-        brush_icon.texture = AssetManager.getTile(GetTileName(tile_type));
+        this.setBrush(tile_type);
       });
     });
+  }
+
+  private setBrush = (def : TILE_DEF) => {
+    this.m_activeBrush = def;
+    this.m_brushIcon = AssetManager.getTile(GetTileName(def));
   }
 }

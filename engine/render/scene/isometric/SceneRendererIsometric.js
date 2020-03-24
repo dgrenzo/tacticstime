@@ -26,7 +26,7 @@ var SceneRendererIsometric = (function (_super) {
         _this.HALF_TILE_HEIGHT = TILE_HEIGHT / 2;
         _this.screenToTilePos = function (global) {
             var point = _this.m_container.toLocal(global);
-            point.y -= 3;
+            point.y -= 2;
             var game_x = Math.round(point.y / _this.TILE_HEIGHT + point.x / _this.TILE_WIDTH) - 1;
             var game_y = Math.round(point.y / _this.TILE_HEIGHT - point.x / _this.TILE_WIDTH);
             return {
@@ -47,18 +47,21 @@ var SceneRendererIsometric = (function (_super) {
             });
         };
         _this.getElementDepth = function (element) {
-            return (element.x + element.y) + element.GetInfo().depth;
+            return (element.x + element.y) + element.depthOffset;
         };
         _this.m_container.position.set(500, 50);
         _this.m_container.scale.set(4);
         pixi.renderer.plugins.interaction.on('pointermove', function (evt) {
-            _this.m_eventManager.emit("POINTER_MOVE", _this.screenToTilePos(evt.data.global));
+            _this.m_event_manager.emit("POINTER_MOVE", _this.screenToTilePos(evt.data.global));
         });
         pixi.renderer.plugins.interaction.on('pointerdown', function (evt) {
-            _this.m_eventManager.emit("POINTER_DOWN", _this.screenToTilePos(evt.data.global));
+            if (evt.stopped) {
+                return;
+            }
+            _this.m_event_manager.emit("POINTER_DOWN", _this.screenToTilePos(evt.data.global));
         });
         pixi.renderer.plugins.interaction.on('pointerup', function (evt) {
-            _this.m_eventManager.emit("POINTER_UP", _this.screenToTilePos(evt.data.global));
+            _this.m_event_manager.emit("POINTER_UP", _this.screenToTilePos(evt.data.global));
         });
         return _this;
     }

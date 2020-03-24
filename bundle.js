@@ -37,7 +37,7 @@ var FSM = (function () {
 }());
 exports.FSM = FSM;
 
-},{"lodash":54}],2:[function(require,module,exports){
+},{"lodash":68}],2:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Signal = (function () {
@@ -132,76 +132,102 @@ exports.CreateRenderer = CreateRenderer;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
-var REntity = (function () {
-    function REntity(info, tex) {
+var assets_1 = require("../../../game/assets");
+var RenderEntity = (function () {
+    function RenderEntity(id) {
         var _this = this;
         this.offsetY = 0;
-        this.setSprite = function (tex) {
-            _this.m_image.texture = tex;
-        };
-        this.setFilter = function (filter) {
-            if (filter.highlight) {
-                _this.sprite.alpha = 0.5;
+        this.render = function (asset_info) {
+            switch (asset_info.type) {
+                case "SPRITE":
+                    _this.setSprite(asset_info.name);
+                    break;
+                case "ANIMATED_SPRITE":
+                    _this.setAnimatedSprite(asset_info.name);
+                    break;
             }
-            else {
-                _this.sprite.alpha = 1;
-            }
         };
-        this.m_sprite = new PIXI.Sprite();
-        this.m_sprite.interactive = this.m_sprite.buttonMode = true;
-        this.id = info.id;
+        this.setPlugin = function (plugin_name) {
+            _this.m_image.pluginName = plugin_name;
+        };
+        this.resetPlugin = function () {
+            _this.m_image.pluginName = 'batch';
+        };
+        this.setSprite = function (asset_name) {
+            _this.m_container.removeChildren();
+            _this.m_container.addChild(_this.m_image = new PIXI.Sprite(assets_1.default.getTile(asset_name)));
+        };
+        this.setAnimatedSprite = function (animation_name) {
+            _this.m_container.removeChildren();
+            var animation_data = assets_1.default.getAnimatedSprite(animation_name);
+            var animated_sprite = new PIXI.AnimatedSprite(animation_data, true);
+            animated_sprite.position.set(3, -7);
+            animated_sprite.play();
+            _this.m_image = animated_sprite;
+            _this.m_container.addChild(animated_sprite);
+        };
+        this.m_container = new PIXI.Sprite();
+        this.m_container.interactive = this.m_container.buttonMode = true;
+        this.m_id = id;
         this.m_image = new PIXI.Sprite();
-        this.m_sprite.addChild(this.m_image);
-        this.setSprite(tex);
+        this.m_container.addChild(this.m_image);
     }
-    Object.defineProperty(REntity.prototype, "sprite", {
+    Object.defineProperty(RenderEntity.prototype, "id", {
         get: function () {
-            return this.m_sprite;
+            return this.m_id;
         },
         enumerable: true,
         configurable: true
     });
-    REntity.prototype.setPosition = function (x, y) {
-        this.m_sprite.position.set(x, y + this.offsetY);
+    Object.defineProperty(RenderEntity.prototype, "sprite", {
+        get: function () {
+            return this.m_container;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    RenderEntity.prototype.setPosition = function (x, y) {
+        this.m_container.position.set(x, y + this.offsetY);
     };
-    return REntity;
+    return RenderEntity;
 }());
-exports.REntity = REntity;
+exports.RenderEntity = RenderEntity;
 
-},{"pixi.js":58}],5:[function(require,module,exports){
+},{"../../../game/assets":10,"pixi.js":72}],5:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
-var REntity_1 = require("./REntity");
+var RenderEntity_1 = require("./RenderEntity");
 var event_1 = require("../../listener/event");
-var assets_1 = require("../../../game/assets");
 var SceneRenderer = (function () {
     function SceneRenderer(m_pixi) {
         var _this = this;
         this.m_pixi = m_pixi;
-        this.m_eventManager = new event_1.EventManager();
+        this.m_event_manager = new event_1.EventManager();
         this.initializeScene = function (scene) {
             _this.m_renderables = new Map();
             _this.m_container.removeChildren();
             scene.getElements().forEach(function (element) {
                 var renderable = _this.addEntity(element);
+                renderable.render(element.getCurrentAsset());
                 renderable.sprite.on('pointerdown', function () {
-                    _this.m_eventManager.emit("ENTITY_CLICKED", { id: renderable.id });
+                    _this.m_event_manager.emit("ENTITY_CLICKED", { id: renderable.id });
                 });
             });
             _this.renderScene(scene);
         };
         this.on = function (event_name, cb) {
-            _this.m_eventManager.add(event_name, cb);
+            _this.m_event_manager.add(event_name, cb);
         };
         this.off = function (event_name, cb) {
-            _this.m_eventManager.remove(event_name, cb);
+            _this.m_event_manager.remove(event_name, cb);
         };
         this.renderScene = function (scene) {
             scene.getElements().forEach(function (element) {
                 _this.positionElement(_this.m_renderables.get(element.id), element.x, element.y);
             });
             _this.sortElements(scene.getElements());
+            _this.m_container.render(_this.m_pixi.renderer);
         };
         this.removeEntity = function (entity) {
             var renderable = _this.m_renderables.get(entity.id);
@@ -212,10 +238,9 @@ var SceneRenderer = (function () {
             return renderable;
         };
         this.addEntity = function (entity) {
-            var info = entity.GetInfo();
-            var tex = assets_1.default.getTile(info.asset.name);
-            _this.m_renderables.set(entity.id, new REntity_1.REntity(info, tex));
-            return _this.m_renderables.get(entity.id);
+            var renderable = CreateRenderable(entity);
+            _this.m_renderables.set(entity.id, renderable);
+            return renderable;
         };
         this.getRenderable = function (id) {
             return _this.m_renderables.get(id);
@@ -232,8 +257,11 @@ var SceneRenderer = (function () {
     return SceneRenderer;
 }());
 exports.SceneRenderer = SceneRenderer;
+function CreateRenderable(entity) {
+    return new RenderEntity_1.RenderEntity(entity.id);
+}
 
-},{"../../../game/assets":10,"../../listener/event":2,"./REntity":4,"pixi.js":58}],6:[function(require,module,exports){
+},{"../../listener/event":2,"./RenderEntity":4,"pixi.js":72}],6:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -262,7 +290,7 @@ var SceneRendererIsometric = (function (_super) {
         _this.HALF_TILE_HEIGHT = TILE_HEIGHT / 2;
         _this.screenToTilePos = function (global) {
             var point = _this.m_container.toLocal(global);
-            point.y -= 3;
+            point.y -= 2;
             var game_x = Math.round(point.y / _this.TILE_HEIGHT + point.x / _this.TILE_WIDTH) - 1;
             var game_y = Math.round(point.y / _this.TILE_HEIGHT - point.x / _this.TILE_WIDTH);
             return {
@@ -283,18 +311,21 @@ var SceneRendererIsometric = (function (_super) {
             });
         };
         _this.getElementDepth = function (element) {
-            return (element.x + element.y) + element.GetInfo().depth;
+            return (element.x + element.y) + element.depthOffset;
         };
         _this.m_container.position.set(500, 50);
         _this.m_container.scale.set(4);
         pixi.renderer.plugins.interaction.on('pointermove', function (evt) {
-            _this.m_eventManager.emit("POINTER_MOVE", _this.screenToTilePos(evt.data.global));
+            _this.m_event_manager.emit("POINTER_MOVE", _this.screenToTilePos(evt.data.global));
         });
         pixi.renderer.plugins.interaction.on('pointerdown', function (evt) {
-            _this.m_eventManager.emit("POINTER_DOWN", _this.screenToTilePos(evt.data.global));
+            if (evt.stopped) {
+                return;
+            }
+            _this.m_event_manager.emit("POINTER_DOWN", _this.screenToTilePos(evt.data.global));
         });
         pixi.renderer.plugins.interaction.on('pointerup', function (evt) {
-            _this.m_eventManager.emit("POINTER_UP", _this.screenToTilePos(evt.data.global));
+            _this.m_event_manager.emit("POINTER_UP", _this.screenToTilePos(evt.data.global));
         });
         return _this;
     }
@@ -305,31 +336,35 @@ exports.SceneRendererIsometric = SceneRendererIsometric;
 },{"../SceneRenderer":5}],7:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+var event_1 = require("../listener/event");
 var id_ticker = 0;
 var Entity = (function () {
     function Entity(x, y) {
         this.x = x;
         this.y = y;
-        this.id = id_ticker++;
+        this.m_id = id_ticker++;
         this.depth_offset = 0;
+        this.m_event_manager = new event_1.EventManager();
     }
-    Entity.prototype.GetInfo = function () {
-        return {
-            asset: this.getAssetInfo(),
-            depth: this.depth_offset,
-            id: this.id
-        };
-    };
-    Entity.prototype.getAssetInfo = function () {
-        return {
-            name: 'grass_empty.png'
-        };
-    };
+    Object.defineProperty(Entity.prototype, "depthOffset", {
+        get: function () {
+            return 0;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Entity.prototype, "id", {
+        get: function () {
+            return this.m_id;
+        },
+        enumerable: true,
+        configurable: true
+    });
     return Entity;
 }());
 exports.Entity = Entity;
 
-},{}],8:[function(require,module,exports){
+},{"../listener/event":2}],8:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Scene = (function () {
@@ -367,16 +402,16 @@ exports.Scene = Scene;
 },{}],9:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var _ = require("lodash");
 var PIXI = require("pixi.js");
 var GameBoard_1 = require("./board/GameBoard");
 var render_1 = require("../engine/render/render");
 var FSM_1 = require("../engine/FSM");
 var event_1 = require("../engine/listener/event");
 var TileHighlighter_1 = require("./extras/TileHighlighter");
-var Tile_1 = require("./board/Tile");
-var assets_1 = require("./assets");
-var tile_palette_1 = require("./interface/tile_palette");
+var Loader_1 = require("./board/Loader");
+var PlayerTurn_1 = require("./play/PlayerTurn");
+var ActionStack_1 = require("./play/action/ActionStack");
+var pathfinding_1 = require("./pathfinding");
 var GameState;
 (function (GameState) {
     GameState[GameState["SETUP"] = 0] = "SETUP";
@@ -386,128 +421,102 @@ var GameController = (function () {
     function GameController(m_config) {
         var _this = this;
         this.m_config = m_config;
-        this.m_eventManager = new event_1.EventManager();
-        this.loadBoard = function () {
-            var default_path = 'assets/data/boards/default.json';
-            var board_json = default_path;
-            new PIXI.Loader()
-                .add(board_json)
-                .load(function (loader, resources) {
-                var url_data = location.search.split("board=")[1];
-                var url_cfg = null;
-                if (url_data && url_data.length > -1) {
-                    try {
-                        var strings = (url_data).match(/.{2}/g);
-                        url_cfg = [];
-                        _.forEach(strings, function (str) {
-                            url_cfg.push(parseInt(str));
-                        });
-                    }
-                    catch (e) {
-                    }
-                }
-                var board_config = url_cfg ? url_cfg : resources[board_json].data;
-                var parsed_def = {
-                    layout: {
-                        width: board_config.shift(),
-                        height: board_config.shift(),
-                        tiles: board_config
-                    },
-                    entities: [],
-                };
-                _this.m_board.init(parsed_def);
-                _this.m_renderer.initializeScene(_this.m_board);
-                _this.onSetupComplete();
-            });
-        };
+        this.m_event_manager = new event_1.EventManager();
+        this.m_interface_container = new PIXI.Container();
         this.onSetupComplete = function () {
             _this.m_config.pixi_app.stage.addChild(_this.m_renderer.stage);
+            _this.m_config.pixi_app.stage.addChild(_this.m_interface_container);
             var highligher = new TileHighlighter_1.default(_this.m_renderer, _this.m_board);
             _this.m_config.pixi_app.ticker.add(highligher.update);
             _this.m_config.pixi_app.ticker.add(function () {
                 _this.m_renderer.renderScene(_this.m_board);
             });
+            var player = new PlayerTurn_1.PlayerTurn(_this);
             _this.m_renderer.on("POINTER_DOWN", _this.tileClicked);
-            var p = new tile_palette_1.TilePalette();
-            var brush = Tile_1.TILE_DEF.GRASS_EMPTY;
-            var painting = false;
-            p.on("TILE_SELECTED", function (data) {
-                brush = data.def;
+            _this.on("SET_PLUGIN", function (data) {
+                _this.m_renderer.getRenderable(data.id).setPlugin(data.plugin);
             });
-            var paintTile = function (pos, type) {
-                var tile = _this.m_board.getTileAt(pos);
-                if (!tile) {
-                    return;
-                }
-                if (tile.type !== type) {
-                    tile.setTileType(type);
-                    _this.m_renderer.getRenderable(tile.id).setSprite(assets_1.default.getTile(tile.getAssetInfo().name));
-                    var cfg = _this.m_board.getConfig();
-                    var url = location.origin + location.pathname;
-                    history.replaceState({}, "board", url + "?board=" + atob(cfg));
-                }
-            };
-            _this.m_renderer.on("POINTER_DOWN", function (data) {
-                painting = true;
-                paintTile(data, brush);
-            });
-            _this.m_renderer.on("POINTER_MOVE", function (data) {
-                if (painting) {
-                    paintTile(data, brush);
-                }
-            });
-            _this.m_renderer.on("POINTER_UP", function (data) {
-                painting = false;
-            });
-            _this.m_config.pixi_app.stage.addChild(p.container);
         };
-        this.getTileAt = function (pos) {
-            return _this.m_board.getTileAt(pos);
+        this.sendAction = function (action) {
+            _this.m_action_stack.push(action);
         };
-        this.highlightTile = function (pos, highlight) {
-            var tile = _this.getTileAt(pos);
-            if (!tile) {
-                return;
-            }
-            _this.m_renderer.getRenderable(tile.id).setFilter({ highlight: highlight });
-        };
-        this.highlightTiles = function (coords, highlight) {
-            _.forEach(coords, function (pos) {
-                _this.highlightTile(pos, highlight);
+        this.executeActionStack = function () {
+            return _this.m_action_stack.execute().then(function () {
+                var player = new PlayerTurn_1.PlayerTurn(_this);
             });
+            ;
+        };
+        this.getMoveOptions = function (unit) {
+            return pathfinding_1.GetMoveOptions(unit, _this.m_board);
+        };
+        this.getTile = function (pos) {
+            return _this.m_board.getTile(pos);
+        };
+        this.getUnit = function (pos) {
+            return _this.m_board.getUnit(pos);
+        };
+        this.removeUnit = function (unit) {
+            _this.m_board.removeElement(unit.id);
+            _this.m_renderer.removeEntity(unit);
         };
         this.on = function (event_name, cb) {
-            _this.m_eventManager.add(event_name, cb);
+            _this.m_event_manager.add(event_name, cb);
         };
         this.off = function (event_name, cb) {
-            _this.m_eventManager.remove(event_name, cb);
+            _this.m_event_manager.remove(event_name, cb);
+        };
+        this.emit = function (event_name, data) {
+            _this.m_event_manager.emit(event_name, data);
         };
         this.tileClicked = function (data) {
-            _this.m_eventManager.emit("TILE_CLICKED", data);
+            _this.m_event_manager.emit("TILE_CLICKED", _this.m_board.getTile(data));
         };
         this.m_fsm = new FSM_1.FSM();
         m_config.pixi_app.ticker.add(this.m_fsm.update);
-        this.m_board = new GameBoard_1.ChessBoard();
+        this.m_board = new GameBoard_1.GameBoard();
         this.m_renderer = render_1.CreateRenderer(this.m_config);
-        this.loadBoard();
+        this.m_action_stack = new ActionStack_1.ActionStack(this);
+        Loader_1.LoadBoard('assets/data/boards/coast.json').then(function (board_data) {
+            _this.m_board.init(board_data);
+            _this.m_renderer.initializeScene(_this.m_board);
+            _this.onSetupComplete();
+        });
     }
+    GameController.prototype.addInterfaceElement = function (element) {
+        this.m_interface_container.addChild(element);
+    };
     return GameController;
 }());
 exports.GameController = GameController;
 
-},{"../engine/FSM":1,"../engine/listener/event":2,"../engine/render/render":3,"./assets":10,"./board/GameBoard":11,"./board/Tile":12,"./extras/TileHighlighter":13,"./interface/tile_palette":14,"lodash":54,"pixi.js":58}],10:[function(require,module,exports){
+},{"../engine/FSM":1,"../engine/listener/event":2,"../engine/render/render":3,"./board/GameBoard":11,"./board/Loader":12,"./extras/TileHighlighter":15,"./pathfinding":17,"./play/PlayerTurn":18,"./play/action/ActionStack":19,"pixi.js":72}],10:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
+var _ = require("lodash");
 var iso_spritesheet = 'assets/images/isometric/all.json';
 var iso_tiles = 'assets/images/isometric/iso.json';
 var AssetManager = (function () {
     function AssetManager() {
         var _this = this;
+        this.m_animationMap = new Map();
         this.load = function (cb) {
             _this.loader.load(function (loader, resources) {
-                _this.m_spritesheet = resources[iso_spritesheet].spritesheet;
                 _this.m_tilesheet = resources[iso_tiles].spritesheet;
+                _this.m_spritesheet = resources[iso_spritesheet].spritesheet;
+                _.forEach(_.keys(_this.m_spritesheet.animations), function (animation_name) {
+                    var sheet = _this.m_spritesheet;
+                    var animation = [];
+                    var textures = sheet.animations[animation_name];
+                    var data = resources[iso_spritesheet].data;
+                    _.forEach(textures, function (tex) {
+                        animation.push({
+                            texture: tex,
+                            time: data.frames[tex.textureCacheIds[0]].frame.time,
+                        });
+                    });
+                    AssetManager._instance.m_animationMap.set(animation_name, animation);
+                });
                 cb();
             });
         };
@@ -519,6 +528,9 @@ var AssetManager = (function () {
     AssetManager.getTile = function (name) {
         return AssetManager._instance.m_tilesheet.textures[name];
     };
+    AssetManager.getAnimatedSprite = function (name) {
+        return AssetManager._instance.m_animationMap.get(name);
+    };
     AssetManager.init = function (onLoaded) {
         var manager = new AssetManager();
         manager.load(onLoaded);
@@ -527,7 +539,7 @@ var AssetManager = (function () {
 }());
 exports.default = AssetManager;
 
-},{"pixi.js":58}],11:[function(require,module,exports){
+},{"lodash":68,"pixi.js":72}],11:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -546,21 +558,36 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var _ = require("lodash");
 var Tile_1 = require("./Tile");
 var Scene_1 = require("../../engine/scene/Scene");
-var ChessBoard = (function (_super) {
-    __extends(ChessBoard, _super);
-    function ChessBoard() {
+var Unit_1 = require("./Unit");
+var GameBoard = (function (_super) {
+    __extends(GameBoard, _super);
+    function GameBoard() {
         var _this = _super.call(this) || this;
+        _this.addUnit = function (unit) {
+            _this.addElement(unit);
+        };
         _this.addTile = function (x, y, def) {
             _this.m_tiles[x][y] = _this.addElement(new Tile_1.Tile(x, y, def));
         };
-        _this.getTileAt = function (pos) {
+        _this.getUnit = function (pos) {
+            var unit = null;
+            _.forEach(_this.getElementsAt(pos), function (element) {
+                if (element instanceof Unit_1.Unit) {
+                    unit = element;
+                    return false;
+                }
+                return true;
+            });
+            return unit;
+        };
+        _this.getTile = function (pos) {
             if (!_this.m_tiles[pos.x] || !_this.m_tiles[pos.x][pos.y]) {
                 return null;
             }
             return _this.m_tiles[pos.x][pos.y];
         };
         _this.tileExists = function (pos) {
-            return _this.getTileAt(pos) !== null;
+            return _this.getTile(pos) !== null;
         };
         _this.getConfig = function () {
             var cfg = [];
@@ -568,7 +595,7 @@ var ChessBoard = (function (_super) {
             cfg.push(String.fromCharCode(_this.height));
             for (var y = 0; y < _this.height; y++) {
                 for (var x = 0; x < _this.width; x++) {
-                    var type = _this.getTileAt({ x: x, y: y }).type;
+                    var type = _this.getTile({ x: x, y: y }).type;
                     cfg.push(String.fromCharCode(type));
                 }
             }
@@ -576,7 +603,7 @@ var ChessBoard = (function (_super) {
         };
         return _this;
     }
-    ChessBoard.prototype.init = function (board_config) {
+    GameBoard.prototype.init = function (board_config) {
         var _this = this;
         this.m_elements = [];
         this.width = board_config.layout.width;
@@ -590,8 +617,15 @@ var ChessBoard = (function (_super) {
             var y = Math.floor(index / board_config.layout.width);
             _this.addTile(x, y, tile);
         });
+        this.addUnit(new Unit_1.Unit(7, 10, { asset: "dwarf" }));
+        this.addUnit(new Unit_1.Unit(8, 13, { asset: "lizard" }));
+        this.addUnit(new Unit_1.Unit(9, 11, { asset: "guard" }));
+        this.addUnit(new Unit_1.Unit(10, 9, { asset: "monk" }));
+        this.addUnit(new Unit_1.Unit(11, 8, { asset: "oldman" }));
+        this.addUnit(new Unit_1.Unit(3, 6, { asset: "rhino" }));
+        this.addUnit(new Unit_1.Unit(10, 3, { asset: "wizard" }));
     };
-    ChessBoard.prototype.getElementsAt = function (pos) {
+    GameBoard.prototype.getElementsAt = function (pos) {
         if (!pos) {
             return [];
         }
@@ -603,11 +637,70 @@ var ChessBoard = (function (_super) {
         });
         return elements;
     };
-    return ChessBoard;
+    return GameBoard;
 }(Scene_1.Scene));
-exports.ChessBoard = ChessBoard;
+exports.GameBoard = GameBoard;
 
-},{"../../engine/scene/Scene":8,"./Tile":12,"lodash":54}],12:[function(require,module,exports){
+},{"../../engine/scene/Scene":8,"./Tile":13,"./Unit":14,"lodash":68}],12:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var PIXI = require("pixi.js");
+var _ = require("lodash");
+function LoadBoard(path) {
+    var board_json = path;
+    return new Promise(function (resolve) {
+        new PIXI.Loader()
+            .add(board_json)
+            .load(function (loader, resources) {
+            var board_config = resources[board_json].data;
+            var parsed_config = ParseBoardData(board_config);
+            resolve(parsed_config);
+        });
+    });
+}
+exports.LoadBoard = LoadBoard;
+function ParseBoardData(boardFile) {
+    var data_split = (boardFile.data).match(/.{2}/g);
+    var data_cfg = [];
+    _.forEach(data_split, function (part) {
+        data_cfg.push(parseInt(part));
+    });
+    return {
+        layout: {
+            width: data_cfg.shift(),
+            height: data_cfg.shift(),
+            tiles: data_cfg
+        },
+        entities: [],
+    };
+}
+function LoadFromURLParam() {
+    var url_data = location.search.split("board=")[1];
+    var url_cfg = null;
+    if (url_data && url_data.length > -1) {
+        try {
+            var strings = (url_data).match(/.{2}/g);
+            url_cfg = [];
+            _.forEach(strings, function (str) {
+                url_cfg.push(parseInt(str));
+            });
+        }
+        catch (e) {
+            return null;
+        }
+    }
+    return {
+        layout: {
+            width: url_cfg.shift(),
+            height: url_cfg.shift(),
+            tiles: url_cfg
+        },
+        entities: [],
+    };
+}
+exports.LoadFromURLParam = LoadFromURLParam;
+
+},{"lodash":68,"pixi.js":72}],13:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -658,8 +751,9 @@ var Tile = (function (_super) {
             _this.m_definition = def;
             _this.m_tile_name = exports.GetTileName(def);
         };
-        _this.getAssetInfo = function () {
+        _this.getCurrentAsset = function () {
             return {
+                type: "SPRITE",
                 name: _this.m_tile_name,
             };
         };
@@ -669,6 +763,13 @@ var Tile = (function (_super) {
     Object.defineProperty(Tile.prototype, "type", {
         get: function () {
             return this.m_definition;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Tile.prototype, "tile_name", {
+        get: function () {
+            return this.m_tile_name;
         },
         enumerable: true,
         configurable: true
@@ -688,7 +789,69 @@ var getType = function (type) {
     return ["empty", "mtn", "tree", "hut"][type];
 };
 
-},{"../../engine/scene/Entity":7}],13:[function(require,module,exports){
+},{"../../engine/scene/Entity":7}],14:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var Entity_1 = require("../../engine/scene/Entity");
+var Unit = (function (_super) {
+    __extends(Unit, _super);
+    function Unit(x, y, data) {
+        var _this = _super.call(this, x, y) || this;
+        _this.hp = 1;
+        _this.getAbilities = function () {
+            return [
+                {
+                    name: "MOVE",
+                    data: {
+                        range: 4,
+                    }
+                },
+                {
+                    name: "STRIKE",
+                    data: {
+                        range: 1,
+                        strength: 3,
+                    }
+                }
+            ];
+        };
+        _this.getMoveLeft = function () {
+            return 6;
+        };
+        _this.getCurrentAsset = function () {
+            return {
+                type: "ANIMATED_SPRITE",
+                name: _this.m_unit_type + '_idle',
+            };
+        };
+        _this.m_unit_type = data.asset;
+        return _this;
+    }
+    Object.defineProperty(Unit.prototype, "depthOffset", {
+        get: function () {
+            return 2;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    return Unit;
+}(Entity_1.Entity));
+exports.Unit = Unit;
+
+},{"../../engine/scene/Entity":7}],15:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var TileHighlighter = (function () {
@@ -723,66 +886,682 @@ var TileHighlighter = (function () {
 }());
 exports.default = TileHighlighter;
 
-},{}],14:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
+var blue_frag = "\nvarying vec2 vTextureCoord;\nvarying vec4 vColor;\nvarying float vTextureId;\nuniform sampler2D uSamplers[%count%];\n\nvoid main(void){\n    vec4 color;\n    %forloop%\n    float blue = (color.r + color.g + color.b) / 3.0;\n    gl_FragColor = vec4(color.r / 2.0, color.g / 2.0, blue, color.a);\n}\n";
+var red_frag = "\nvarying vec2 vTextureCoord;\nvarying vec4 vColor;\nvarying float vTextureId;\nuniform sampler2D uSamplers[%count%];\n\nvoid main(void){\n    vec4 color;\n    %forloop%\n    float red = (color.r + color.g + color.b) / 3.0;\n    gl_FragColor = vec4(red, color.g / 2.0, color.b / 2.0, color.a);\n}\n";
+var green_frag = "\nvarying vec2 vTextureCoord;\nvarying vec4 vColor;\nvarying float vTextureId;\nuniform sampler2D uSamplers[%count%];\n\nvoid main(void){\n    vec4 color;\n    %forloop%\n    float green = (color.r + color.g + color.b) / 3.0;\n    gl_FragColor = vec4(color.r / 2.0 , green, color.b / 2.0, color.a);\n}\n";
+function InitRenderPlugins() {
+    PIXI.Renderer.registerPlugin('highlight_blue', PIXI.BatchPluginFactory.create({ fragment: blue_frag }));
+    PIXI.Renderer.registerPlugin('highlight_red', PIXI.BatchPluginFactory.create({ fragment: red_frag }));
+    PIXI.Renderer.registerPlugin('highlight_green', PIXI.BatchPluginFactory.create({ fragment: green_frag }));
+}
+exports.InitRenderPlugins = InitRenderPlugins;
+
+},{"pixi.js":72}],17:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var _ = require("lodash");
-var event_1 = require("../../engine/listener/event");
 var Tile_1 = require("../board/Tile");
-var assets_1 = require("../assets");
-var TilePalette = (function () {
-    function TilePalette() {
-        var _this = this;
-        this.on = function (event, cb) {
-            _this.m_eventManager.add(event, cb);
-        };
-        this.init = function () {
-            var brush_icon = new PIXI.Sprite();
-            brush_icon.texture = assets_1.default.getTile(Tile_1.GetTileName(Tile_1.TILE_DEF.GRASS_EMPTY));
-            brush_icon.position.set(5, 30);
-            brush_icon.scale.set(2);
-            _this.m_container.addChild(brush_icon);
-            _.forEach(_.values(Tile_1.TILE_DEF), function (tile_type) {
-                if (typeof tile_type === "string") {
-                    return;
+var PathList = (function () {
+    function PathList() {
+        this.m_list = [];
+    }
+    PathList.prototype.isEmpty = function () {
+        return this.m_list.length === 0;
+    };
+    PathList.prototype.getLowestCost = function () {
+        var path = null;
+        _.forEach(this.m_list, function (element) {
+            if (!path || element.cost < path.cost) {
+                path = element;
+            }
+        });
+        _.remove(this.m_list, (function (element) { return element === path; }));
+        return path;
+    };
+    PathList.prototype.push = function (path) {
+        if (path.tile === null) {
+            return;
+        }
+        if (this.exists(path)) {
+            this.updateCost(path);
+        }
+        else {
+            this.m_list.push(path);
+        }
+    };
+    PathList.prototype.exists = function (path) {
+        var exists = false;
+        _.forEach(this.m_list, function (element) {
+            if (path.tile === element.tile) {
+                exists = true;
+                return false;
+            }
+            return true;
+        });
+        return exists;
+    };
+    PathList.prototype.updateCost = function (path) {
+        _.forEach(this.m_list, function (element) {
+            if (path.tile === element.tile) {
+                if (path.cost < element.cost) {
+                    element.cost = path.cost;
+                    element.last = path.last;
                 }
-                var x = tile_type % 10;
-                var y = Math.floor(tile_type / 10);
-                var btn = new PIXI.Sprite(assets_1.default.getTile(Tile_1.GetTileName(tile_type)));
-                _this.m_container.addChild(btn);
-                btn.position.set(50 + x * 24, y * 24);
-                btn.buttonMode = btn.interactive = true;
-                btn.on('pointerdown', function () {
-                    _this.m_eventManager.emit("TILE_SELECTED", { def: tile_type });
-                    brush_icon.texture = assets_1.default.getTile(Tile_1.GetTileName(tile_type));
-                });
+                return false;
+            }
+            return true;
+        });
+    };
+    PathList.prototype.shift = function () {
+        return this.m_list.shift();
+    };
+    PathList.prototype.getPaths = function () {
+        return this.m_list;
+    };
+    PathList.prototype.getTiles = function () {
+        var tiles = [];
+        _.forEach(this.m_list, function (path) {
+            tiles.push(path.tile);
+        });
+        return tiles;
+    };
+    return PathList;
+}());
+function GetMoveOptions(unit, board) {
+    if (!unit) {
+        return [];
+    }
+    var max_cost = unit.getMoveLeft();
+    var closed_list = new PathList();
+    var open_list = new PathList();
+    var current_tile = board.getTile(unit);
+    open_list.push({ tile: current_tile, cost: 0, last: null });
+    var _loop_1 = function () {
+        var next = open_list.getLowestCost();
+        closed_list.push(next);
+        var adjacent = GetAdjacent(next.tile, board);
+        _.forEach(adjacent, function (tile) {
+            var path = ToPathTile(tile, next.cost, next);
+            if (closed_list.exists(path) || path.cost > max_cost || !CanPassTile(unit, tile, board)) {
+                return;
+            }
+            open_list.push(path);
+            return;
+        });
+    };
+    while (!open_list.isEmpty()) {
+        _loop_1();
+    }
+    return closed_list.getPaths();
+}
+exports.GetMoveOptions = GetMoveOptions;
+function CanOccupyTile(unit, tile, board) {
+    return true;
+}
+function CanPassTile(unit, tile, board) {
+    if (board.getUnit(tile)) {
+        return false;
+    }
+    return true;
+}
+function GetAdjacent(tile, board) {
+    return _.shuffle([
+        board.getTile({ x: tile.x - 1, y: tile.y }),
+        board.getTile({ x: tile.x + 1, y: tile.y }),
+        board.getTile({ x: tile.x, y: tile.y - 1 }),
+        board.getTile({ x: tile.x, y: tile.y + 1 }),
+    ]);
+}
+function ToPathTile(tile, cost, last) {
+    return {
+        tile: tile,
+        cost: cost + GetTileCost(tile),
+        last: last,
+    };
+}
+function GetTileCost(tile) {
+    if (!tile) {
+        return Infinity;
+    }
+    if (tile.type === Tile_1.TILE_DEF.WATER_EMPTY) {
+        return 2;
+    }
+    return 1;
+}
+
+},{"../board/Tile":13,"lodash":68}],18:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var FSM_1 = require("../../engine/FSM");
+var MoveActionUI_1 = require("./action/MoveActionUI");
+var UnitSelectedPanel_1 = require("./interface/UnitSelectedPanel");
+var AttackActionUI_1 = require("./action/AttackActionUI");
+var PLAY_STATE;
+(function (PLAY_STATE) {
+    PLAY_STATE[PLAY_STATE["NO_SELECTION"] = 0] = "NO_SELECTION";
+    PLAY_STATE[PLAY_STATE["SELECTED"] = 1] = "SELECTED";
+    PLAY_STATE[PLAY_STATE["ACTING"] = 2] = "ACTING";
+})(PLAY_STATE || (PLAY_STATE = {}));
+var PlayerTurn = (function () {
+    function PlayerTurn(m_controller) {
+        var _this = this;
+        this.m_controller = m_controller;
+        this.setupFSM = function () {
+            if (_this.m_fsm) {
+                return;
+            }
+            _this.m_fsm = new FSM_1.FSM();
+            _this.m_fsm.registerState(PLAY_STATE.NO_SELECTION, {
+                enter: function () {
+                    _this.m_active_tile = null;
+                },
+            });
+            _this.m_fsm.registerState(PLAY_STATE.SELECTED, {
+                enter: function () {
+                    _this.m_controller.emit("TILE_SELECTED", _this.m_active_tile);
+                    _this.m_controller.emit("SET_PLUGIN", { id: _this.m_active_tile.id, plugin: 'highlight_green' });
+                    _this.m_active_unit = _this.m_controller.getUnit(_this.m_active_tile);
+                    _this.m_selected_panel.showUnitPanel(_this.m_active_unit);
+                },
+                exit: function () {
+                    _this.m_controller.emit("SET_PLUGIN", { id: _this.m_active_tile.id, plugin: 'batch' });
+                    _this.m_selected_panel.hide();
+                    if (_this.m_action_ui) {
+                        _this.m_action_ui.hideOptions();
+                        _this.m_action_ui = null;
+                    }
+                }
+            });
+            _this.m_fsm.registerState(PLAY_STATE.ACTING, {});
+        };
+        this.onAbilitySelected = function (ability) {
+            switch (ability.name) {
+                case "MOVE":
+                    _this.m_action_ui = new MoveActionUI_1.MoveActionUI(_this.m_active_tile, _this.m_controller);
+                    break;
+                case "STRIKE":
+                    _this.m_action_ui = new AttackActionUI_1.AttackActionUI(_this.m_active_tile, _this.m_controller);
+                    break;
+            }
+        };
+        this.onTileClicked = function (tile) {
+            switch (_this.m_fsm.state) {
+                case PLAY_STATE.NO_SELECTION:
+                    _this.selectTile(tile);
+                    break;
+                case PLAY_STATE.SELECTED:
+                    var action = [];
+                    if (_this.m_action_ui) {
+                        action = _this.m_action_ui.getAction(tile);
+                    }
+                    if (action.length > 0) {
+                        _this.m_controller.sendAction(action);
+                        _this.m_controller.executeActionStack();
+                        _this.m_fsm.setState(PLAY_STATE.ACTING);
+                    }
+                    else {
+                        _this.m_fsm.setState(PLAY_STATE.NO_SELECTION);
+                        _this.selectTile(tile);
+                    }
+                    break;
+                default:
+                    return;
+            }
+        };
+        this.selectTile = function (tile) {
+            if (!tile) {
+                return;
+            }
+            _this.m_active_tile = tile;
+            _this.m_fsm.setState(PLAY_STATE.SELECTED);
+        };
+        this.m_selected_panel = new UnitSelectedPanel_1.UnitSelectedPanel(this.m_controller);
+        this.m_selected_panel.onAbilitySelected(this.onAbilitySelected);
+        this.m_controller.on("TILE_CLICKED", this.onTileClicked);
+        this.setupFSM();
+        this.m_fsm.setState(PLAY_STATE.NO_SELECTION);
+    }
+    return PlayerTurn;
+}());
+exports.PlayerTurn = PlayerTurn;
+
+},{"../../engine/FSM":1,"./action/AttackActionUI":20,"./action/MoveActionUI":22,"./interface/UnitSelectedPanel":28}],19:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var _ = require("lodash");
+var executors_1 = require("./executors");
+var ActionStack = (function () {
+    function ActionStack(m_controller) {
+        var _this = this;
+        this.m_controller = m_controller;
+        this.m_stack_root = {
+            action: null,
+            next: null,
+        };
+        this.execute = function () {
+            return new Promise(function (resolve) {
+                var next_action = _this.shift();
+                if (!next_action) {
+                    resolve();
+                }
+                else {
+                    executors_1.ExecuteGameEvent(next_action, _this.m_controller).then(function () {
+                        _this.m_controller.emit(next_action.type, next_action.data);
+                        return _this.execute();
+                    }).then(resolve);
+                }
             });
         };
-        this.m_eventManager = new event_1.EventManager();
-        this.m_container = new PIXI.Container();
-        this.m_container.interactive = this.m_container.interactiveChildren = true;
-        this.init();
+        this.push = function (actions) {
+            actions = _.concat(actions);
+            _.forEach(actions, function (action) {
+                _this.tail.next = {
+                    action: action,
+                    next: null,
+                };
+            });
+        };
+        this.shift = function () {
+            var next = _this.m_stack_root.next;
+            if (next) {
+                _this.m_stack_root.next = next.next;
+                return next.action;
+            }
+            return null;
+        };
     }
-    Object.defineProperty(TilePalette.prototype, "container", {
+    Object.defineProperty(ActionStack.prototype, "tail", {
         get: function () {
-            return this.m_container;
+            var tail = this.m_stack_root;
+            while (tail.next) {
+                tail = tail.next;
+            }
+            return tail;
         },
         enumerable: true,
         configurable: true
     });
-    return TilePalette;
+    return ActionStack;
 }());
-exports.TilePalette = TilePalette;
+exports.ActionStack = ActionStack;
 
-},{"../../engine/listener/event":2,"../assets":10,"../board/Tile":12,"lodash":54,"pixi.js":58}],15:[function(require,module,exports){
+},{"./executors":27,"lodash":68}],20:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var _ = require("lodash");
+var BoardActionUI_1 = require("./BoardActionUI");
+var UNIT_COLLISION;
+(function (UNIT_COLLISION) {
+    UNIT_COLLISION[UNIT_COLLISION["NONE"] = 0] = "NONE";
+    UNIT_COLLISION[UNIT_COLLISION["ALL"] = 1] = "ALL";
+    UNIT_COLLISION[UNIT_COLLISION["ENEMY"] = 2] = "ENEMY";
+    UNIT_COLLISION[UNIT_COLLISION["ALLY"] = 3] = "ALLY";
+})(UNIT_COLLISION || (UNIT_COLLISION = {}));
+var AttackActionUI = (function (_super) {
+    __extends(AttackActionUI, _super);
+    function AttackActionUI(m_tile, m_controller) {
+        var _this = _super.call(this, m_tile, m_controller) || this;
+        _this.m_tile = m_tile;
+        _this.m_controller = m_controller;
+        _this.getTileOptionsInRange = function (start, max_range, min_range) {
+            if (min_range === void 0) { min_range = 1; }
+            var options = [];
+            for (var offset_x = -max_range; offset_x <= max_range; offset_x++) {
+                var max_y = max_range - Math.abs(offset_x);
+                for (var offset_y = -max_y; offset_y <= max_y; offset_y++) {
+                    if (Math.abs(offset_x) + Math.abs(offset_y) < min_range) {
+                        continue;
+                    }
+                    var tile = _this.m_controller.getTile({ x: start.x + offset_x, y: start.y + offset_y });
+                    if (tile) {
+                        options.push({ tile: tile });
+                    }
+                }
+            }
+            return options;
+        };
+        _this.showOptions = function () {
+            _.forEach(_this.m_options, function (path) {
+                _this.m_controller.emit("SET_PLUGIN", { id: path.tile.id, plugin: 'highlight_red' });
+            });
+        };
+        _this.hideOptions = function () {
+            _.forEach(_this.m_options, function (path) {
+                _this.m_controller.emit("SET_PLUGIN", { id: path.tile.id, plugin: 'batch' });
+            });
+        };
+        _this.getAction = function (tile) {
+            var option = _this.getOptionFromTile(tile);
+            return _this.toAttackAction(option);
+        };
+        _this.getExecuteFunction = function () {
+            return function (data) {
+                return new Promise(function (resolve) {
+                    setTimeout(resolve, 100);
+                });
+            };
+        };
+        _this.m_active_unit = _this.m_controller.getUnit(_this.m_active_tile);
+        _this.m_options = _this.getTileOptionsInRange(_this.m_active_unit, 2, 1);
+        _this.showOptions();
+        return _this;
+    }
+    AttackActionUI.prototype.toAttackAction = function (option) {
+        var target = this.m_controller.getUnit(option.tile);
+        if (!target) {
+            return [];
+        }
+        return [
+            {
+                type: "STRIKE",
+                data: {
+                    unit: this.m_active_unit,
+                    target: this.m_controller.getUnit(option.tile),
+                    damage: 1,
+                    tile: option.tile,
+                }
+            }
+        ];
+    };
+    AttackActionUI.prototype.getOptionFromTile = function (tile) {
+        var path = null;
+        _.forEach(this.m_options, function (option) {
+            if (option.tile === tile) {
+                path = option;
+                return false;
+            }
+            return true;
+        });
+        return path;
+    };
+    return AttackActionUI;
+}(BoardActionUI_1.BoardActionUI));
+exports.AttackActionUI = AttackActionUI;
+
+},{"./BoardActionUI":21,"lodash":68}],21:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var UNIT_COLLISION;
+(function (UNIT_COLLISION) {
+    UNIT_COLLISION[UNIT_COLLISION["NONE"] = 0] = "NONE";
+    UNIT_COLLISION[UNIT_COLLISION["ALL"] = 1] = "ALL";
+    UNIT_COLLISION[UNIT_COLLISION["ENEMY"] = 2] = "ENEMY";
+    UNIT_COLLISION[UNIT_COLLISION["ALLY"] = 3] = "ALLY";
+})(UNIT_COLLISION || (UNIT_COLLISION = {}));
+var BoardActionUI = (function () {
+    function BoardActionUI(m_active_tile, m_controller) {
+        this.m_active_tile = m_active_tile;
+        this.m_controller = m_controller;
+    }
+    BoardActionUI.prototype.showOptions = function () {
+    };
+    BoardActionUI.prototype.hideOptions = function () {
+    };
+    BoardActionUI.prototype.getAction = function (tile) {
+        return [];
+    };
+    return BoardActionUI;
+}());
+exports.BoardActionUI = BoardActionUI;
+
+},{}],22:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var _ = require("lodash");
+var BoardActionUI_1 = require("./BoardActionUI");
+var UNIT_COLLISION;
+(function (UNIT_COLLISION) {
+    UNIT_COLLISION[UNIT_COLLISION["NONE"] = 0] = "NONE";
+    UNIT_COLLISION[UNIT_COLLISION["ALL"] = 1] = "ALL";
+    UNIT_COLLISION[UNIT_COLLISION["ENEMY"] = 2] = "ENEMY";
+    UNIT_COLLISION[UNIT_COLLISION["ALLY"] = 3] = "ALLY";
+})(UNIT_COLLISION || (UNIT_COLLISION = {}));
+var MoveActionUI = (function (_super) {
+    __extends(MoveActionUI, _super);
+    function MoveActionUI(m_tile, m_controller) {
+        var _this = _super.call(this, m_tile, m_controller) || this;
+        _this.m_tile = m_tile;
+        _this.m_controller = m_controller;
+        _this.showOptions = function () {
+            _.forEach(_this.m_options, function (path) {
+                if (!_this.m_controller.getUnit(path.tile)) {
+                    _this.m_controller.emit("SET_PLUGIN", { id: path.tile.id, plugin: 'highlight_blue' });
+                }
+            });
+        };
+        _this.hideOptions = function () {
+            _.forEach(_this.m_options, function (path) {
+                if (!_this.m_controller.getUnit(path.tile)) {
+                    _this.m_controller.emit("SET_PLUGIN", { id: path.tile.id, plugin: 'batch' });
+                }
+            });
+        };
+        _this.getAction = function (tile) {
+            var option = _this.getOptionFromTile(tile);
+            return _this.toMoveAction(option);
+        };
+        _this.m_active_unit = _this.m_controller.getUnit(_this.m_active_tile);
+        _this.m_options = _this.m_controller.getMoveOptions(_this.m_active_unit);
+        _this.showOptions();
+        return _this;
+    }
+    MoveActionUI.prototype.toMoveAction = function (path) {
+        var action = [];
+        while (path) {
+            action.unshift({
+                type: "MOVE",
+                data: {
+                    unit: this.m_active_unit,
+                    tile: path.tile,
+                }
+            });
+            path = path.last;
+        }
+        return action;
+    };
+    MoveActionUI.prototype.getOptionFromTile = function (tile) {
+        var path = null;
+        _.forEach(this.m_options, function (option) {
+            if (option.tile === tile) {
+                path = option;
+                return false;
+            }
+            return true;
+        });
+        return path;
+    };
+    return MoveActionUI;
+}(BoardActionUI_1.BoardActionUI));
+exports.MoveActionUI = MoveActionUI;
+
+},{"./BoardActionUI":21,"lodash":68}],23:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+function ExecuteDamage(data, controller) {
+    return new Promise(function (resolve) {
+        var starting_hp = data.unit.hp;
+        if (starting_hp === 0) {
+            resolve();
+            return;
+        }
+        data.unit.hp = Math.max(starting_hp - data.amount, 0);
+        if (data.unit.hp != starting_hp) {
+            controller.sendAction({
+                type: "DAMAGE_DEALT",
+                data: {
+                    amount: starting_hp - data.unit.hp,
+                    unit: data.unit,
+                }
+            });
+        }
+        if (data.unit.hp === 0) {
+            controller.sendAction({
+                type: "UNIT_KILLED",
+                data: {
+                    unit: data.unit
+                }
+            });
+        }
+        setTimeout(resolve, 100);
+    });
+}
+exports.ExecuteDamage = ExecuteDamage;
+
+},{}],24:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+function ExecuteKilled(data, controller) {
+    return new Promise(function (resolve) {
+        controller.removeUnit(data.unit);
+        setTimeout(resolve, 100);
+    });
+}
+exports.ExecuteKilled = ExecuteKilled;
+
+},{}],25:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+function ExecuteMove(data, controller) {
+    return new Promise(function (resolve) {
+        data.unit.x = data.tile.x;
+        data.unit.y = data.tile.y;
+        setTimeout(resolve, 100);
+    });
+}
+exports.ExecuteMove = ExecuteMove;
+
+},{}],26:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+function ExecuteStrike(data, controller) {
+    return new Promise(function (resolve) {
+        controller.sendAction({
+            type: "DAMAGE",
+            data: {
+                amount: 1,
+                unit: data.target,
+            }
+        });
+        setTimeout(resolve, 100);
+    });
+}
+exports.ExecuteStrike = ExecuteStrike;
+
+},{}],27:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var Movement_1 = require("./action/Movement");
+var Strike_1 = require("./action/Strike");
+var Damage_1 = require("./action/Damage");
+var Killed_1 = require("./action/Killed");
+function ExecuteGameEvent(action, controller) {
+    console.log(action);
+    switch (action.type) {
+        case "MOVE":
+            return Movement_1.ExecuteMove(action.data, controller);
+        case "STRIKE":
+            return Strike_1.ExecuteStrike(action.data, controller);
+        case "DAMAGE":
+            return Damage_1.ExecuteDamage(action.data, controller);
+        case "UNIT_KILLED":
+            return Killed_1.ExecuteKilled(action.data, controller);
+        default:
+            return Promise.resolve();
+    }
+}
+exports.ExecuteGameEvent = ExecuteGameEvent;
+
+},{"./action/Damage":23,"./action/Killed":24,"./action/Movement":25,"./action/Strike":26}],28:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var _ = require("lodash");
+var PIXI = require("pixi.js");
+var event_1 = require("../../../engine/listener/event");
+var UnitSelectedPanel = (function () {
+    function UnitSelectedPanel(m_controller) {
+        var _this = this;
+        this.m_controller = m_controller;
+        this.m_container = new PIXI.Container();
+        this.m_event_manager = new event_1.EventManager();
+        this.showUnitPanel = function (unit) {
+            _this.m_container.removeChildren();
+            _this.m_container.visible = true;
+            if (!unit) {
+                return;
+            }
+            _this.showAbilities(unit.getAbilities());
+        };
+        this.hide = function () {
+            _this.m_container.visible = false;
+        };
+        this.onAbilitySelected = function (cb) {
+            _this.m_event_manager.add("ABILITY_SELECTED", cb);
+        };
+        this.showAbilities = function (abiliy_list) {
+            _.forEach(abiliy_list, function (def, index) {
+                var btn = new PIXI.Sprite();
+                var bg = new PIXI.Graphics();
+                btn.addChild(new PIXI.Graphics().beginFill(0x333333).drawRoundedRect(0, 0, 200, 60, 5).endFill());
+                btn.interactive = btn.buttonMode = true;
+                btn.on('pointerdown', function (evt) {
+                    evt.stopPropagation();
+                    _this.m_event_manager.emit("ABILITY_SELECTED", def);
+                });
+                btn.position.set(0, index * 80);
+                var label = new PIXI.Text(def.name, { fill: 0xFFFFFF });
+                label.anchor.set(0.5);
+                label.position.set(100, 30);
+                btn.addChild(label);
+                _this.m_container.addChild(btn);
+            });
+        };
+        this.m_container.position.set(10, 500);
+        m_controller.addInterfaceElement(this.m_container);
+    }
+    return UnitSelectedPanel;
+}());
+exports.UnitSelectedPanel = UnitSelectedPanel;
+
+},{"../../../engine/listener/event":2,"lodash":68,"pixi.js":72}],29:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
 var GameController_1 = require("./game/GameController");
 var render_1 = require("./engine/render/render");
 var assets_1 = require("./game/assets");
+var plugins_1 = require("./game/extras/plugins");
 exports.DEBUG = false;
+plugins_1.InitRenderPlugins();
 PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
 var pixi_app = new PIXI.Application({
     forceCanvas: true,
@@ -801,7 +1580,7 @@ assets_1.default.init(function () {
     });
 });
 
-},{"./engine/render/render":3,"./game/GameController":9,"./game/assets":10,"pixi.js":58}],16:[function(require,module,exports){
+},{"./engine/render/render":3,"./game/GameController":9,"./game/assets":10,"./game/extras/plugins":16,"pixi.js":72}],30:[function(require,module,exports){
 /*!
  * @pixi/accessibility - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -1452,7 +2231,7 @@ exports.AccessibilityManager = AccessibilityManager;
 exports.accessibleTarget = accessibleTarget;
 
 
-},{"@pixi/display":20,"@pixi/utils":49}],17:[function(require,module,exports){
+},{"@pixi/display":34,"@pixi/utils":63}],31:[function(require,module,exports){
 /*!
  * @pixi/app - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -1687,7 +2466,7 @@ Application.registerPlugin(ResizePlugin);
 exports.Application = Application;
 
 
-},{"@pixi/core":19,"@pixi/display":20}],18:[function(require,module,exports){
+},{"@pixi/core":33,"@pixi/display":34}],32:[function(require,module,exports){
 /*!
  * @pixi/constants - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -2037,7 +2816,7 @@ exports.TYPES = TYPES;
 exports.WRAP_MODES = WRAP_MODES;
 
 
-},{}],19:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 /*!
  * @pixi/core - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -14517,7 +15296,7 @@ exports.resources = index;
 exports.systems = systems;
 
 
-},{"@pixi/constants":18,"@pixi/display":20,"@pixi/math":31,"@pixi/runner":40,"@pixi/settings":41,"@pixi/ticker":48,"@pixi/utils":49}],20:[function(require,module,exports){
+},{"@pixi/constants":32,"@pixi/display":34,"@pixi/math":45,"@pixi/runner":54,"@pixi/settings":55,"@pixi/ticker":62,"@pixi/utils":63}],34:[function(require,module,exports){
 /*!
  * @pixi/display - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -16325,7 +17104,7 @@ exports.Container = Container;
 exports.DisplayObject = DisplayObject;
 
 
-},{"@pixi/math":31,"@pixi/settings":41,"@pixi/utils":49}],21:[function(require,module,exports){
+},{"@pixi/math":45,"@pixi/settings":55,"@pixi/utils":63}],35:[function(require,module,exports){
 /*!
  * @pixi/extract - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -16628,7 +17407,7 @@ Extract.arrayPostDivide = function arrayPostDivide (pixels, out)
 exports.Extract = Extract;
 
 
-},{"@pixi/core":19,"@pixi/math":31,"@pixi/utils":49}],22:[function(require,module,exports){
+},{"@pixi/core":33,"@pixi/math":45,"@pixi/utils":63}],36:[function(require,module,exports){
 /*!
  * @pixi/filter-alpha - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -16701,7 +17480,7 @@ var AlphaFilter = /*@__PURE__*/(function (Filter) {
 exports.AlphaFilter = AlphaFilter;
 
 
-},{"@pixi/core":19}],23:[function(require,module,exports){
+},{"@pixi/core":33}],37:[function(require,module,exports){
 /*!
  * @pixi/filter-blur - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -17137,7 +17916,7 @@ exports.BlurFilter = BlurFilter;
 exports.BlurFilterPass = BlurFilterPass;
 
 
-},{"@pixi/core":19,"@pixi/settings":41}],24:[function(require,module,exports){
+},{"@pixi/core":33,"@pixi/settings":55}],38:[function(require,module,exports){
 /*!
  * @pixi/filter-color-matrix - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -17744,7 +18523,7 @@ ColorMatrixFilter.prototype.grayscale = ColorMatrixFilter.prototype.greyscale;
 exports.ColorMatrixFilter = ColorMatrixFilter;
 
 
-},{"@pixi/core":19}],25:[function(require,module,exports){
+},{"@pixi/core":33}],39:[function(require,module,exports){
 /*!
  * @pixi/filter-displacement - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -17871,7 +18650,7 @@ var DisplacementFilter = /*@__PURE__*/(function (Filter) {
 exports.DisplacementFilter = DisplacementFilter;
 
 
-},{"@pixi/core":19,"@pixi/math":31}],26:[function(require,module,exports){
+},{"@pixi/core":33,"@pixi/math":45}],40:[function(require,module,exports){
 /*!
  * @pixi/filter-fxaa - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -17917,7 +18696,7 @@ var FXAAFilter = /*@__PURE__*/(function (Filter) {
 exports.FXAAFilter = FXAAFilter;
 
 
-},{"@pixi/core":19}],27:[function(require,module,exports){
+},{"@pixi/core":33}],41:[function(require,module,exports){
 /*!
  * @pixi/filter-noise - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -18005,7 +18784,7 @@ var NoiseFilter = /*@__PURE__*/(function (Filter) {
 exports.NoiseFilter = NoiseFilter;
 
 
-},{"@pixi/core":19}],28:[function(require,module,exports){
+},{"@pixi/core":33}],42:[function(require,module,exports){
 /*!
  * @pixi/graphics - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -21533,7 +22312,7 @@ exports.GraphicsGeometry = GraphicsGeometry;
 exports.LineStyle = LineStyle;
 
 
-},{"@pixi/constants":18,"@pixi/core":19,"@pixi/display":20,"@pixi/math":31,"@pixi/utils":49}],29:[function(require,module,exports){
+},{"@pixi/constants":32,"@pixi/core":33,"@pixi/display":34,"@pixi/math":45,"@pixi/utils":63}],43:[function(require,module,exports){
 /*!
  * @pixi/interaction - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -24011,7 +24790,7 @@ exports.InteractionTrackingData = InteractionTrackingData;
 exports.interactiveTarget = interactiveTarget;
 
 
-},{"@pixi/display":20,"@pixi/math":31,"@pixi/ticker":48,"@pixi/utils":49}],30:[function(require,module,exports){
+},{"@pixi/display":34,"@pixi/math":45,"@pixi/ticker":62,"@pixi/utils":63}],44:[function(require,module,exports){
 /*!
  * @pixi/loaders - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -24326,7 +25105,7 @@ exports.LoaderResource = LoaderResource;
 exports.TextureLoader = TextureLoader;
 
 
-},{"@pixi/core":19,"@pixi/utils":49,"resource-loader":64}],31:[function(require,module,exports){
+},{"@pixi/core":33,"@pixi/utils":63,"resource-loader":78}],45:[function(require,module,exports){
 /*!
  * @pixi/math - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -26448,7 +27227,7 @@ exports.SHAPES = SHAPES;
 exports.Transform = Transform;
 
 
-},{}],32:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 /*!
  * @pixi/mesh-extras - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -27218,7 +27997,7 @@ exports.SimplePlane = SimplePlane;
 exports.SimpleRope = SimpleRope;
 
 
-},{"@pixi/core":19,"@pixi/mesh":33}],33:[function(require,module,exports){
+},{"@pixi/core":33,"@pixi/mesh":47}],47:[function(require,module,exports){
 /*!
  * @pixi/mesh - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -28013,7 +28792,7 @@ exports.MeshGeometry = MeshGeometry;
 exports.MeshMaterial = MeshMaterial;
 
 
-},{"@pixi/constants":18,"@pixi/core":19,"@pixi/display":20,"@pixi/math":31,"@pixi/settings":41,"@pixi/utils":49}],34:[function(require,module,exports){
+},{"@pixi/constants":32,"@pixi/core":33,"@pixi/display":34,"@pixi/math":45,"@pixi/settings":55,"@pixi/utils":63}],48:[function(require,module,exports){
 /*!
  * @pixi/mixin-cache-as-bitmap - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -28448,7 +29227,7 @@ display.DisplayObject.prototype._cacheAsBitmapDestroy = function _cacheAsBitmapD
 };
 
 
-},{"@pixi/core":19,"@pixi/display":20,"@pixi/math":31,"@pixi/settings":41,"@pixi/sprite":44,"@pixi/utils":49}],35:[function(require,module,exports){
+},{"@pixi/core":33,"@pixi/display":34,"@pixi/math":45,"@pixi/settings":55,"@pixi/sprite":58,"@pixi/utils":63}],49:[function(require,module,exports){
 /*!
  * @pixi/mixin-get-child-by-name - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -28490,7 +29269,7 @@ display.Container.prototype.getChildByName = function getChildByName(name)
 };
 
 
-},{"@pixi/display":20}],36:[function(require,module,exports){
+},{"@pixi/display":34}],50:[function(require,module,exports){
 /*!
  * @pixi/mixin-get-global-position - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -28533,7 +29312,7 @@ display.DisplayObject.prototype.getGlobalPosition = function getGlobalPosition(p
 };
 
 
-},{"@pixi/display":20,"@pixi/math":31}],37:[function(require,module,exports){
+},{"@pixi/display":34,"@pixi/math":45}],51:[function(require,module,exports){
 /*!
  * @pixi/particles - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -29515,7 +30294,7 @@ exports.ParticleContainer = ParticleContainer;
 exports.ParticleRenderer = ParticleRenderer;
 
 
-},{"@pixi/constants":18,"@pixi/core":19,"@pixi/display":20,"@pixi/math":31,"@pixi/utils":49}],38:[function(require,module,exports){
+},{"@pixi/constants":32,"@pixi/core":33,"@pixi/display":34,"@pixi/math":45,"@pixi/utils":63}],52:[function(require,module,exports){
 (function (global){
 /*!
  * @pixi/polyfill - v5.1.6
@@ -29684,7 +30463,7 @@ if (!window.Int32Array)
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"es6-promise-polyfill":52,"object-assign":56}],39:[function(require,module,exports){
+},{"es6-promise-polyfill":66,"object-assign":70}],53:[function(require,module,exports){
 /*!
  * @pixi/prepare - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -30414,7 +31193,7 @@ exports.Prepare = Prepare;
 exports.TimeLimiter = TimeLimiter;
 
 
-},{"@pixi/core":19,"@pixi/display":20,"@pixi/graphics":28,"@pixi/settings":41,"@pixi/text":47,"@pixi/ticker":48}],40:[function(require,module,exports){
+},{"@pixi/core":33,"@pixi/display":34,"@pixi/graphics":42,"@pixi/settings":55,"@pixi/text":61,"@pixi/ticker":62}],54:[function(require,module,exports){
 /*!
  * @pixi/runner - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -30634,7 +31413,7 @@ Runner.prototype.run = Runner.prototype.emit;
 exports.Runner = Runner;
 
 
-},{}],41:[function(require,module,exports){
+},{}],55:[function(require,module,exports){
 /*!
  * @pixi/settings - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -30958,7 +31737,7 @@ exports.isMobile = isMobile;
 exports.settings = settings;
 
 
-},{"ismobilejs":53}],42:[function(require,module,exports){
+},{"ismobilejs":67}],56:[function(require,module,exports){
 /*!
  * @pixi/sprite-animated - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -31419,7 +32198,7 @@ var AnimatedSprite = /*@__PURE__*/(function (Sprite) {
 exports.AnimatedSprite = AnimatedSprite;
 
 
-},{"@pixi/core":19,"@pixi/sprite":44,"@pixi/ticker":48}],43:[function(require,module,exports){
+},{"@pixi/core":33,"@pixi/sprite":58,"@pixi/ticker":62}],57:[function(require,module,exports){
 /*!
  * @pixi/sprite-tiling - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -31929,7 +32708,7 @@ exports.TilingSprite = TilingSprite;
 exports.TilingSpriteRenderer = TilingSpriteRenderer;
 
 
-},{"@pixi/constants":18,"@pixi/core":19,"@pixi/math":31,"@pixi/sprite":44,"@pixi/utils":49}],44:[function(require,module,exports){
+},{"@pixi/constants":32,"@pixi/core":33,"@pixi/math":45,"@pixi/sprite":58,"@pixi/utils":63}],58:[function(require,module,exports){
 /*!
  * @pixi/sprite - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -32613,7 +33392,7 @@ var Sprite = /*@__PURE__*/(function (Container) {
 exports.Sprite = Sprite;
 
 
-},{"@pixi/constants":18,"@pixi/core":19,"@pixi/display":20,"@pixi/math":31,"@pixi/settings":41,"@pixi/utils":49}],45:[function(require,module,exports){
+},{"@pixi/constants":32,"@pixi/core":33,"@pixi/display":34,"@pixi/math":45,"@pixi/settings":55,"@pixi/utils":63}],59:[function(require,module,exports){
 /*!
  * @pixi/spritesheet - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -33034,7 +33813,7 @@ exports.Spritesheet = Spritesheet;
 exports.SpritesheetLoader = SpritesheetLoader;
 
 
-},{"@pixi/core":19,"@pixi/loaders":30,"@pixi/math":31,"@pixi/utils":49}],46:[function(require,module,exports){
+},{"@pixi/core":33,"@pixi/loaders":44,"@pixi/math":45,"@pixi/utils":63}],60:[function(require,module,exports){
 /*!
  * @pixi/text-bitmap - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -33875,7 +34654,7 @@ exports.BitmapFontLoader = BitmapFontLoader;
 exports.BitmapText = BitmapText;
 
 
-},{"@pixi/core":19,"@pixi/display":20,"@pixi/loaders":30,"@pixi/math":31,"@pixi/settings":41,"@pixi/sprite":44,"@pixi/utils":49}],47:[function(require,module,exports){
+},{"@pixi/core":33,"@pixi/display":34,"@pixi/loaders":44,"@pixi/math":45,"@pixi/settings":55,"@pixi/sprite":58,"@pixi/utils":63}],61:[function(require,module,exports){
 /*!
  * @pixi/text - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -36162,7 +36941,7 @@ exports.TextMetrics = TextMetrics;
 exports.TextStyle = TextStyle;
 
 
-},{"@pixi/core":19,"@pixi/math":31,"@pixi/settings":41,"@pixi/sprite":44,"@pixi/utils":49}],48:[function(require,module,exports){
+},{"@pixi/core":33,"@pixi/math":45,"@pixi/settings":55,"@pixi/sprite":58,"@pixi/utils":63}],62:[function(require,module,exports){
 /*!
  * @pixi/ticker - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -37125,7 +37904,7 @@ exports.TickerPlugin = TickerPlugin;
 exports.UPDATE_PRIORITY = UPDATE_PRIORITY;
 
 
-},{"@pixi/settings":41}],49:[function(require,module,exports){
+},{"@pixi/settings":55}],63:[function(require,module,exports){
 /*!
  * @pixi/utils - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -38152,7 +38931,7 @@ exports.trimCanvas = trimCanvas;
 exports.uid = uid;
 
 
-},{"@pixi/constants":18,"@pixi/settings":41,"earcut":51,"eventemitter3":50,"url":66}],50:[function(require,module,exports){
+},{"@pixi/constants":32,"@pixi/settings":55,"earcut":65,"eventemitter3":64,"url":80}],64:[function(require,module,exports){
 'use strict';
 
 var has = Object.prototype.hasOwnProperty
@@ -38490,7 +39269,7 @@ if ('undefined' !== typeof module) {
   module.exports = EventEmitter;
 }
 
-},{}],51:[function(require,module,exports){
+},{}],65:[function(require,module,exports){
 'use strict';
 
 module.exports = earcut;
@@ -39171,7 +39950,7 @@ earcut.flatten = function (data) {
     return result;
 };
 
-},{}],52:[function(require,module,exports){
+},{}],66:[function(require,module,exports){
 (function (global,setImmediate){
 (function(global){
 
@@ -39521,9 +40300,9 @@ Promise.reject = function(reason){
 })(typeof window != 'undefined' ? window : typeof global != 'undefined' ? global : typeof self != 'undefined' ? self : this);
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("timers").setImmediate)
-},{"timers":65}],53:[function(require,module,exports){
+},{"timers":79}],67:[function(require,module,exports){
 !function(e){var n=/iPhone/i,t=/iPod/i,r=/iPad/i,a=/\bAndroid(?:.+)Mobile\b/i,p=/Android/i,b=/\bAndroid(?:.+)SD4930UR\b/i,l=/\bAndroid(?:.+)(?:KF[A-Z]{2,4})\b/i,f=/Windows Phone/i,s=/\bWindows(?:.+)ARM\b/i,u=/BlackBerry/i,c=/BB10/i,h=/Opera Mini/i,v=/\b(CriOS|Chrome)(?:.+)Mobile/i,w=/Mobile(?:.+)Firefox\b/i;function m(e,i){return e.test(i)}function i(e){var i=e||("undefined"!=typeof navigator?navigator.userAgent:""),o=i.split("[FBAN");void 0!==o[1]&&(i=o[0]),void 0!==(o=i.split("Twitter"))[1]&&(i=o[0]);var d={apple:{phone:m(n,i)&&!m(f,i),ipod:m(t,i),tablet:!m(n,i)&&m(r,i)&&!m(f,i),device:(m(n,i)||m(t,i)||m(r,i))&&!m(f,i)},amazon:{phone:m(b,i),tablet:!m(b,i)&&m(l,i),device:m(b,i)||m(l,i)},android:{phone:!m(f,i)&&m(b,i)||!m(f,i)&&m(a,i),tablet:!m(f,i)&&!m(b,i)&&!m(a,i)&&(m(l,i)||m(p,i)),device:!m(f,i)&&(m(b,i)||m(l,i)||m(a,i)||m(p,i))||m(/\bokhttp\b/i,i)},windows:{phone:m(f,i),tablet:m(s,i),device:m(f,i)||m(s,i)},other:{blackberry:m(u,i),blackberry10:m(c,i),opera:m(h,i),firefox:m(w,i),chrome:m(v,i),device:m(u,i)||m(c,i)||m(h,i)||m(w,i)||m(v,i)}};return d.any=d.apple.device||d.android.device||d.windows.device||d.other.device,d.phone=d.apple.phone||d.android.phone||d.windows.phone,d.tablet=d.apple.tablet||d.android.tablet||d.windows.tablet,d}"undefined"!=typeof module&&module.exports&&"undefined"==typeof window?module.exports=i:"undefined"!=typeof module&&module.exports&&"undefined"!=typeof window?(module.exports=i(),module.exports.isMobile=i):"function"==typeof define&&define.amd?define([],e.isMobile=i()):e.isMobile=i()}(this);
-},{}],54:[function(require,module,exports){
+},{}],68:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -56639,7 +57418,7 @@ Promise.reject = function(reason){
 }.call(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],55:[function(require,module,exports){
+},{}],69:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -56806,7 +57585,7 @@ MiniSignal.MiniSignalBinding = MiniSignalBinding;
 exports['default'] = MiniSignal;
 module.exports = exports['default'];
 
-},{}],56:[function(require,module,exports){
+},{}],70:[function(require,module,exports){
 /*
 object-assign
 (c) Sindre Sorhus
@@ -56898,7 +57677,7 @@ module.exports = shouldUseNative() ? Object.assign : function (target, source) {
 	return to;
 };
 
-},{}],57:[function(require,module,exports){
+},{}],71:[function(require,module,exports){
 'use strict'
 
 module.exports = function parseURI (str, opts) {
@@ -56930,7 +57709,7 @@ module.exports = function parseURI (str, opts) {
   return uri
 }
 
-},{}],58:[function(require,module,exports){
+},{}],72:[function(require,module,exports){
 /*!
  * pixi.js - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -58364,7 +59143,7 @@ exports.filters = filters;
 exports.useDeprecated = useDeprecated;
 
 
-},{"@pixi/accessibility":16,"@pixi/app":17,"@pixi/constants":18,"@pixi/core":19,"@pixi/display":20,"@pixi/extract":21,"@pixi/filter-alpha":22,"@pixi/filter-blur":23,"@pixi/filter-color-matrix":24,"@pixi/filter-displacement":25,"@pixi/filter-fxaa":26,"@pixi/filter-noise":27,"@pixi/graphics":28,"@pixi/interaction":29,"@pixi/loaders":30,"@pixi/math":31,"@pixi/mesh":33,"@pixi/mesh-extras":32,"@pixi/mixin-cache-as-bitmap":34,"@pixi/mixin-get-child-by-name":35,"@pixi/mixin-get-global-position":36,"@pixi/particles":37,"@pixi/polyfill":38,"@pixi/prepare":39,"@pixi/runner":40,"@pixi/settings":41,"@pixi/sprite":44,"@pixi/sprite-animated":42,"@pixi/sprite-tiling":43,"@pixi/spritesheet":45,"@pixi/text":47,"@pixi/text-bitmap":46,"@pixi/ticker":48,"@pixi/utils":49}],59:[function(require,module,exports){
+},{"@pixi/accessibility":30,"@pixi/app":31,"@pixi/constants":32,"@pixi/core":33,"@pixi/display":34,"@pixi/extract":35,"@pixi/filter-alpha":36,"@pixi/filter-blur":37,"@pixi/filter-color-matrix":38,"@pixi/filter-displacement":39,"@pixi/filter-fxaa":40,"@pixi/filter-noise":41,"@pixi/graphics":42,"@pixi/interaction":43,"@pixi/loaders":44,"@pixi/math":45,"@pixi/mesh":47,"@pixi/mesh-extras":46,"@pixi/mixin-cache-as-bitmap":48,"@pixi/mixin-get-child-by-name":49,"@pixi/mixin-get-global-position":50,"@pixi/particles":51,"@pixi/polyfill":52,"@pixi/prepare":53,"@pixi/runner":54,"@pixi/settings":55,"@pixi/sprite":58,"@pixi/sprite-animated":56,"@pixi/sprite-tiling":57,"@pixi/spritesheet":59,"@pixi/text":61,"@pixi/text-bitmap":60,"@pixi/ticker":62,"@pixi/utils":63}],73:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -58550,7 +59329,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],60:[function(require,module,exports){
+},{}],74:[function(require,module,exports){
 (function (global){
 /*! https://mths.be/punycode v1.4.1 by @mathias */
 ;(function(root) {
@@ -59087,7 +59866,7 @@ process.umask = function() { return 0; };
 }(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],61:[function(require,module,exports){
+},{}],75:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -59173,7 +59952,7 @@ var isArray = Array.isArray || function (xs) {
   return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{}],62:[function(require,module,exports){
+},{}],76:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -59260,13 +60039,13 @@ var objectKeys = Object.keys || function (obj) {
   return res;
 };
 
-},{}],63:[function(require,module,exports){
+},{}],77:[function(require,module,exports){
 'use strict';
 
 exports.decode = exports.parse = require('./decode');
 exports.encode = exports.stringify = require('./encode');
 
-},{"./decode":61,"./encode":62}],64:[function(require,module,exports){
+},{"./decode":75,"./encode":76}],78:[function(require,module,exports){
 /*!
  * resource-loader - v3.0.1
  * https://github.com/pixijs/pixi-sound
@@ -61617,7 +62396,7 @@ exports.encodeBinary = encodeBinary;
 exports.middleware = index;
 
 
-},{"mini-signals":55,"parse-uri":57}],65:[function(require,module,exports){
+},{"mini-signals":69,"parse-uri":71}],79:[function(require,module,exports){
 (function (setImmediate,clearImmediate){
 var nextTick = require('process/browser.js').nextTick;
 var apply = Function.prototype.apply;
@@ -61696,7 +62475,7 @@ exports.clearImmediate = typeof clearImmediate === "function" ? clearImmediate :
   delete immediateIds[id];
 };
 }).call(this,require("timers").setImmediate,require("timers").clearImmediate)
-},{"process/browser.js":59,"timers":65}],66:[function(require,module,exports){
+},{"process/browser.js":73,"timers":79}],80:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -62430,7 +63209,7 @@ Url.prototype.parseHost = function() {
   if (host) this.hostname = host;
 };
 
-},{"./util":67,"punycode":60,"querystring":63}],67:[function(require,module,exports){
+},{"./util":81,"punycode":74,"querystring":77}],81:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -62448,4 +63227,4 @@ module.exports = {
   }
 };
 
-},{}]},{},[15]);
+},{}]},{},[29]);

@@ -16,21 +16,36 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var _ = require("lodash");
 var Tile_1 = require("./Tile");
 var Scene_1 = require("../../engine/scene/Scene");
-var ChessBoard = (function (_super) {
-    __extends(ChessBoard, _super);
-    function ChessBoard() {
+var Unit_1 = require("./Unit");
+var GameBoard = (function (_super) {
+    __extends(GameBoard, _super);
+    function GameBoard() {
         var _this = _super.call(this) || this;
+        _this.addUnit = function (unit) {
+            _this.addElement(unit);
+        };
         _this.addTile = function (x, y, def) {
             _this.m_tiles[x][y] = _this.addElement(new Tile_1.Tile(x, y, def));
         };
-        _this.getTileAt = function (pos) {
+        _this.getUnit = function (pos) {
+            var unit = null;
+            _.forEach(_this.getElementsAt(pos), function (element) {
+                if (element instanceof Unit_1.Unit) {
+                    unit = element;
+                    return false;
+                }
+                return true;
+            });
+            return unit;
+        };
+        _this.getTile = function (pos) {
             if (!_this.m_tiles[pos.x] || !_this.m_tiles[pos.x][pos.y]) {
                 return null;
             }
             return _this.m_tiles[pos.x][pos.y];
         };
         _this.tileExists = function (pos) {
-            return _this.getTileAt(pos) !== null;
+            return _this.getTile(pos) !== null;
         };
         _this.getConfig = function () {
             var cfg = [];
@@ -38,7 +53,7 @@ var ChessBoard = (function (_super) {
             cfg.push(String.fromCharCode(_this.height));
             for (var y = 0; y < _this.height; y++) {
                 for (var x = 0; x < _this.width; x++) {
-                    var type = _this.getTileAt({ x: x, y: y }).type;
+                    var type = _this.getTile({ x: x, y: y }).type;
                     cfg.push(String.fromCharCode(type));
                 }
             }
@@ -46,7 +61,7 @@ var ChessBoard = (function (_super) {
         };
         return _this;
     }
-    ChessBoard.prototype.init = function (board_config) {
+    GameBoard.prototype.init = function (board_config) {
         var _this = this;
         this.m_elements = [];
         this.width = board_config.layout.width;
@@ -60,8 +75,15 @@ var ChessBoard = (function (_super) {
             var y = Math.floor(index / board_config.layout.width);
             _this.addTile(x, y, tile);
         });
+        this.addUnit(new Unit_1.Unit(7, 10, { asset: "dwarf" }));
+        this.addUnit(new Unit_1.Unit(8, 13, { asset: "lizard" }));
+        this.addUnit(new Unit_1.Unit(9, 11, { asset: "guard" }));
+        this.addUnit(new Unit_1.Unit(10, 9, { asset: "monk" }));
+        this.addUnit(new Unit_1.Unit(11, 8, { asset: "oldman" }));
+        this.addUnit(new Unit_1.Unit(3, 6, { asset: "rhino" }));
+        this.addUnit(new Unit_1.Unit(10, 3, { asset: "wizard" }));
     };
-    ChessBoard.prototype.getElementsAt = function (pos) {
+    GameBoard.prototype.getElementsAt = function (pos) {
         if (!pos) {
             return [];
         }
@@ -73,6 +95,6 @@ var ChessBoard = (function (_super) {
         });
         return elements;
     };
-    return ChessBoard;
+    return GameBoard;
 }(Scene_1.Scene));
-exports.ChessBoard = ChessBoard;
+exports.GameBoard = GameBoard;

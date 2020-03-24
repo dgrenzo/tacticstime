@@ -48,8 +48,9 @@ var Tile = (function (_super) {
             _this.m_definition = def;
             _this.m_tile_name = exports.GetTileName(def);
         };
-        _this.getAssetInfo = function () {
+        _this.getCurrentAsset = function () {
             return {
+                type: "SPRITE",
                 name: _this.m_tile_name,
             };
         };
@@ -59,6 +60,13 @@ var Tile = (function (_super) {
     Object.defineProperty(Tile.prototype, "type", {
         get: function () {
             return this.m_definition;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Tile.prototype, "tile_name", {
+        get: function () {
+            return this.m_tile_name;
         },
         enumerable: true,
         configurable: true

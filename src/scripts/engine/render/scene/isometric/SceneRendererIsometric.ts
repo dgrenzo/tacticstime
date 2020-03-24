@@ -23,6 +23,9 @@ export class SceneRendererIsometric extends SceneRenderer {
     })
 
     pixi.renderer.plugins.interaction.on('pointerdown', (evt : PIXI.interaction.InteractionEvent) => {
+      if (evt.stopped) {
+        return;
+      }
       this.m_event_manager.emit("POINTER_DOWN", this.screenToTilePos(evt.data.global));
     })
     pixi.renderer.plugins.interaction.on('pointerup', (evt : PIXI.interaction.InteractionEvent) => {

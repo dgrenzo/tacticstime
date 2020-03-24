@@ -9,7 +9,13 @@ export interface IPathTile {
   last : IPathTile,
 }
 
+export interface ISearchTile {
+  path : IPathTile,
+  open : boolean,
+}
+
 class PathList {
+  
   private m_list : IPathTile[] = [];
   constructor() {
 
@@ -44,8 +50,8 @@ class PathList {
     }
   }
 
-  public exists(path : IPathTile) {
-    let exists = false;
+  public exists(path : IPathTile) : boolean {
+    let exists : boolean = false;
     _.forEach(this.m_list, element => {
       if (path.tile === element.tile) {
         exists = true;
@@ -59,8 +65,10 @@ class PathList {
   public updateCost(path : IPathTile) {
     _.forEach(this.m_list, element => {
       if (path.tile === element.tile) {
-        element.cost = path.cost;
-        element.last = path.last;
+        if (path.cost < element.cost) {
+          element.cost = path.cost;
+          element.last = path.last;
+        }
         return false;
       }
       return true;
@@ -84,12 +92,17 @@ class PathList {
 }
 
 export function GetMoveOptions (unit : Unit, board : GameBoard) : IPathTile[] {
+  if (!unit) {
+    return [];
+  }
   let max_cost = unit.getMoveLeft();
 
   let closed_list = new PathList();
   let open_list = new PathList();
   
-  open_list.push({ tile : board.getTile(unit), cost : 0, last : null});
+  let current_tile = board.getTile(unit);
+
+  open_list.push({ tile : current_tile, cost : 0, last : null});
 
   while (!open_list.isEmpty())
   {
@@ -99,7 +112,7 @@ export function GetMoveOptions (unit : Unit, board : GameBoard) : IPathTile[] {
     let adjacent = GetAdjacent(next.tile, board);
     _.forEach(adjacent, tile => {
       let path : IPathTile = ToPathTile(tile, next.cost, next);
-      if (closed_list.exists(path) || path.cost > max_cost) {
+      if (closed_list.exists(path) || path.cost > max_cost || !CanPassTile(unit, tile, board)) {
         return;
       }
 
@@ -116,17 +129,19 @@ function CanOccupyTile (unit : Unit, tile : Tile, board : GameBoard) : boolean {
 }
 
 function CanPassTile (unit : Unit, tile : Tile, board : GameBoard) : boolean {
-
+  if (board.getUnit(tile)) {
+    return false;
+  }
   return true;
 }
 
 function GetAdjacent (tile : ITilePos, board : GameBoard) : Tile[] {
-  return [
+  return _.shuffle([
     board.getTile({ x : tile.x - 1, y : tile.y    }),
     board.getTile({ x : tile.x + 1, y : tile.y    }),
     board.getTile({ x : tile.x    , y : tile.y - 1}),
     board.getTile({ x : tile.x    , y : tile.y + 1}),
-  ];
+  ]);
 }
 
 function ToPathTile(tile : Tile, cost : number, last : IPathTile) : IPathTile {

@@ -1,19 +1,19 @@
 import * as _ from 'lodash';
-import { GameController } from '../GameController';
-import { Unit } from '../board/Unit';
-import { Tile } from '../board/Tile';
+import { GameController } from '../../GameController';
+import { Unit } from '../../board/Unit';
+import { Tile } from '../../board/Tile';
+import { ExecuteGameEvent } from './executors';
 
-export type GameEvent = "MOVE";
+export type GameEvent = "MOVE" | "STRIKE" | "DAMAGE" | "DAMAGE_DEALT" | "UNIT_KILLED";
 
 export interface IActionData {
+  [index : string] : any,
   unit ?: Unit,
   tile ?: Tile,
-  [index : string] : any,
 }
 
 export interface IGameAction {
   type : GameEvent,
-  executor : (data:any)=>Promise<void>,
   data : IActionData,
 }
 
@@ -23,7 +23,6 @@ interface IStackedAction {
 }
 
 export class ActionStack {
-
   constructor (private m_controller : GameController) {
 
   }
@@ -40,7 +39,7 @@ export class ActionStack {
       if (!next_action) {
         resolve();
       } else {
-        next_action.executor(next_action.data).then(() => {
+        ExecuteGameEvent(next_action, this.m_controller).then(() => {
           this.m_controller.emit(next_action.type, next_action.data)
           return this.execute()
         }).then(resolve);

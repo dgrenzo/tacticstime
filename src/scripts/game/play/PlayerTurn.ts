@@ -5,6 +5,12 @@ import { FSM } from '../../engine/FSM';
 import { Tile } from '../board/Tile';
 import { Unit } from '../board/Unit';
 import { IPathTile } from '../pathfinding';
+import { BoardActionUI } from './action/BoardActionUI';
+import { IActionData } from './action/ActionStack';
+import { MoveActionUI } from './action/MoveActionUI';
+import { UnitSelectedPanel } from './interface/UnitSelectedPanel';
+import { IAbilityInfo } from './Ability';
+import { AttackActionUI } from './action/AttackActionUI';
 
 enum PLAY_STATE {
   NO_SELECTION = 0,
@@ -17,65 +23,92 @@ interface ISelection {
 }
 
 export class PlayerTurn {
-  private m_active_unit : Unit;
+
+  private m_selected_panel : UnitSelectedPanel;
+  private m_action_ui : BoardActionUI;
+
+
   private m_active_tile : Tile;
-
-  private m_options : IPathTile[];
-
+  private m_active_unit : Unit;
   private m_fsm : FSM;
 
-
   constructor (private m_controller : GameController) {
+    this.m_selected_panel = new UnitSelectedPanel(this.m_controller);
+    this.m_selected_panel.onAbilitySelected(this.onAbilitySelected);
 
+    this.m_controller.on("TILE_CLICKED", this.onTileClicked);
+    this.setupFSM();
+    this.m_fsm.setState(PLAY_STATE.NO_SELECTION);
+  }
+
+  private setupFSM = () => {
+    if (this.m_fsm) {
+      return;
+    }
     this.m_fsm = new FSM();
-
     this.m_fsm.registerState(PLAY_STATE.NO_SELECTION, {
       enter : () => {
-        this.m_active_unit = this.m_active_tile = null;
-        this.m_controller.on("TILE_CLICKED", this.selectTile);
+        this.m_active_tile = null;
       },
-      exit : () => {
-        this.m_controller.off("TILE_CLICKED", this.selectTile);
-      }
     });
 
     this.m_fsm.registerState(PLAY_STATE.SELECTED, {
       enter : () => {
-       this.m_controller.emit("TILE_SELECTED", this.m_active_tile);
-       this.m_controller.emit("SET_PLUGIN", {id :  this.m_active_tile.id, plugin : 'highlight_green'});
+        this.m_controller.emit("TILE_SELECTED", this.m_active_tile);
+        this.m_controller.emit("SET_PLUGIN", {id :  this.m_active_tile.id, plugin : 'highlight_green'});
 
-       let unit = this.m_active_unit = this.m_controller.getUnit(this.m_active_tile);
-       if (unit) {
-         this.m_options = this.m_controller.getMoveOptions(unit);
-         _.forEach(this.m_options, path => {
-           if (!this.m_controller.getUnit(path.tile)) {
-            this.m_controller.emit("SET_PLUGIN", {id : path.tile.id, plugin : 'highlight_blue'});
-           }
-         });
-       }
-       this.m_controller.on("TILE_CLICKED", this.moveAction);
+        this.m_active_unit = this.m_controller.getUnit(this.m_active_tile);
+        this.m_selected_panel.showUnitPanel(this.m_active_unit);
+
       },
       exit : () => {
-        
-       this.m_controller.off("TILE_CLICKED", this.moveAction);
-       this.m_controller.emit("SET_PLUGIN", {id :  this.m_active_tile.id, plugin : 'batch'});
-        _.forEach(this.m_options, path => {
-          if (!this.m_controller.getUnit(path.tile)) {
-           this.m_controller.emit("SET_PLUGIN", {id : path.tile.id, plugin : 'batch'});
-          }
-        });
+        this.m_controller.emit("SET_PLUGIN", {id :  this.m_active_tile.id, plugin : 'batch'});
+        this.m_selected_panel.hide();
+        if (this.m_action_ui) {
+          this.m_action_ui.hideOptions();
+          this.m_action_ui = null;
+        }
       }
     });
     this.m_fsm.registerState(PLAY_STATE.ACTING, {});
-    this.m_fsm.setState(PLAY_STATE.NO_SELECTION);
-
-    
-
-
   }
 
-  private selectTile = (data : ITilePos) => {
-    let tile = this.m_controller.getTile(data);
+  private onAbilitySelected = (ability : IAbilityInfo) => {
+    switch (ability.name) {
+      case "MOVE" :
+        this.m_action_ui = new MoveActionUI(this.m_active_tile, this.m_controller);
+        break;
+      case "STRIKE" :
+        this.m_action_ui = new AttackActionUI(this.m_active_tile, this.m_controller);
+        break;
+    }
+  }
+
+  private onTileClicked = (tile : Tile) => {
+    switch (this.m_fsm.state) {
+      case PLAY_STATE.NO_SELECTION :
+        this.selectTile(tile);
+        break;
+      case PLAY_STATE.SELECTED :
+        let action = [];
+        if (this.m_action_ui) {
+          action = this.m_action_ui.getAction(tile);
+        }
+        if (action.length > 0) {
+          this.m_controller.sendAction(action);
+          this.m_controller.executeActionStack();
+          this.m_fsm.setState(PLAY_STATE.ACTING);
+        } else {
+          this.m_fsm.setState(PLAY_STATE.NO_SELECTION);
+          this.selectTile(tile);
+        }
+        break;
+      default :
+        return;
+    }
+  }
+
+  private selectTile = (tile : Tile) => {
     if (!tile) {
       return;
     }
@@ -83,57 +116,4 @@ export class PlayerTurn {
     this.m_fsm.setState(PLAY_STATE.SELECTED);
   }
 
-  private moveAction = (data : ITilePos) => {
-    let tile = this.m_controller.getTile(data);
-    
-    let move_option = this.getMoveOption(tile);
-    if (move_option) {
-      let move_action = this.toMoveAction(move_option);
-      this.m_controller.sendAction(move_action);
-      this.m_fsm.setState(PLAY_STATE.ACTING);
-    } else {
-      this.m_fsm.setState(PLAY_STATE.NO_SELECTION);
-      if (this.m_controller.getUnit(data)) {
-        this.selectTile(data);
-      }
-    }
-  }
-  
-  private executeMove = (data : {unit : Unit, tile : ITilePos}) : Promise<null> => {
-    return new Promise(resolve => {
-      data.unit.x = data.tile.x;
-      data.unit.y = data.tile.y;
-      setTimeout(resolve, 100);
-    })
-  }
-
-  private toMoveAction(path : IPathTile) {
-    let action = [];
-
-    while (path) {
-      action.unshift({
-        type : "MOVE",
-        executor : this.executeMove,
-        data : {
-          unit : this.m_active_unit,
-          tile : path.tile,
-        }
-      });
-      path = path.last;
-    }
-    return action;
-  }
-
-  private getMoveOption(tile : Tile) {
-    let path : IPathTile = null;
-    _.forEach(this.m_options, option => {
-      if (option.tile === tile) {
-        path = option;
-        return false;
-      }
-      return true;
-    });
-    return path;
-  }
-  
 }

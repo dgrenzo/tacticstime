@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 
 import * as PIXI from 'pixi.js';
-import { GameBoard, ITilePos, IBoardConfig } from "./board/GameBoard";
+import { GameBoard, ITilePos } from "./board/GameBoard";
 import { RenderMode, CreateRenderer } from '../engine/render/render';
 import { FSM } from '../engine/FSM';
 import { SceneRenderer } from '../engine/render/scene/SceneRenderer';
@@ -11,7 +11,7 @@ import { LoadBoard } from './board/Loader';
 import { Tile } from './board/Tile';
 import { Unit } from './board/Unit';
 import { PlayerTurn } from './play/PlayerTurn';
-import { ActionStack, IGameAction, GameEvent } from './play/ActionStack';
+import { ActionStack, IGameAction, GameEvent } from './play/action/ActionStack';
 import { GetMoveOptions } from './pathfinding';
 import { RENDER_PLUGIN } from './extras/plugins';
 
@@ -50,6 +50,8 @@ export class GameController {
   private m_event_manager = new EventManager<GameSignal>();
   private m_action_stack : ActionStack;
 
+  private m_interface_container : PIXI.Container = new PIXI.Container();
+
   constructor(private m_config : GameConfig) {
     this.m_fsm = new FSM();
     m_config.pixi_app.ticker.add(this.m_fsm.update);
@@ -68,6 +70,7 @@ export class GameController {
 
   private onSetupComplete = () => {
     this.m_config.pixi_app.stage.addChild(this.m_renderer.stage);
+    this.m_config.pixi_app.stage.addChild(this.m_interface_container);
 
     let highligher = new TileHighlighter(this.m_renderer, this.m_board);
     this.m_config.pixi_app.ticker.add(highligher.update);
@@ -75,7 +78,7 @@ export class GameController {
     this.m_config.pixi_app.ticker.add(() => {
       this.m_renderer.renderScene(this.m_board);
     });
-    
+
     let player = new PlayerTurn(this);
 
     this.m_renderer.on("POINTER_DOWN", this.tileClicked);
@@ -85,11 +88,18 @@ export class GameController {
     });
   }
 
+  public addInterfaceElement(element : PIXI.Container) {
+    this.m_interface_container.addChild(element);
+  }
+
   public sendAction = (action : IGameAction | IGameAction[]) => {
     this.m_action_stack.push(action);
-    this.m_action_stack.execute().then( () => {
+  }
+
+  public executeActionStack = () : Promise<void> => {
+    return this.m_action_stack.execute().then( () => {
       let player = new PlayerTurn(this);
-    });
+    });;
   }
 
 
@@ -102,6 +112,11 @@ export class GameController {
   }
   public getUnit = (pos : ITilePos) : Unit => {
     return this.m_board.getUnit(pos);
+  }
+
+  public removeUnit = (unit : Unit) => {
+    this.m_board.removeElement(unit.id);
+    this.m_renderer.removeEntity(unit);
   }
   
   public on = (event_name : GameSignal, cb : (data:any) => void) => {
@@ -116,6 +131,6 @@ export class GameController {
   }
 
   private tileClicked = (data : TileData) => {
-    this.m_event_manager.emit("TILE_CLICKED", data);
+    this.m_event_manager.emit("TILE_CLICKED", this.m_board.getTile(data));
   }
 }

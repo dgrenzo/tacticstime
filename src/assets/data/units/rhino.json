@@ -1,0 +1,13 @@
+{
+  "display" : {
+    "sprite" : "rhino"
+  },
+  "abilities" : [
+    "STRIKE"
+  ],
+  "stats" : {
+    "move" : 3,
+    "hp" : 6,
+    "magic" : 2
+  }
+}

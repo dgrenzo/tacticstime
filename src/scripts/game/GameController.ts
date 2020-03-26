@@ -7,7 +7,7 @@ import { FSM } from '../engine/FSM';
 import { SceneRenderer } from '../engine/render/scene/SceneRenderer';
 import { EventManager } from '../engine/listener/event';
 import TileHighlighter from './extras/TileHighlighter';
-import { LoadBoard } from './board/Loader';
+import { LoadMission } from './board/Loader';
 import { Tile } from './board/Tile';
 import { Unit } from './board/Unit';
 import { PlayerTurn } from './play/PlayerTurn';
@@ -32,6 +32,9 @@ export type TileData = {
   x : number,
   y : number
 };
+
+
+
 
 
 export type PlaySignal = "TILE_SELECTED";
@@ -60,14 +63,13 @@ export class GameController {
     this.m_renderer = CreateRenderer(this.m_config);
     this.m_action_stack = new ActionStack(this);
 
-    LoadBoard('assets/data/boards/coast.json').then(board_data => {
-      this.m_board.init(board_data);
+    LoadMission('assets/data/missions/001.json').then(mission_data => {
+      this.m_board.init(mission_data.board);
+      this.m_board.initTeams(mission_data.teams);
       this.m_renderer.initializeScene(this.m_board);
       this.onSetupComplete();
-    })
+    }); 
   }
-
-
   private onSetupComplete = () => {
     this.m_config.pixi_app.stage.addChild(this.m_renderer.stage);
     this.m_config.pixi_app.stage.addChild(this.m_interface_container);

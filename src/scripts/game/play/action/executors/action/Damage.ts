@@ -1,7 +1,6 @@
 import { IActionData } from "../../ActionStack";
 import { GameController } from "../../../../GameController";
 import { Unit } from "../../../../board/Unit";
-import { Tile } from "../../../../board/Tile";
 
 export interface IDamageAction extends IActionData {
   unit : Unit,
@@ -10,8 +9,6 @@ export interface IDamageAction extends IActionData {
 
 export function ExecuteDamage(data : IDamageAction, controller : GameController):Promise<void> {
   return new Promise((resolve) => {
-
-    
     let starting_hp = data.unit.hp;
 
     if (starting_hp === 0) {

@@ -7,19 +7,98 @@ interface IBoardFile {
   data : string,
 }
 
-export function LoadBoard(path : string) : Promise<IBoardConfig> {
-  let board_json : string = path;
+interface IUnitData {
+  type : string,
+  pos : {
+    x : number,
+    y : number,
+  }
+}
 
-  return new Promise((resolve) => {
-    new PIXI.Loader()
-    .add(board_json)
-    .load((loader : PIXI.Loader, resources : PIXI.IResourceDictionary) => {
-      let board_config : IBoardFile = resources[board_json].data;
-      let parsed_config : IBoardConfig = ParseBoardData(board_config);
+interface ITeamData {
+  name : string,
+  units : IUnitData[],
+}
+interface IMissionData {
+  board : string,
+  teams : ITeamData[],
+}
 
-      resolve(parsed_config);
-    })
+export interface ILoadedUnit {
+  display : {
+    sprite : string,
+  },
+  abilities : string[],
+  stats : {
+    move : number,
+    hp : number,
+    magic : number,
+  },
+}
+
+interface IMissionUnit {
+  unit : ILoadedUnit,
+  pos : {
+    x : number,
+    y : number,
+  }
+}
+
+export interface ILoadedTeam {
+  name : string,
+  units : IMissionUnit[]
+}
+
+export interface ILoadedMission {
+  board : IBoardConfig,
+  teams : ILoadedTeam[],
+}
+
+export function LoadMission(path : string) : Promise<ILoadedMission> {
+  let loaded_mission : ILoadedMission = {
+    board : null,
+    teams : [],
+  };
+  return LoadJSON<IMissionData>(path)
+  .then( data => {
+    let promises : Promise<any>[] = [];
+
+    promises.push(LoadBoard(data.board).then(board_cfg => {
+      loaded_mission.board = board_cfg
+    }));
+
+    _.forEach(data.teams, (team, team_index) => {
+      loaded_mission.teams.push({
+        name : team.name,
+        units : [],
+      });
+      _.forEach(team.units, (unit, unit_index) => {
+        promises.push(LoadJSON<ILoadedUnit>(unit.type).then (unit_data => {
+          loaded_mission.teams[team_index].units[unit_index] = {
+            pos : unit.pos,
+            unit : unit_data,
+          }
+        }))
+      });
+    });
+    return Promise.all(promises);
+  }).then(data => {
+    return loaded_mission;
   });
+}
+
+export function LoadBoard(path : string) : Promise<IBoardConfig> {
+  return LoadJSON<IBoardFile>(path).then(ParseBoardData)
+}
+
+export function LoadJSON<JSONType>(path : string) : Promise<JSONType> {
+  return new Promise<JSONType>((resolve) => {
+    new PIXI.Loader()
+    .add(path)
+    .load( (loader : PIXI.Loader, resources : PIXI.IResourceDictionary) => {
+      resolve(resources[path].data as JSONType);
+    })
+  })
 }
 
 function ParseBoardData(boardFile : IBoardFile) : IBoardConfig {
@@ -34,8 +113,7 @@ function ParseBoardData(boardFile : IBoardFile) : IBoardConfig {
       width : data_cfg.shift(),
       height : data_cfg.shift(),
       tiles : data_cfg
-    },
-    entities : [],
+    }
   }
 }
 
@@ -58,7 +136,6 @@ export function LoadFromURLParam() : IBoardConfig {
       width : url_cfg.shift(),
       height : url_cfg.shift(),
       tiles : url_cfg
-    },
-    entities : [],
+    }
   }
 }

@@ -1,7 +1,5 @@
 import { Entity, IAssetInfo } from "../../engine/scene/Entity";
 
-import {factionToString, AssetInfo} from '../../assets';
-
 export enum TILE_DEF {
   GRASS_EMPTY = 10,
   GRASS_MTN,
@@ -58,7 +56,6 @@ export class Tile extends Entity {
   public get tile_name() : string {
     return this.m_tile_name;
   }
-
 }
 
 

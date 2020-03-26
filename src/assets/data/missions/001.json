@@ -1,0 +1,36 @@
+{
+  "board" : "/assets/data/boards/coast.json",
+  "teams" : [
+    {
+      "name" : "PLAYER",
+      "units" : [
+        {
+          "type" : "/assets/data/units/oldman.json",
+          "pos" : {
+            "x" : 8,
+            "y" : 12
+          }
+        }
+      ]
+    },
+    {
+      "name" : "Dorks",
+      "units" : [
+        {
+          "type" : "/assets/data/units/troll.json",
+          "pos" : {
+            "x" : 8,
+            "y" : 8
+          }
+        },
+        {
+          "type" : "/assets/data/units/rhino.json",
+          "pos" : {
+            "x" : 10,
+            "y" : 7
+          }
+        }
+      ]
+    }
+  ]
+}

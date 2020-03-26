@@ -3,6 +3,8 @@ import { Tile, TILE_DEF } from './Tile';
 import { Scene } from '../../engine/scene/Scene';
 import { Entity } from '../../engine/scene/Entity';
 import { Unit } from './Unit';
+import { ILoadedTeam } from './Loader';
+import { UNIT_TYPE } from '../assets/units';
 
 export interface IBoardConfig {
   layout : {
@@ -10,7 +12,6 @@ export interface IBoardConfig {
     height : number,
     tiles : TILE_DEF[],
   }
-  entities : Array<any>,
 }
 
 export interface ITilePos {
@@ -45,14 +46,17 @@ export class GameBoard extends Scene {
       let y : number = Math.floor(index / board_config.layout.width);
       this.addTile(x, y, tile);
     });
+  }
 
-    this.addUnit(new Unit(7,10, {asset : "dwarf"}))
-    this.addUnit(new Unit(8,13, {asset : "lizard"}))
-    this.addUnit(new Unit(9,11, {asset : "guard"}))
-    this.addUnit(new Unit(10,9, {asset : "monk"}))
-    this.addUnit(new Unit(11,8, {asset : "oldman"}))
-    this.addUnit(new Unit(3,6, {asset : "rhino"}))
-    this.addUnit(new Unit(10,3, {asset : "wizard"}))
+  public initTeams = (teams : ILoadedTeam[]) => {
+    _.forEach(teams, team => {
+      _.forEach(team.units, unit => {
+        let x = unit.pos.x;
+        let y = unit.pos.y;
+        let asset = unit.unit.display.sprite as UNIT_TYPE;
+        this.addUnit(new Unit(x, y, {asset}));
+      })
+    });
   }
 
   private addUnit = (unit : Unit) => {
@@ -113,5 +117,4 @@ export class GameBoard extends Scene {
     }
     return cfg.join('');
   }
-
 }

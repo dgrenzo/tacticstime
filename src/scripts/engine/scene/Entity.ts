@@ -1,10 +1,9 @@
-import { AssetInfo } from "../../assets";
 import { EventManager } from "../listener/event";
 
 let id_ticker = 0;
 
 export interface IEntityInfo {
-  asset : AssetInfo,
+  asset : IAssetInfo,
   depth : number,
   id : number,
 }

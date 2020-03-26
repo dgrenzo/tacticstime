@@ -1,0 +1,28 @@
+{
+  "name" : "Meteor",
+  "target" : {
+    "range" : {
+      "min" : 1,
+      "max" : 4
+    },
+    "valid" : "ANY"
+  },
+  "effects" : [
+    {
+      "type" : "DAMAGE",
+      "amount" : 3,
+      "range" : {
+        "min" : 0,
+        "max" : 0
+      }
+    },
+    {
+      "type" : "DAMAGE",
+      "amount" : 1,
+      "range" : {
+        "min" : 1,
+        "max" : 1
+      }
+    }
+  ]
+}

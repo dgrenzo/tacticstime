@@ -1,0 +1,13 @@
+{
+  "display" : {
+    "sprite" : "mooseman"
+  },
+  "abilities" : [
+    "STRIKE"
+  ],
+  "stats" : {
+    "move" : 3,
+    "hp" : 4,
+    "magic" : 2
+  }
+}

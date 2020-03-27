@@ -5,6 +5,7 @@ import { Entity } from '../../engine/scene/Entity';
 import { Unit } from './Unit';
 import { ILoadedTeam } from './Loader';
 import { UNIT_TYPE } from '../assets/units';
+import { IRangeDef } from '../play/action/abilities';
 
 export interface IBoardConfig {
   layout : {
@@ -50,11 +51,10 @@ export class GameBoard extends Scene {
 
   public initTeams = (teams : ILoadedTeam[]) => {
     _.forEach(teams, team => {
-      _.forEach(team.units, unit => {
-        let x = unit.pos.x;
-        let y = unit.pos.y;
-        let asset = unit.unit.display.sprite as UNIT_TYPE;
-        this.addUnit(new Unit(x, y, {asset}));
+      _.forEach(team.units, data => {
+        let x = data.pos.x;
+        let y = data.pos.y;
+        this.addUnit(new Unit(x, y, data.unit));
       })
     });
   }
@@ -90,6 +90,25 @@ export class GameBoard extends Scene {
       return true;
     })
     return unit;
+  }
+
+  public getTilesInRange = (pos : ITilePos, range : IRangeDef) : Tile[] => {
+    let tiles : Tile[] = [];
+      //TODO filter options with target_def.target_type
+
+    for (let offset_x = -range.max; offset_x <= range.max; offset_x ++) {
+      let max_y = range.max - Math.abs(offset_x);
+      for (let offset_y = -max_y; offset_y <= max_y; offset_y ++) {
+        if (Math.abs(offset_x) + Math.abs(offset_y) < range.min) {
+          continue;
+        }
+        let tile = this.getTile({x : pos.x + offset_x, y : pos.y + offset_y});
+        if (tile) {
+          tiles.push(tile)
+        }
+      }
+    }
+    return tiles;
   }
 
   

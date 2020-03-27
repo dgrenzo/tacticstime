@@ -10,6 +10,13 @@
             "x" : 8,
             "y" : 12
           }
+        },
+        {
+          "type" : "/assets/data/units/dwarf.json",
+          "pos" : {
+            "x" : 11,
+            "y" : 9
+          }
         }
       ]
     },
@@ -26,8 +33,22 @@
         {
           "type" : "/assets/data/units/rhino.json",
           "pos" : {
-            "x" : 10,
+            "x" : 9,
             "y" : 7
+          }
+        },
+        {
+          "type" : "/assets/data/units/rhino.json",
+          "pos" : {
+            "x" : 11,
+            "y" : 7
+          }
+        },
+        {
+          "type" : "/assets/data/units/rhino.json",
+          "pos" : {
+            "x" : 10,
+            "y" : 8
           }
         }
       ]

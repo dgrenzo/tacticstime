@@ -1,16 +1,14 @@
 import * as _ from 'lodash';
 import { GameController } from '../GameController';
-import { ITilePos } from '../board/GameBoard';
 import { FSM } from '../../engine/FSM';
 import { Tile } from '../board/Tile';
 import { Unit } from '../board/Unit';
-import { IPathTile } from '../pathfinding';
 import { BoardActionUI } from './action/BoardActionUI';
-import { IActionData } from './action/ActionStack';
 import { MoveActionUI } from './action/MoveActionUI';
 import { UnitSelectedPanel } from './interface/UnitSelectedPanel';
-import { IAbilityInfo } from './Ability';
 import { AttackActionUI } from './action/AttackActionUI';
+import { IAbilityDef } from './action/abilities';
+import { AbilityTargetUI } from './action/AbilityTargetUI';
 
 enum PLAY_STATE {
   NO_SELECTION = 0,
@@ -35,6 +33,7 @@ export class PlayerTurn {
   constructor (private m_controller : GameController) {
     this.m_selected_panel = new UnitSelectedPanel(this.m_controller);
     this.m_selected_panel.onAbilitySelected(this.onAbilitySelected);
+    this.m_selected_panel.onMoveSelected(this.onMoveSelected);
 
     this.m_controller.on("TILE_CLICKED", this.onTileClicked);
     this.setupFSM();
@@ -73,13 +72,13 @@ export class PlayerTurn {
     this.m_fsm.registerState(PLAY_STATE.ACTING, {});
   }
 
-  private onAbilitySelected = (ability : IAbilityInfo) => {
+  private onMoveSelected = () => {
+    this.m_action_ui = new MoveActionUI(this.m_active_tile, this.m_controller);
+  }
+  private onAbilitySelected = (ability : IAbilityDef) => {
     switch (ability.name) {
-      case "MOVE" :
-        this.m_action_ui = new MoveActionUI(this.m_active_tile, this.m_controller);
-        break;
-      case "STRIKE" :
-        this.m_action_ui = new AttackActionUI(this.m_active_tile, this.m_controller);
+      default :
+        this.m_action_ui = new AbilityTargetUI(ability, this.m_active_tile, this.m_controller);
         break;
     }
   }

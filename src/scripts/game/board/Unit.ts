@@ -1,10 +1,5 @@
 import { Entity, IAssetInfo } from "../../engine/scene/Entity";
-import { UNIT_TYPE } from "../assets/units";
-import { IAbilityInfo } from "../play/Ability";
-
-export interface IUnitDef {
-  asset : UNIT_TYPE,
-}
+import { ILoadedUnit } from "./Loader";
 
 export class Unit extends Entity {
 
@@ -12,31 +7,17 @@ export class Unit extends Entity {
   
   public hp : number = 1;
   
-  constructor(x : number, y : number, data : IUnitDef) {
+  constructor(x : number, y : number, private m_data : ILoadedUnit) {
     super(x, y);
-    this.m_unit_type = data.asset;
+    this.m_unit_type = m_data.display.sprite;
   }
 
-  public getAbilities = () : IAbilityInfo[] => {
-    return [
-      {
-        name : "MOVE",
-        data : {
-          range : 4,
-        }
-      },
-      {
-        name : "STRIKE",
-        data : {
-          range : 1,
-          strength : 3,
-        }
-      }
-    ];
+  public getAbilities = () : string[] => {
+    return this.m_data.abilities;
   }
 
-  public getMoveLeft = () : number => {
-    return 6;
+  public getMove = () : number => {
+    return this.m_data.stats.move;
   }
 
   public get depthOffset () : number {

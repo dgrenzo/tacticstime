@@ -2,10 +2,10 @@
   "name" : "Meteor",
   "target" : {
     "range" : {
-      "min" : 1,
+      "min" : 0,
       "max" : 4
     },
-    "valid" : "ANY"
+    "target_type" : "ANY"
   },
   "effects" : [
     {

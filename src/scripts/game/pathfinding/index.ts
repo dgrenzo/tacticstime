@@ -95,7 +95,7 @@ export function GetMoveOptions (unit : Unit, board : GameBoard) : IPathTile[] {
   if (!unit) {
     return [];
   }
-  let max_cost = unit.getMoveLeft();
+  let max_cost = unit.getMove();
 
   let closed_list = new PathList();
   let open_list = new PathList();

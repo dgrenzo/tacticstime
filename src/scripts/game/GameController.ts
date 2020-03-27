@@ -14,6 +14,7 @@ import { PlayerTurn } from './play/PlayerTurn';
 import { ActionStack, IGameAction, GameEvent } from './play/action/ActionStack';
 import { GetMoveOptions } from './pathfinding';
 import { RENDER_PLUGIN } from './extras/plugins';
+import { IRangeDef, GetAbilityDef } from './play/action/abilities';
 
 export type GameConfig = {
   pixi_app : PIXI.Application,
@@ -112,6 +113,11 @@ export class GameController {
   public getTile = (pos : { x : number, y : number }) : Tile => {
     return this.m_board.getTile(pos);
   }
+
+  public getTilesInRange = (pos : ITilePos, range : IRangeDef) : Tile[] => {
+    return this.m_board.getTilesInRange(pos, range);
+  }
+
   public getUnit = (pos : ITilePos) : Unit => {
     return this.m_board.getUnit(pos);
   }

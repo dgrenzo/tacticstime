@@ -2,11 +2,11 @@ import * as _ from 'lodash';
 import * as PIXI from 'pixi.js';
 
 import { GameController } from "../../GameController";
-import { IAbilityInfo } from "../Ability";
 import { Unit } from '../../board/Unit';
 import { EventManager } from '../../../engine/listener/event';
+import { GetAbilityDef, IAbilityDef } from '../action/abilities';
 
-type SELECTION_PANEL_EVENT = "ABILITY_SELECTED";
+type SELECTION_PANEL_EVENT = "MOVE_SELECTED" | "ABILITY_SELECTED";
 
 export class UnitSelectedPanel {
 
@@ -25,18 +25,45 @@ export class UnitSelectedPanel {
     if (!unit) {
       return;
     }
+    this.showMove();
     this.showAbilities(unit.getAbilities());
   }
   public hide = () => {
     this.m_container.visible = false;
   }
 
-  public onAbilitySelected = (cb : (def : IAbilityInfo )=>void ) => {
+  public onMoveSelected = (cb : ()=>void) => {
+    this.m_event_manager.add("MOVE_SELECTED", cb);
+  }
+  
+  public onAbilitySelected = (cb : (def : IAbilityDef )=>void ) => {
     this.m_event_manager.add("ABILITY_SELECTED", cb);
   }
-  public showAbilities = (abiliy_list : IAbilityInfo[]) => {
 
-    _.forEach(abiliy_list, (def, index) => {
+  public showMove = () => {
+      let btn =  new PIXI.Sprite();
+      let bg = new PIXI.Graphics();
+
+      btn.addChild(new PIXI.Graphics().beginFill(0x3333CC).drawRoundedRect(0,0, 200, 60, 5).endFill());
+      btn.interactive = btn.buttonMode = true;
+      btn.on('pointerdown', (evt : PIXI.interaction.InteractionEvent) => {
+        evt.stopPropagation();
+        this.m_event_manager.emit("MOVE_SELECTED");
+      });
+      btn.position.set(0, 0);
+
+      let label = new PIXI.Text("MOVE", { fill : 0xFFFFFF });
+      label.anchor.set(0.5);
+      label.position.set(100, 30);
+      btn.addChild(label);
+
+      this.m_container.addChild(btn);
+  }
+
+  public showAbilities = (abiliy_list : string[]) => {
+    _.forEach(abiliy_list, (name, index) => {
+      let ability_def = GetAbilityDef(name);
+
       let btn =  new PIXI.Sprite();
       
       let bg = new PIXI.Graphics();
@@ -45,14 +72,13 @@ export class UnitSelectedPanel {
       btn.interactive = btn.buttonMode = true;
       btn.on('pointerdown', (evt : PIXI.interaction.InteractionEvent) => {
         evt.stopPropagation();
-
-        this.m_event_manager.emit("ABILITY_SELECTED", def);
+        this.m_event_manager.emit("ABILITY_SELECTED", ability_def);
 
       });
 
-      btn.position.set(0, index * 80);
+      btn.position.set(0, 80 + index * 80);
 
-      let label = new PIXI.Text(def.name, { fill : 0xFFFFFF });
+      let label = new PIXI.Text(ability_def.name, { fill : 0xFFFFFF });
       label.anchor.set(0.5);
       label.position.set(100, 30);
       btn.addChild(label);

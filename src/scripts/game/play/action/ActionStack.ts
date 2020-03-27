@@ -4,7 +4,7 @@ import { Unit } from '../../board/Unit';
 import { Tile } from '../../board/Tile';
 import { ExecuteGameEvent } from './executors';
 
-export type GameEvent = "MOVE" | "STRIKE" | "DAMAGE" | "DAMAGE_DEALT" | "UNIT_KILLED";
+export type GameEvent = "MOVE" | "ABILITY" | "STRIKE" | "DAMAGE" | "HEAL" | "DAMAGE_DEALT" | "UNIT_KILLED";
 
 export interface IActionData {
   [index : string] : any,

@@ -1,0 +1,14 @@
+{
+  "display" : {
+    "sprite" : "dwarf"
+  },
+  "abilities" : [
+    "STRIKE"
+  ],
+  "stats" : {
+    "speed": 3,
+    "move" : 2,
+    "hp" : 4,
+    "magic" : 2
+  }
+}

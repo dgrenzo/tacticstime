@@ -2,19 +2,51 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
 var _ = require("lodash");
+function LoadMission(path) {
+    var loaded_mission = {
+        board: null,
+        teams: [],
+    };
+    return LoadJSON(path)
+        .then(function (data) {
+        var promises = [];
+        promises.push(LoadBoard(data.board).then(function (board_cfg) {
+            loaded_mission.board = board_cfg;
+        }));
+        _.forEach(data.teams, function (team, team_index) {
+            loaded_mission.teams.push({
+                name: team.name,
+                units: [],
+            });
+            _.forEach(team.units, function (unit, unit_index) {
+                promises.push(LoadJSON(unit.type).then(function (unit_data) {
+                    loaded_mission.teams[team_index].units[unit_index] = {
+                        pos: unit.pos,
+                        unit: unit_data,
+                    };
+                }));
+            });
+        });
+        return Promise.all(promises);
+    }).then(function (data) {
+        return loaded_mission;
+    });
+}
+exports.LoadMission = LoadMission;
 function LoadBoard(path) {
-    var board_json = path;
+    return LoadJSON(path).then(ParseBoardData);
+}
+exports.LoadBoard = LoadBoard;
+function LoadJSON(path) {
     return new Promise(function (resolve) {
         new PIXI.Loader()
-            .add(board_json)
+            .add(path)
             .load(function (loader, resources) {
-            var board_config = resources[board_json].data;
-            var parsed_config = ParseBoardData(board_config);
-            resolve(parsed_config);
+            resolve(resources[path].data);
         });
     });
 }
-exports.LoadBoard = LoadBoard;
+exports.LoadJSON = LoadJSON;
 function ParseBoardData(boardFile) {
     var data_split = (boardFile.data).match(/.{2}/g);
     var data_cfg = [];
@@ -26,8 +58,7 @@ function ParseBoardData(boardFile) {
             width: data_cfg.shift(),
             height: data_cfg.shift(),
             tiles: data_cfg
-        },
-        entities: [],
+        }
     };
 }
 function LoadFromURLParam() {
@@ -50,8 +81,7 @@ function LoadFromURLParam() {
             width: url_cfg.shift(),
             height: url_cfg.shift(),
             tiles: url_cfg
-        },
-        entities: [],
+        }
     };
 }
 exports.LoadFromURLParam = LoadFromURLParam;

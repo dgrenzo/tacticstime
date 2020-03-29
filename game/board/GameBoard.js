@@ -21,8 +21,21 @@ var GameBoard = (function (_super) {
     __extends(GameBoard, _super);
     function GameBoard() {
         var _this = _super.call(this) || this;
+        _this.initTeams = function (teams) {
+            var units = [];
+            _.forEach(teams, function (team) {
+                _.forEach(team.units, function (data) {
+                    var x = data.pos.x;
+                    var y = data.pos.y;
+                    var unit = _this.addUnit(new Unit_1.Unit(x, y, data.unit));
+                    units.push(unit);
+                });
+            });
+            return units;
+        };
         _this.addUnit = function (unit) {
             _this.addElement(unit);
+            return unit;
         };
         _this.addTile = function (x, y, def) {
             _this.m_tiles[x][y] = _this.addElement(new Tile_1.Tile(x, y, def));
@@ -37,6 +50,22 @@ var GameBoard = (function (_super) {
                 return true;
             });
             return unit;
+        };
+        _this.getTilesInRange = function (pos, range) {
+            var tiles = [];
+            for (var offset_x = -range.max; offset_x <= range.max; offset_x++) {
+                var max_y = range.max - Math.abs(offset_x);
+                for (var offset_y = -max_y; offset_y <= max_y; offset_y++) {
+                    if (Math.abs(offset_x) + Math.abs(offset_y) < range.min) {
+                        continue;
+                    }
+                    var tile = _this.getTile({ x: pos.x + offset_x, y: pos.y + offset_y });
+                    if (tile) {
+                        tiles.push(tile);
+                    }
+                }
+            }
+            return tiles;
         };
         _this.getTile = function (pos) {
             if (!_this.m_tiles[pos.x] || !_this.m_tiles[pos.x][pos.y]) {
@@ -75,13 +104,6 @@ var GameBoard = (function (_super) {
             var y = Math.floor(index / board_config.layout.width);
             _this.addTile(x, y, tile);
         });
-        this.addUnit(new Unit_1.Unit(7, 10, { asset: "dwarf" }));
-        this.addUnit(new Unit_1.Unit(8, 13, { asset: "lizard" }));
-        this.addUnit(new Unit_1.Unit(9, 11, { asset: "guard" }));
-        this.addUnit(new Unit_1.Unit(10, 9, { asset: "monk" }));
-        this.addUnit(new Unit_1.Unit(11, 8, { asset: "oldman" }));
-        this.addUnit(new Unit_1.Unit(3, 6, { asset: "rhino" }));
-        this.addUnit(new Unit_1.Unit(10, 3, { asset: "wizard" }));
     };
     GameBoard.prototype.getElementsAt = function (pos) {
         if (!pos) {

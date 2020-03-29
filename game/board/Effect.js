@@ -14,37 +14,33 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var Entity_1 = require("../../engine/scene/Entity");
-var Unit = (function (_super) {
-    __extends(Unit, _super);
-    function Unit(x, y, m_data) {
-        var _this = _super.call(this, x, y) || this;
-        _this.m_data = m_data;
-        _this.hp = 1;
-        _this.getAbilities = function () {
-            return _this.m_data.abilities;
-        };
-        _this.getSpeed = function () {
-            return _this.m_data.stats.speed;
-        };
-        _this.getMove = function () {
-            return _this.m_data.stats.move;
-        };
+var Effect = (function (_super) {
+    __extends(Effect, _super);
+    function Effect(m_ability) {
+        var _this = _super.call(this, m_ability.target.x, m_ability.target.y) || this;
+        _this.m_ability = m_ability;
         _this.getCurrentAsset = function () {
             return {
-                type: "ANIMATED_SPRITE",
-                name: _this.m_unit_type + '_idle',
+                type: "EFFECT",
+                name: _this.m_ability.ability.name,
             };
         };
-        _this.m_unit_type = m_data.display.sprite;
         return _this;
     }
-    Object.defineProperty(Unit.prototype, "depthOffset", {
+    Object.defineProperty(Effect.prototype, "depthOffset", {
         get: function () {
-            return 2;
+            return 10;
         },
         enumerable: true,
         configurable: true
     });
-    return Unit;
+    Object.defineProperty(Effect.prototype, "ability_def", {
+        get: function () {
+            return this.m_ability;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    return Effect;
 }(Entity_1.Entity));
-exports.Unit = Unit;
+exports.Effect = Effect;

@@ -4,11 +4,14 @@ var Movement_1 = require("./action/Movement");
 var Strike_1 = require("./action/Strike");
 var Damage_1 = require("./action/Damage");
 var Killed_1 = require("./action/Killed");
+var Ability_1 = require("./action/Ability");
 function ExecuteGameEvent(action, controller) {
     console.log(action);
     switch (action.type) {
         case "MOVE":
             return Movement_1.ExecuteMove(action.data, controller);
+        case "ABILITY":
+            return Ability_1.ExecuteAbility(action.data, controller);
         case "STRIKE":
             return Strike_1.ExecuteStrike(action.data, controller);
         case "DAMAGE":

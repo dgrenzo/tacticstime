@@ -1,0 +1,14 @@
+{
+  "display" : {
+    "sprite" : "troll"
+  },
+  "abilities" : [
+    "STRIKE"
+  ],
+  "stats" : {
+    "speed": 3,
+    "move" : 2,
+    "hp" : 9,
+    "magic" : 2
+  }
+}

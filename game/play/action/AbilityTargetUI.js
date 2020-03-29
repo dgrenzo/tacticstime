@@ -15,21 +15,16 @@ var __extends = (this && this.__extends) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 var _ = require("lodash");
 var BoardActionUI_1 = require("./BoardActionUI");
-var UNIT_COLLISION;
-(function (UNIT_COLLISION) {
-    UNIT_COLLISION[UNIT_COLLISION["NONE"] = 0] = "NONE";
-    UNIT_COLLISION[UNIT_COLLISION["ALL"] = 1] = "ALL";
-    UNIT_COLLISION[UNIT_COLLISION["ENEMY"] = 2] = "ENEMY";
-    UNIT_COLLISION[UNIT_COLLISION["ALLY"] = 3] = "ALLY";
-})(UNIT_COLLISION || (UNIT_COLLISION = {}));
-var AttackActionUI = (function (_super) {
-    __extends(AttackActionUI, _super);
-    function AttackActionUI(m_tile, m_controller) {
-        var _this = _super.call(this, m_tile, m_controller) || this;
-        _this.m_tile = m_tile;
+var AbilityTargetUI = (function (_super) {
+    __extends(AbilityTargetUI, _super);
+    function AbilityTargetUI(m_ability_def, m_active_unit, m_controller) {
+        var _this = _super.call(this, m_active_unit, m_controller) || this;
+        _this.m_ability_def = m_ability_def;
+        _this.m_active_unit = m_active_unit;
         _this.m_controller = m_controller;
-        _this.getTileOptionsInRange = function (start, max_range, min_range) {
-            if (min_range === void 0) { min_range = 1; }
+        _this.getTileOptionsInRange = function (start, target_def) {
+            var max_range = target_def.range.max;
+            var min_range = target_def.range.min;
             var options = [];
             for (var offset_x = -max_range; offset_x <= max_range; offset_x++) {
                 var max_y = max_range - Math.abs(offset_x);
@@ -57,38 +52,25 @@ var AttackActionUI = (function (_super) {
         };
         _this.getAction = function (tile) {
             var option = _this.getOptionFromTile(tile);
-            return _this.toAttackAction(option);
+            return _this.toAction(option);
         };
-        _this.getExecuteFunction = function () {
-            return function (data) {
-                return new Promise(function (resolve) {
-                    setTimeout(resolve, 100);
-                });
-            };
-        };
-        _this.m_active_unit = _this.m_controller.getUnit(_this.m_active_tile);
-        _this.m_options = _this.getTileOptionsInRange(_this.m_active_unit, 2, 1);
+        _this.m_options = _this.getTileOptionsInRange(_this.m_active_unit, _this.m_ability_def.target);
         _this.showOptions();
         return _this;
     }
-    AttackActionUI.prototype.toAttackAction = function (option) {
-        var target = this.m_controller.getUnit(option.tile);
-        if (!target) {
-            return [];
-        }
+    AbilityTargetUI.prototype.toAction = function (option) {
         return [
             {
-                type: "STRIKE",
+                type: "ABILITY",
                 data: {
-                    unit: this.m_active_unit,
-                    target: this.m_controller.getUnit(option.tile),
-                    damage: 1,
-                    tile: option.tile,
+                    source: this.m_active_unit,
+                    target: option.tile,
+                    ability: this.m_ability_def,
                 }
             }
         ];
     };
-    AttackActionUI.prototype.getOptionFromTile = function (tile) {
+    AbilityTargetUI.prototype.getOptionFromTile = function (tile) {
         var path = null;
         _.forEach(this.m_options, function (option) {
             if (option.tile === tile) {
@@ -99,6 +81,6 @@ var AttackActionUI = (function (_super) {
         });
         return path;
     };
-    return AttackActionUI;
+    return AbilityTargetUI;
 }(BoardActionUI_1.BoardActionUI));
-exports.AttackActionUI = AttackActionUI;
+exports.AbilityTargetUI = AbilityTargetUI;

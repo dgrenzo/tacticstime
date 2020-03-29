@@ -14,6 +14,8 @@ var RenderEntity = (function () {
                 case "ANIMATED_SPRITE":
                     _this.setAnimatedSprite(asset_info.name);
                     break;
+                case "EFFECT":
+                    _this.setEffect(asset_info.name);
             }
         };
         this.setPlugin = function (plugin_name) {
@@ -34,6 +36,8 @@ var RenderEntity = (function () {
             animated_sprite.play();
             _this.m_image = animated_sprite;
             _this.m_container.addChild(animated_sprite);
+        };
+        this.setEffect = function (effect_name) {
         };
         this.m_container = new PIXI.Sprite();
         this.m_container.interactive = this.m_container.buttonMode = true;

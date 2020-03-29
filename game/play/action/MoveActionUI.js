@@ -24,9 +24,9 @@ var UNIT_COLLISION;
 })(UNIT_COLLISION || (UNIT_COLLISION = {}));
 var MoveActionUI = (function (_super) {
     __extends(MoveActionUI, _super);
-    function MoveActionUI(m_tile, m_controller) {
-        var _this = _super.call(this, m_tile, m_controller) || this;
-        _this.m_tile = m_tile;
+    function MoveActionUI(m_active_unit, m_controller) {
+        var _this = _super.call(this, m_active_unit, m_controller) || this;
+        _this.m_active_unit = m_active_unit;
         _this.m_controller = m_controller;
         _this.showOptions = function () {
             _.forEach(_this.m_options, function (path) {
@@ -44,9 +44,8 @@ var MoveActionUI = (function (_super) {
         };
         _this.getAction = function (tile) {
             var option = _this.getOptionFromTile(tile);
-            return _this.toMoveAction(option);
+            return option ? _this.toMoveAction(option) : null;
         };
-        _this.m_active_unit = _this.m_controller.getUnit(_this.m_active_tile);
         _this.m_options = _this.m_controller.getMoveOptions(_this.m_active_unit);
         _this.showOptions();
         return _this;

@@ -72,7 +72,7 @@ function GetMoveOptions(unit, board) {
     if (!unit) {
         return [];
     }
-    var max_cost = unit.getMoveLeft();
+    var max_cost = unit.getMove();
     var closed_list = new PathList();
     var open_list = new PathList();
     var current_tile = board.getTile(unit);

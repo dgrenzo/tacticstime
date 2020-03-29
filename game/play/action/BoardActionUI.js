@@ -8,8 +8,8 @@ var UNIT_COLLISION;
     UNIT_COLLISION[UNIT_COLLISION["ALLY"] = 3] = "ALLY";
 })(UNIT_COLLISION || (UNIT_COLLISION = {}));
 var BoardActionUI = (function () {
-    function BoardActionUI(m_active_tile, m_controller) {
-        this.m_active_tile = m_active_tile;
+    function BoardActionUI(m_active_unit, m_controller) {
+        this.m_active_unit = m_active_unit;
         this.m_controller = m_controller;
     }
     BoardActionUI.prototype.showOptions = function () {

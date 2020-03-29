@@ -1,0 +1,14 @@
+{
+  "display" : {
+    "sprite" : "lizard"
+  },
+  "abilities" : [
+    "STRIKE"
+  ],
+  "stats" : {
+    "speed": 4,
+    "move" : 5,
+    "hp" : 3,
+    "magic" : 2
+  }
+}

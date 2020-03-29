@@ -25,7 +25,7 @@ function ExecuteDamage(data, controller) {
                 }
             });
         }
-        setTimeout(resolve, 100);
+        resolve();
     });
 }
 exports.ExecuteDamage = ExecuteDamage;

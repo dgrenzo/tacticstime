@@ -3,7 +3,7 @@
     "sprite" : "troll"
   },
   "abilities" : [
-    "STRIKE"
+    "strike"
   ],
   "stats" : {
     "speed": 3,

@@ -25,39 +25,14 @@ export class UnitSelectedPanel {
     if (!unit) {
       return;
     }
-    this.showMove();
     this.showAbilities(unit.getAbilities());
   }
   public hide = () => {
     this.m_container.visible = false;
   }
 
-  public onMoveSelected = (cb : ()=>void) => {
-    this.m_event_manager.add("MOVE_SELECTED", cb);
-  }
-  
   public onAbilitySelected = (cb : (def : IAbilityDef )=>void ) => {
     this.m_event_manager.add("ABILITY_SELECTED", cb);
-  }
-
-  public showMove = () => {
-      let btn =  new PIXI.Sprite();
-      let bg = new PIXI.Graphics();
-
-      btn.addChild(new PIXI.Graphics().beginFill(0x3333CC).drawRoundedRect(0,0, 200, 60, 5).endFill());
-      btn.interactive = btn.buttonMode = true;
-      btn.on('pointerdown', (evt : PIXI.interaction.InteractionEvent) => {
-        evt.stopPropagation();
-        this.m_event_manager.emit("MOVE_SELECTED");
-      });
-      btn.position.set(0, 0);
-
-      let label = new PIXI.Text("MOVE", { fill : 0xFFFFFF });
-      label.anchor.set(0.5);
-      label.position.set(100, 30);
-      btn.addChild(label);
-
-      this.m_container.addChild(btn);
   }
 
   public showAbilities = (abiliy_list : string[]) => {

@@ -14,7 +14,12 @@ import { PlayerTurn } from './play/PlayerTurn';
 import { ActionStack, IGameAction, GameEvent } from './play/action/ActionStack';
 import { GetMoveOptions } from './pathfinding';
 import { RENDER_PLUGIN } from './extras/plugins';
-import { IRangeDef, GetAbilityDef } from './play/action/abilities';
+import { IRangeDef } from './play/action/abilities';
+import { IAbilityAction } from './play/action/executors/action/Ability';
+import EffectsManager from './effects';
+import { Effect } from './board/Effect';
+import { Entity } from '../engine/scene/Entity';
+import { UnitQueue } from './play/UnitQueue';
 
 export type GameConfig = {
   pixi_app : PIXI.Application,
@@ -51,6 +56,7 @@ export class GameController {
 
   private m_board : GameBoard;
   private m_renderer : SceneRenderer;
+  private m_unit_queue : UnitQueue;
   private m_event_manager = new EventManager<GameSignal>();
   private m_action_stack : ActionStack;
 
@@ -61,12 +67,14 @@ export class GameController {
     m_config.pixi_app.ticker.add(this.m_fsm.update);
     
     this.m_board = new GameBoard();
+    this.m_unit_queue = new UnitQueue();
     this.m_renderer = CreateRenderer(this.m_config);
     this.m_action_stack = new ActionStack(this);
 
     LoadMission('assets/data/missions/001.json').then(mission_data => {
       this.m_board.init(mission_data.board);
-      this.m_board.initTeams(mission_data.teams);
+      let units : Unit[] = this.m_board.initTeams(mission_data.teams);
+      this.m_unit_queue.addUnits(units);
       this.m_renderer.initializeScene(this.m_board);
       this.onSetupComplete();
     }); 
@@ -82,13 +90,14 @@ export class GameController {
       this.m_renderer.renderScene(this.m_board);
     });
 
-    let player = new PlayerTurn(this);
-
-    this.m_renderer.on("POINTER_DOWN", this.tileClicked);
-
     this.on("SET_PLUGIN", (data : { id : number, plugin : RENDER_PLUGIN}) => {
       this.m_renderer.getRenderable(data.id).setPlugin(data.plugin);
     });
+
+    this.m_renderer.on("POINTER_DOWN", this.tileClicked);
+
+
+    let player = new PlayerTurn(this.m_unit_queue.getNextQueued(), this, this.onTurnComplete);
   }
 
   public addInterfaceElement(element : PIXI.Container) {
@@ -99,10 +108,29 @@ export class GameController {
     this.m_action_stack.push(action);
   }
 
-  public executeActionStack = () : Promise<void> => {
-    return this.m_action_stack.execute().then( () => {
-      let player = new PlayerTurn(this);
-    });;
+  public executeActionStack = (onComplete : () => void) : Promise<void> => {
+    return this.m_action_stack.execute().then(onComplete);
+  }
+
+  private onTurnComplete = () => {
+    let player = new PlayerTurn(this.m_unit_queue.getNextQueued(), this, this.onTurnComplete);   
+  }
+
+  public createEffect = (ability : IAbilityAction, cb : ()=>void) => {
+
+   let entity = this.m_board.addElement(new Effect(ability));
+   let renderer = this.m_renderer.addEntity(entity);
+
+   let onComplete = () => {
+     this.removeEntity(entity);
+     cb();
+   }
+
+   EffectsManager.RenderEffect({
+     entity,
+     renderer
+   }, onComplete);
+
   }
 
 
@@ -122,9 +150,9 @@ export class GameController {
     return this.m_board.getUnit(pos);
   }
 
-  public removeUnit = (unit : Unit) => {
-    this.m_board.removeElement(unit.id);
-    this.m_renderer.removeEntity(unit);
+  public removeEntity = (ent : Entity) => {
+    this.m_board.removeElement(ent.id);
+    this.m_renderer.removeEntity(ent);
   }
   
   public on = (event_name : GameSignal, cb : (data:any) => void) => {

@@ -16,6 +16,9 @@ export class Unit extends Entity {
     return this.m_data.abilities;
   }
 
+  public getSpeed = () : number => {
+    return this.m_data.stats.speed;
+  }
   public getMove = () : number => {
     return this.m_data.stats.move;
   }

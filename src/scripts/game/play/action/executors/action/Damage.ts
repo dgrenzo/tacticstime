@@ -36,7 +36,7 @@ export function ExecuteDamage(data : IDamageAction, controller : GameController)
         }
       })
     }
-
-    setTimeout(resolve, 100);
+    resolve();
+    // setTimeout(resolve, 100);
   });
 }

@@ -13,14 +13,11 @@ export interface IBoardOption {
 }
 
 export class AbilityTargetUI extends BoardActionUI {
-  private m_active_unit : Unit;
   protected m_options : IBoardOption[];
 
-  constructor(protected m_ability_def : IAbilityDef, m_tile : Tile, protected m_controller : GameController) {
-    super(m_tile, m_controller);
-
-    this.m_active_unit = this.m_controller.getUnit(this.m_active_tile);
-
+  constructor(protected m_ability_def : IAbilityDef, protected m_active_unit : Unit, protected m_controller : GameController) {
+    super(m_active_unit, m_controller);
+    
     this.m_options = this.getTileOptionsInRange(this.m_active_unit, this.m_ability_def.target);
 
     this.showOptions();

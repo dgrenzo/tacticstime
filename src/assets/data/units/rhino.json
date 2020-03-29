@@ -6,6 +6,7 @@
     "STRIKE"
   ],
   "stats" : {
+    "speed": 2,
     "move" : 3,
     "hp" : 6,
     "magic" : 2

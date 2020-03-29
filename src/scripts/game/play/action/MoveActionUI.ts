@@ -22,15 +22,11 @@ export interface IBoardOption {
 }
 
 export class MoveActionUI extends BoardActionUI {
-  private m_active_unit : Unit;
   protected m_options : IPathTile[];
 
-  constructor(protected m_tile : Tile, protected m_controller : GameController) {
-    super(m_tile, m_controller);
-
-    this.m_active_unit = this.m_controller.getUnit(this.m_active_tile);
+  constructor(protected m_active_unit : Unit, protected m_controller : GameController) {
+    super(m_active_unit, m_controller);
     this.m_options = this.m_controller.getMoveOptions(this.m_active_unit);
-
     this.showOptions();
   }
 
@@ -52,7 +48,7 @@ export class MoveActionUI extends BoardActionUI {
 
   public getAction = (tile : Tile) => {
     let option = this.getOptionFromTile(tile);
-    return this.toMoveAction(option);
+    return option ? this.toMoveAction(option) : null;
   }
   
   private toMoveAction(path : IPathTile) {

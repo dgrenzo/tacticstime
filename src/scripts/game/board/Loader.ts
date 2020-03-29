@@ -30,6 +30,7 @@ export interface ILoadedUnit {
   },
   abilities : string[],
   stats : {
+    speed : number,
     move : number,
     hp : number,
     magic : number,

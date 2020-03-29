@@ -9,7 +9,7 @@ export interface IEntityInfo {
 }
 
 export interface IAssetInfo {
-  type : "SPRITE" | "ANIMATED_SPRITE",
+  type : "SPRITE" | "ANIMATED_SPRITE" | "EFFECT",
   name : string;
 }
 

@@ -29,7 +29,6 @@ export class RenderEntity {
   }
 
   public render = (asset_info : IAssetInfo) => {
-    
     switch (asset_info.type) {
       case "SPRITE" : 
         this.setSprite(asset_info.name);
@@ -37,6 +36,8 @@ export class RenderEntity {
       case "ANIMATED_SPRITE" :
         this.setAnimatedSprite(asset_info.name);
         break;
+      case "EFFECT" :
+        this.setEffect(asset_info.name);
     }
   }
   
@@ -61,6 +62,10 @@ export class RenderEntity {
     animated_sprite.play();
     this.m_image = animated_sprite;
     this.m_container.addChild(animated_sprite);
+  }
+
+  public setEffect = (effect_name : string) => {
+
   }
 
   public get sprite() : PIXI.Container {

@@ -23,7 +23,7 @@ export interface IBoardOption {
 export class BoardActionUI {
   protected m_options : IBoardOption[];
 
-  constructor(protected m_active_tile : Tile, protected m_controller : GameController) {
+  constructor(protected m_active_unit : Unit, protected m_controller : GameController) {
   }
 
   public showOptions() {

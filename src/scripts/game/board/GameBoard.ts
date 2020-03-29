@@ -49,18 +49,22 @@ export class GameBoard extends Scene {
     });
   }
 
-  public initTeams = (teams : ILoadedTeam[]) => {
+  public initTeams = (teams : ILoadedTeam[]) : Unit[] => {
+    let units : Unit[] = [];
     _.forEach(teams, team => {
       _.forEach(team.units, data => {
         let x = data.pos.x;
         let y = data.pos.y;
-        this.addUnit(new Unit(x, y, data.unit));
+        let unit = this.addUnit(new Unit(x, y, data.unit));
+        units.push(unit);
       })
     });
+    return units;
   }
 
-  private addUnit = (unit : Unit) => {
+  private addUnit = (unit : Unit) : Unit => {
     this.addElement(unit);
+    return unit;
   }
 
   private addTile = (x : number, y : number, def : TILE_DEF) => {

@@ -29,7 +29,7 @@ export function ExecuteAbility(data : IAbilityAction, controller : GameControlle
        }
      });
     });
+    controller.createEffect(data, resolve);
 
-    setTimeout(resolve, 100);
   });
 }

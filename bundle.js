@@ -433,8 +433,8 @@ var GameController = (function () {
         this.onSetupComplete = function () {
             _this.m_config.pixi_app.stage.addChild(_this.m_renderer.stage);
             _this.m_config.pixi_app.stage.addChild(_this.m_interface_container);
-            var highligher = new TileHighlighter_1.default(_this.m_renderer, _this.m_board);
-            _this.m_config.pixi_app.ticker.add(highligher.update);
+            var highlighter = new TileHighlighter_1.default(_this.m_renderer, _this.m_board);
+            _this.m_config.pixi_app.ticker.add(highlighter.update);
             _this.m_config.pixi_app.ticker.add(function () {
                 _this.m_renderer.renderScene(_this.m_board);
             });
@@ -777,6 +777,7 @@ function LoadBoard(path) {
 }
 exports.LoadBoard = LoadBoard;
 function LoadJSON(path) {
+    path = path + "?t=" + Date.now();
     return new Promise(function (resolve) {
         new PIXI.Loader()
             .add(path)

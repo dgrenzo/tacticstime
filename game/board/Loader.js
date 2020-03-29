@@ -38,6 +38,7 @@ function LoadBoard(path) {
 }
 exports.LoadBoard = LoadBoard;
 function LoadJSON(path) {
+    path = path + "?t=" + Date.now();
     return new Promise(function (resolve) {
         new PIXI.Loader()
             .add(path)

@@ -83,8 +83,8 @@ export class GameController {
     this.m_config.pixi_app.stage.addChild(this.m_renderer.stage);
     this.m_config.pixi_app.stage.addChild(this.m_interface_container);
 
-    let highligher = new TileHighlighter(this.m_renderer, this.m_board);
-    this.m_config.pixi_app.ticker.add(highligher.update);
+    let highlighter = new TileHighlighter(this.m_renderer, this.m_board);
+    this.m_config.pixi_app.ticker.add(highlighter.update);
 
     this.m_config.pixi_app.ticker.add(() => {
       this.m_renderer.renderScene(this.m_board);

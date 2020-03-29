@@ -93,6 +93,7 @@ export function LoadBoard(path : string) : Promise<IBoardConfig> {
 }
 
 export function LoadJSON<JSONType>(path : string) : Promise<JSONType> {
+  path = path + "?t=" + Date.now();
   return new Promise<JSONType>((resolve) => {
     new PIXI.Loader()
     .add(path)

@@ -3,7 +3,7 @@
     "sprite" : "oldman"
   },
   "abilities" : [
-    "METEOR"
+    "meteor"
   ],
   "stats" : {
     "speed": 1,

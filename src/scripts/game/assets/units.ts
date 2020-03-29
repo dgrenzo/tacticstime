@@ -1,4 +1,3 @@
-
 type BASIC_UNIT = "basic" | "basic_animesword" | "basic_axe" | "basic_bow" | "basic_pique" | "basic_sword";
 
 type KNIGHT_UNIT = "knight_blue" | "knight_green" | "knight_red" | "knight_yellow";

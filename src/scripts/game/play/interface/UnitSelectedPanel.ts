@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import * as PIXI from 'pixi.js';
 
 import { GameController } from "../../GameController";
-import { Unit } from '../../board/Unit';
+import { IUnit } from '../../board/Unit';
 import { EventManager } from '../../../engine/listener/event';
 import { GetAbilityDef, IAbilityDef } from '../action/abilities';
 
@@ -18,14 +18,14 @@ export class UnitSelectedPanel {
     m_controller.addInterfaceElement(this.m_container);
   }
 
-  public showUnitPanel = (unit : Unit) => {
+  public showUnitPanel = (unit : IUnit) => {
     this.m_container.removeChildren();
     this.m_container.visible = true;
 
     if (!unit) {
       return;
     }
-    this.showAbilities(unit.getAbilities());
+    this.showAbilities(unit.abilities);
   }
   public hide = () => {
     this.m_container.visible = false;

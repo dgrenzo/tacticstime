@@ -40,8 +40,43 @@
         {
           "type" : "assets/data/units/rhino.json",
           "pos" : {
+            "x" : 9,
+            "y" : 8
+          }
+        },
+        {
+          "type" : "assets/data/units/rhino.json",
+          "pos" : {
+            "x" : 4,
+            "y" : 7
+          }
+        },
+        {
+          "type" : "assets/data/units/rhino.json",
+          "pos" : {
+            "x" : 6,
+            "y" : 7
+          }
+        },
+        {
+          "type" : "assets/data/units/rhino.json",
+          "pos" : {
+            "x" : 12,
+            "y" : 13
+          }
+        },
+        {
+          "type" : "assets/data/units/rhino.json",
+          "pos" : {
             "x" : 11,
             "y" : 7
+          }
+        },
+        {
+          "type" : "assets/data/units/rhino.json",
+          "pos" : {
+            "x" : 11,
+            "y" : 5
           }
         },
         {

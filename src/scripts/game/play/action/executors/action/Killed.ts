@@ -1,13 +1,15 @@
-import { IActionData } from "../../ActionStack";
-import { GameController } from "../../../../GameController";
-import { Unit } from "../../../../board/Unit";
+import { IActionData, IGameAction } from "../../ActionStack";
+import { BoardController } from "../../../../board/BoardController";
+import { IElementMap } from "../../../../../engine/scene/Scene";
 
+export interface IKilledAction extends IGameAction {
+  type : "UNIT_KILLED",
+}
 
-export function ExecuteKilled(data : IActionData, controller : GameController):Promise<void> {
-  return new Promise((resolve) => {
-    controller.removeEntity(data.unit);
-
-    resolve();
-    // setTimeout(resolve, 100);
+export function ExecuteKilled(action : IGameAction, elements : IElementMap, controller : BoardController):Promise<IElementMap> {
+  return controller.getActionCallback(action).then( () => {
+    controller.removeEntity(action.data.entity_id);
+    return elements.remove(action.data.entity_id);
   });
 }
+

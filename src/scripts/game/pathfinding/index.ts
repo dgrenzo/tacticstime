@@ -1,11 +1,11 @@
 import * as _ from 'lodash';
-import { Unit } from "../board/Unit";
-import { GameBoard, ITilePos } from "../board/GameBoard";
-import { Tile, TILE_DEF, GetTileName } from "../board/Tile";
+import { IUnit } from "../board/Unit";
+import { GameBoard, IBoardPos } from "../board/GameBoard";
+import { ITile, TILE_DEF, GetTileName } from "../board/Tile";
 
 export interface IPathTile {
   cost : number,
-  tile : Tile,
+  tile : ITile,
   last : IPathTile,
 }
 
@@ -82,8 +82,8 @@ class PathList {
   public getPaths() : IPathTile[] {
     return this.m_list;
   }
-  public getTiles() : Tile[] {
-    let tiles : Tile[] = []
+  public getTiles() : ITile[] {
+    let tiles : ITile[] = []
     _.forEach(this.m_list, path => {
       tiles.push(path.tile);
     });
@@ -91,16 +91,16 @@ class PathList {
   }
 }
 
-export function GetMoveOptions (unit : Unit, board : GameBoard) : IPathTile[] {
+export function GetMoveOptions (unit : IUnit, board : GameBoard) : IPathTile[] {
   if (!unit) {
     return [];
   }
-  let max_cost = unit.getMove();
+  let max_cost = unit.stats.move;
 
   let closed_list = new PathList();
   let open_list = new PathList();
   
-  let current_tile = board.getTile(unit);
+  let current_tile = board.getTileAtPos(unit.pos);
 
   open_list.push({ tile : current_tile, cost : 0, last : null});
 
@@ -109,7 +109,7 @@ export function GetMoveOptions (unit : Unit, board : GameBoard) : IPathTile[] {
     let next : IPathTile = open_list.getLowestCost();
     closed_list.push(next);
 
-    let adjacent = GetAdjacent(next.tile, board);
+    let adjacent = GetAdjacent(next.tile.pos, board);
     _.forEach(adjacent, tile => {
       let path : IPathTile = ToPathTile(tile, next.cost, next);
       if (closed_list.exists(path) || path.cost > max_cost || !CanPassTile(unit, tile, board)) {
@@ -123,28 +123,28 @@ export function GetMoveOptions (unit : Unit, board : GameBoard) : IPathTile[] {
   return closed_list.getPaths();
 }
 
-function CanOccupyTile (unit : Unit, tile : Tile, board : GameBoard) : boolean {
+function CanOccupyTile (unit : IUnit, tile : ITile, board : GameBoard) : boolean {
 
   return true;
 }
 
-function CanPassTile (unit : Unit, tile : Tile, board : GameBoard) : boolean {
-  if (board.getUnit(tile)) {
+function CanPassTile (unit : IUnit, tile : ITile, board : GameBoard) : boolean {
+  if (board.getUnitAtPosition(tile.pos)) {
     return false;
   }
   return true;
 }
 
-function GetAdjacent (tile : ITilePos, board : GameBoard) : Tile[] {
+function GetAdjacent (tile : IBoardPos, board : GameBoard) : ITile[] {
   return _.shuffle([
-    board.getTile({ x : tile.x - 1, y : tile.y    }),
-    board.getTile({ x : tile.x + 1, y : tile.y    }),
-    board.getTile({ x : tile.x    , y : tile.y - 1}),
-    board.getTile({ x : tile.x    , y : tile.y + 1}),
+    board.getTileAtPos({ x : tile.x - 1, y : tile.y    }),
+    board.getTileAtPos({ x : tile.x + 1, y : tile.y    }),
+    board.getTileAtPos({ x : tile.x    , y : tile.y - 1}),
+    board.getTileAtPos({ x : tile.x    , y : tile.y + 1}),
   ]);
 }
 
-function ToPathTile(tile : Tile, cost : number, last : IPathTile) : IPathTile {
+function ToPathTile(tile : ITile, cost : number, last : IPathTile) : IPathTile {
   return {
     tile : tile,
     cost : cost + GetTileCost(tile),
@@ -152,11 +152,11 @@ function ToPathTile(tile : Tile, cost : number, last : IPathTile) : IPathTile {
   }
 }
 
-function GetTileCost (tile : Tile) {
+function GetTileCost (tile : ITile) {
   if (!tile) {
     return Infinity;
   }
-  if (tile.type === TILE_DEF.WATER_EMPTY) {
+  if (tile.data.tile_type === TILE_DEF.WATER_EMPTY) {
     return 2;
   }
   return 1;

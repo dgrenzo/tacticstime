@@ -1,6 +1,6 @@
 import { SceneRenderer } from "../../engine/render/scene/SceneRenderer";
 import { GameBoard } from "../board/GameBoard";
-import { Entity } from "../../engine/scene/Entity";
+import { IEntity } from "../../engine/scene/Entity";
 
 
 export default class TileHighlighter {
@@ -21,17 +21,14 @@ export default class TileHighlighter {
 
   public update = () => {
     let targets = this.m_board.getElementsAt(this.m_last_pos)
-    if (targets.length > 0) {
-      targets.forEach((entity:Entity) => {
+      targets.forEach((entity:IEntity) => {
         this.m_renderer.getRenderable(entity.id).offsetY = 0;
       })
-    }        
+        
     targets = this.m_board.getElementsAt(this.m_current_pos)
-    if (targets.length > 0) {
-      targets.forEach((entity:Entity) => {
+      targets.forEach((entity:IEntity) => {
         this.m_renderer.getRenderable(entity.id).offsetY = -2;
       })
-    }
     this.m_last_pos = this.m_current_pos;
   }
 }

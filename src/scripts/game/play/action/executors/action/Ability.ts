@@ -1,35 +1,48 @@
 import * as _ from 'lodash';
 
-import { IActionData } from "../../ActionStack";
-import { GameController } from "../../../../GameController";
-import { Unit } from "../../../../board/Unit";
-import { Tile } from "../../../../board/Tile";
+import { IActionData, IGameAction, GameEvent } from "../../ActionStack";
 import { IAbilityDef } from "../../abilities";
+import { BoardController } from '../../../../board/BoardController';
+import { IElementMap } from '../../../../../engine/scene/Scene';
+import { IUnit } from '../../../../board/Unit';
+import { ITile } from '../../../../board/Tile';
 
-export interface IAbilityAction extends IActionData {
-  source : Unit,
-  target : Tile,
+export interface IAbilityAction extends IGameAction {
+  type : "ABILITY",
+  data : IAbilityActionData,
+}
+
+export interface IAbilityActionData extends IActionData {
+  source : IUnit,
+  target : ITile,
   ability : IAbilityDef,
 }
 
-export function ExecuteAbility(data : IAbilityAction, controller : GameController):Promise<void> {
-  return new Promise((resolve) => {
-    _.forEach(data.ability.effects, effect => {
-     let tiles = controller.getTilesInRange(data.target, effect.range);
-     _.forEach(tiles, tile => {
-       let unit = controller.getUnit(tile);
+export interface IEffectAction extends IGameAction {
+  type : GameEvent,
+  data : {
+    [index : string] : any
+  }
+}
+
+export function ExecuteAbility(action : IAbilityAction, elements : IElementMap, controller : BoardController):Promise<IElementMap> {
+  
+  return controller.getActionCallback(action).then(() => {
+    _.forEach(action.data.ability.effects, effect => {
+     let tiles = controller.getTilesInRange(action.data.target.pos, effect.range);
+     tiles.forEach(tile => {
+       let unit = controller.getUnitAtPosition(tile.pos);
        if (unit) {
         controller.sendAction({
           type : effect.type,
           data : {
-            unit,
+            entity_id : unit.id,
             amount : effect.amount,
           }
-        });
+        } as IEffectAction);
        }
      });
     });
-    controller.createEffect(data, resolve);
-
+    return elements;
   });
 }

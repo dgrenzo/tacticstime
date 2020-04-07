@@ -1,25 +1,21 @@
 import * as _ from 'lodash';
 
 import * as PIXI from 'pixi.js';
-import { GameBoard, ITilePos } from "./board/GameBoard";
+import { GameBoard } from "./board/GameBoard";
 import { RenderMode, CreateRenderer } from '../engine/render/render';
 import { FSM } from '../engine/FSM';
-import { SceneRenderer } from '../engine/render/scene/SceneRenderer';
+import { SceneRenderer, getAsset } from '../engine/render/scene/SceneRenderer';
 import { EventManager } from '../engine/listener/event';
-import TileHighlighter from './extras/TileHighlighter';
 import { LoadMission } from './board/Loader';
-import { Tile } from './board/Tile';
-import { Unit } from './board/Unit';
 import { PlayerTurn } from './play/PlayerTurn';
-import { ActionStack, IGameAction, GameEvent } from './play/action/ActionStack';
-import { GetMoveOptions } from './pathfinding';
+import { GameEvent } from './play/action/ActionStack';
 import { RENDER_PLUGIN } from './extras/plugins';
-import { IRangeDef } from './play/action/abilities';
-import { IAbilityAction } from './play/action/executors/action/Ability';
-import EffectsManager from './effects';
-import { Effect } from './board/Effect';
-import { Entity } from '../engine/scene/Entity';
 import { UnitQueue } from './play/UnitQueue';
+import { BoardController } from './board/BoardController';
+import { EnemyTurn } from './play/EnemyTurn';
+import EffectsManager from './effects';
+import { ICreateUnitActionData } from './play/action/executors/action/CreateUnit';
+import { HealthBar } from './play/interface/HealthBar';
 
 export type GameConfig = {
   pixi_app : PIXI.Application,
@@ -39,56 +35,62 @@ export type TileData = {
   y : number
 };
 
-
-
-
-
 export type PlaySignal = "TILE_SELECTED";
-
 export type RenderSignal = "SET_PLUGIN";
-
 export type GameSignal = GameEvent | PlaySignal | RenderSignal | "TILE_CLICKED";
 
 
 export class GameController {
 
   private m_fsm : FSM;
-
-  private m_board : GameBoard;
+  private m_board_controller : BoardController;
   private m_renderer : SceneRenderer;
   private m_unit_queue : UnitQueue;
   private m_event_manager = new EventManager<GameSignal>();
-  private m_action_stack : ActionStack;
 
   private m_interface_container : PIXI.Container = new PIXI.Container();
+
+  private m_states : GameBoard[];
 
   constructor(private m_config : GameConfig) {
     this.m_fsm = new FSM();
     m_config.pixi_app.ticker.add(this.m_fsm.update);
     
-    this.m_board = new GameBoard();
+    this.m_board_controller = new BoardController();
     this.m_unit_queue = new UnitQueue();
     this.m_renderer = CreateRenderer(this.m_config);
-    this.m_action_stack = new ActionStack(this);
 
     LoadMission('assets/data/missions/001.json').then(mission_data => {
-      this.m_board.init(mission_data.board);
-      let units : Unit[] = this.m_board.initTeams(mission_data.teams);
-      this.m_unit_queue.addUnits(units);
-      this.m_renderer.initializeScene(this.m_board);
+      
+      this.m_board_controller.initBoard(mission_data);
+
+      this.m_board_controller.on("CREATE_UNIT", (data : ICreateUnitActionData) => {
+        this.m_unit_queue.addUnit(data.unit);
+        let renderable = this.m_renderer.addEntity(data.unit);
+        renderable.render(getAsset(data.unit));
+      });
+
+      this.m_board_controller.on("UNIT_CREATED", (data : ICreateUnitActionData) => {
+        let health_bar = new HealthBar(data.unit.id, this.m_board_controller, this.m_renderer);
+        this.m_renderer.effects_container.addChild(health_bar.sprite);
+      });
+
+      this.m_board_controller.sendToRenderer(this.m_renderer);
+
       this.onSetupComplete();
     }); 
   }
+
   private onSetupComplete = () => {
     this.m_config.pixi_app.stage.addChild(this.m_renderer.stage);
+    this.m_config.pixi_app.stage.addChild(this.m_renderer.effects_container);
+
     this.m_config.pixi_app.stage.addChild(this.m_interface_container);
 
-    let highlighter = new TileHighlighter(this.m_renderer, this.m_board);
-    this.m_config.pixi_app.ticker.add(highlighter.update);
+    //let highlighter = new TileHighlighter(this.m_renderer, this.m_board);
+    //this.m_config.pixi_app.ticker.add(highlighter.update);
 
-    this.m_config.pixi_app.ticker.add(() => {
-      this.m_renderer.renderScene(this.m_board);
-    });
+    EffectsManager.init(this.m_renderer);
 
     this.on("SET_PLUGIN", (data : { id : number, plugin : RENDER_PLUGIN}) => {
       this.m_renderer.getRenderable(data.id).setPlugin(data.plugin);
@@ -96,63 +98,28 @@ export class GameController {
 
     this.m_renderer.on("POINTER_DOWN", this.tileClicked);
 
+    this.m_board_controller.executeActionStack().then(this.startGame);
+  }
 
-    let player = new PlayerTurn(this.m_unit_queue.getNextQueued(), this, this.onTurnComplete);
+  private startGame = () => {
+    new PlayerTurn(this.m_unit_queue.getNextQueued(), this, this.m_board_controller, this.onTurnComplete);
   }
 
   public addInterfaceElement(element : PIXI.Container) {
     this.m_interface_container.addChild(element);
   }
 
-  public sendAction = (action : IGameAction | IGameAction[]) => {
-    this.m_action_stack.push(action);
-  }
-
-  public executeActionStack = (onComplete : () => void) : Promise<void> => {
-    return this.m_action_stack.execute().then(onComplete);
-  }
-
   private onTurnComplete = () => {
-    let player = new PlayerTurn(this.m_unit_queue.getNextQueued(), this, this.onTurnComplete);   
-  }
-
-  public createEffect = (ability : IAbilityAction, cb : ()=>void) => {
-
-   let entity = this.m_board.addElement(new Effect(ability));
-   let renderer = this.m_renderer.addEntity(entity);
-
-   let onComplete = () => {
-     this.removeEntity(entity);
-     cb();
-   }
-
-   EffectsManager.RenderEffect({
-     entity,
-     renderer
-   }, onComplete);
-
-  }
-
-
-  public getMoveOptions = (unit : Unit) => {
-    return GetMoveOptions(unit, this.m_board);
-  }
-
-  public getTile = (pos : { x : number, y : number }) : Tile => {
-    return this.m_board.getTile(pos);
-  }
-
-  public getTilesInRange = (pos : ITilePos, range : IRangeDef) : Tile[] => {
-    return this.m_board.getTilesInRange(pos, range);
-  }
-
-  public getUnit = (pos : ITilePos) : Unit => {
-    return this.m_board.getUnit(pos);
-  }
-
-  public removeEntity = (ent : Entity) => {
-    this.m_board.removeElement(ent.id);
-    this.m_renderer.removeEntity(ent);
+    let next_unit = this.m_unit_queue.getNextQueued();
+    if (!next_unit) {
+      console.log('done');
+      return;
+    }
+    if (!this.m_board_controller.getUnit(next_unit)){
+      this.onTurnComplete();
+      return;
+    }
+    let player = new EnemyTurn(next_unit, this, this.m_board_controller, this.onTurnComplete);   
   }
   
   public on = (event_name : GameSignal, cb : (data:any) => void) => {
@@ -167,6 +134,6 @@ export class GameController {
   }
 
   private tileClicked = (data : TileData) => {
-    this.m_event_manager.emit("TILE_CLICKED", this.m_board.getTile(data));
+    this.m_event_manager.emit("TILE_CLICKED", this.m_board_controller.getTile(data));
   }
 }

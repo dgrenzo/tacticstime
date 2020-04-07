@@ -1,12 +1,7 @@
-import { GameBoard } from "../../board/GameBoard";
-
-import * as _ from 'lodash';
-import { GameController } from '../../GameController';
-import { ITilePos } from '../../board/GameBoard';
-import { FSM } from '../../../engine/FSM';
-import { Tile } from '../../board/Tile';
-import { Unit } from '../../board/Unit';
-import { IPathTile, GetMoveOptions } from '../../pathfinding';
+import { ITile } from '../../board/Tile';
+import { IUnit } from '../../board/Unit';
+import { BoardController } from "../../board/BoardController";
+import { IGameAction } from './ActionStack';
 
 enum UNIT_COLLISION {
   NONE = 0,
@@ -17,22 +12,18 @@ enum UNIT_COLLISION {
 
 export interface IBoardOption {
   [index : string] : any,
-  tile : Tile,
+  tile : ITile,
 }
 
-export class BoardActionUI {
+export abstract class BoardActionUI {
   protected m_options : IBoardOption[];
 
-  constructor(protected m_active_unit : Unit, protected m_controller : GameController) {
+  constructor(protected m_active_unit : IUnit, protected m_controller : BoardController) {
   }
-
-  public showOptions() {
+  
+  public get options() {
+    return this.m_options;
   }
-
-  public hideOptions() {
-  }
-
-  public getAction(tile : Tile) {
-    return [];
-  }
+  
+  public abstract getAction(tile : ITile) : IGameAction[];
 }

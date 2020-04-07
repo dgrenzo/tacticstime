@@ -1,8 +1,9 @@
-import { Unit } from "../board/Unit";
+import { IUnit } from "../board/Unit";
+import { List } from 'immutable';
 import * as _ from 'lodash';
 
 interface IQueuedUnit  {
-  unit : Unit,
+  unit : IUnit,
   next : IQueuedUnit
 }
 
@@ -15,18 +16,14 @@ export class UnitQueue {
 
   private m_current : IQueuedUnit = this.m_root;
 
-  constructor() {
-
+  public addUnits = (units : List<IUnit>) => {
+    units.forEach(this.addUnit);
   }
 
-  public addUnits = (units : Unit[]) => {
-    _.forEach(units, this.addUnit);
-  }
-
-  public addUnit = (unit : Unit) => {
+  public addUnit = (unit : IUnit) => {
     let parent = this.m_root;
 
-    while (parent.next && parent.next.unit.getSpeed() >= unit.getSpeed()) {
+    while (parent.next && parent.next.unit.stats.speed >= unit.stats.speed) {
       parent = parent.next;
     }
     let next = parent.next;
@@ -37,10 +34,13 @@ export class UnitQueue {
     }
   }
 
-  public getNextQueued = () : Unit => {
+  public getNextQueued = () : number => {
     this.m_current = this.m_current.next;
     if (this.m_current) {
-      return this.m_current.unit;
+      return this.m_current.unit.id;
+    } else if (this.m_root.next) {
+      this.m_current = this.m_root;
+      return this.getNextQueued();
     }
     return null;
   }

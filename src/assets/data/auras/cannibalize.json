@@ -1,0 +1,19 @@
+{
+  "trigger" : {
+    "event" : "DAMAGE_DEALT",
+    "target" : "ENEMY",
+    "conditions" : {
+      "fatal" : true
+    }
+  },
+  "effects" : 
+  [
+    {
+      "type" : "HEAL",
+      "data" : {
+        "target" : "bearer",
+        "amount" : 4
+      }
+    }
+  ]
+}

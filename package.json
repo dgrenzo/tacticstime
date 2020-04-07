@@ -15,6 +15,7 @@
   "author": "davdd",
   "license": "",
   "devDependencies": {
+    "@tweenjs/tween.js": "^18.5.0",
     "browser-sync": "^2.26.7",
     "browserify": "^16.5.0",
     "browserify-incremental": "^3.1.1",
@@ -27,7 +28,9 @@
     "gulp-typescript": "^5.0.1",
     "gulp-uglify-es": "^2.0.0",
     "howler": "^2.1.3",
+    "immutable": "^4.0.0-rc.12",
     "merge2": "^1.3.0",
+    "minimist": "^1.2.3",
     "pixi.js": "5.1.6",
     "run-sequence": "^2.2.1",
     "tape": "^4.13.2",
@@ -40,6 +43,7 @@
   "dependencies": {
     "@types/howler": "^2.1.2",
     "@types/lodash": "^4.14.149",
+    "@types/tween.js": "^18.5.0",
     "fs": "0.0.1-security",
     "lodash": "^4.17.15"
   },

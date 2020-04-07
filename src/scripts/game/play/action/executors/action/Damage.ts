@@ -1,42 +1,53 @@
-import { IActionData } from "../../ActionStack";
-import { GameController } from "../../../../GameController";
-import { Unit } from "../../../../board/Unit";
+import { IActionData, IGameAction } from "../../ActionStack";
+import { BoardController } from "../../../../board/BoardController";
+import { IElementMap } from "../../../../../engine/scene/Scene";
 
-export interface IDamageAction extends IActionData {
-  unit : Unit,
+export interface IDamageAction extends IGameAction {
+  type : "DAMAGE",
+  data : IDamageActionData,
+}
+
+export interface IDamageActionData extends IActionData {
   amount : number,
 }
 
-export function ExecuteDamage(data : IDamageAction, controller : GameController):Promise<void> {
+export interface IDamageDealtAction extends IGameAction {
+  type : "DAMAGE_DEALT",
+  data : IDamageActionData,
+}
+
+
+export function ExecuteDamage(action : IDamageAction, elements : IElementMap, controller : BoardController):Promise<IElementMap> {
   return new Promise((resolve) => {
-    let starting_hp = data.unit.hp;
+    let unit = controller.getUnit(action.data.entity_id);
+
+    let starting_hp = unit.status.hp;
 
     if (starting_hp === 0) {
-      resolve();
-      return;
+      return resolve(elements);
     }
 
-    data.unit.hp = Math.max (starting_hp - data.amount, 0);
-
-    if (data.unit.hp != starting_hp) {
+    let new_hp = Math.max(starting_hp - action.data.amount, 0);
+    if (new_hp != starting_hp) {
       controller.sendAction({
         type : "DAMAGE_DEALT",
         data : {
-          amount : starting_hp - data.unit.hp,
-          unit : data.unit,
+          amount : starting_hp - new_hp,
+          entity_id : unit.id,
         }
-      });
+      } as IDamageDealtAction);
     }
 
-    if (data.unit.hp === 0) {
+    if (new_hp === 0) {
       controller.sendAction({
         type : "UNIT_KILLED",
         data : {
-          unit : data.unit
+          entity_id : unit.id
         }
       })
     }
-    resolve();
-    // setTimeout(resolve, 100);
+
+    let result = elements.setIn([action.data.entity_id, 'status', 'hp' ], new_hp);
+    resolve(result);
   });
 }

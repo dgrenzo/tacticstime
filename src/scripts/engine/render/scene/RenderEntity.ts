@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js'
-import { Entity, IAssetInfo } from '../../scene/Entity'
+import { IEntity, IAssetInfo } from '../../scene/Entity'
 import AssetManager from '../../../game/assets';
 import { RENDER_PLUGIN } from '../../../game/extras/plugins';
 
@@ -15,7 +15,7 @@ export class RenderEntity {
 
   protected m_image : PIXI.Sprite | PIXI.AnimatedSprite;
 
-  constructor (id : number) {
+  constructor (id : EntityID) {
     this.m_container = new PIXI.Sprite();
     this.m_container.interactive = this.m_container.buttonMode = true;
 
@@ -24,7 +24,7 @@ export class RenderEntity {
     this.m_image = new PIXI.Sprite();
     this.m_container.addChild(this.m_image);
   }
-  public get id() {
+  public get id() : EntityID{
     return this.m_id;
   }
 

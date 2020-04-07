@@ -1,29 +1,28 @@
 import * as _ from 'lodash';
-import { GameController } from '../../GameController';
-import { ITilePos } from '../../board/GameBoard';
-import { Tile } from '../../board/Tile';
-import { Unit } from '../../board/Unit';
+import { IBoardPos } from '../../board/GameBoard';
 import { IPathTile } from '../../pathfinding';
 import { BoardActionUI } from "./BoardActionUI";
-import { IAbilityDef, ITargetDef, IRangeDef } from './abilities';
+import { IAbilityDef, ITargetDef } from './abilities';
+import { BoardController } from '../../board/BoardController';
+import { ITile } from '../../board/Tile';
+import { IUnit } from '../../board/Unit';
+import { IAbilityAction } from './executors/action/Ability';
 
 export interface IBoardOption {
   [index : string] : any,
-  tile : Tile,
+  tile : ITile,
 }
 
 export class AbilityTargetUI extends BoardActionUI {
   protected m_options : IBoardOption[];
 
-  constructor(protected m_ability_def : IAbilityDef, protected m_active_unit : Unit, protected m_controller : GameController) {
+  constructor(protected m_ability_def : IAbilityDef, protected m_active_unit : IUnit, protected m_controller : BoardController) {
     super(m_active_unit, m_controller);
-    
-    this.m_options = this.getTileOptionsInRange(this.m_active_unit, this.m_ability_def.target);
 
-    this.showOptions();
+    this.m_options = this.getTileOptionsInRange(this.m_active_unit.pos, this.m_ability_def.target);
   }
 
-  private getTileOptionsInRange = (start : ITilePos, target_def : ITargetDef) => {
+  private getTileOptionsInRange = (start : IBoardPos, target_def : ITargetDef) => {
 
     let max_range = target_def.range.max;
     let min_range = target_def.range.min;
@@ -46,25 +45,12 @@ export class AbilityTargetUI extends BoardActionUI {
     return options;
   }
 
-
-  public showOptions = () => {
-    _.forEach(this.m_options, path => {
-      this.m_controller.emit("SET_PLUGIN", {id : path.tile.id, plugin : 'highlight_red'});
-    });
-  }
-
-  public hideOptions = () => {
-     _.forEach(this.m_options, path => {
-      this.m_controller.emit("SET_PLUGIN", {id : path.tile.id, plugin : 'batch'});
-    });
-  }
-
-  public getAction = (tile : Tile) => {
+  public getAction = (tile : ITile) : IAbilityAction[] => {
     let option = this.getOptionFromTile(tile);
     return this.toAction(option);
   }
   
-  private toAction(option : IBoardOption) {
+  private toAction(option : IBoardOption) : IAbilityAction[] {
     return [
       {
         type : "ABILITY",
@@ -77,7 +63,7 @@ export class AbilityTargetUI extends BoardActionUI {
     ];
   }
 
-  private getOptionFromTile(tile : Tile) {
+  private getOptionFromTile(tile : ITile) {
     let path : IPathTile = null;
     _.forEach(this.m_options, option => {
       if (option.tile === tile) {

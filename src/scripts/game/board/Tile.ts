@@ -1,5 +1,4 @@
-import { Entity, IAssetInfo } from "../../engine/scene/Entity";
-
+import { IAssetInfo, IEntity } from "../../engine/scene/Entity";
 export enum TILE_DEF {
   GRASS_EMPTY = 10,
   GRASS_MTN,
@@ -24,40 +23,23 @@ export enum TILE_DEF {
   WATER_EMPTY = 60,
 }
 
-export interface ITileInfo {
-  type : string,
+export interface ITile extends IEntity {
+  entity_type : "TILE",
+  data : {
+    tile_type : TILE_DEF,
+  }
 }
 
-export class Tile extends Entity {
-  protected readonly depth_offset : number = -1;
+export function isTile(entity : IEntity) : entity is ITile {
+  return entity.entity_type === "TILE";
+}
 
-  private m_tile_name : string;
-  constructor(x : number, y : number, private m_definition : TILE_DEF) {
-    super(x, y);
-    this.setTileType(m_definition);
-  }
-
-  public setTileType = (def : TILE_DEF) => {  
-    this.m_definition = def;
-    this.m_tile_name = GetTileName(def);
-  }
-
-  public getCurrentAsset = () : IAssetInfo => {
+  function asset() : IAssetInfo {
     return {
       type : "SPRITE",
       name : this.m_tile_name,
     }
   }
-  
-  public get type() : TILE_DEF {
-    return this.m_definition;
-  }
-
-  public get tile_name() : string {
-    return this.m_tile_name;
-  }
-}
-
 
 export const GetTileName = (def : TILE_DEF) => {
   let base = Math.floor(def / 10);
@@ -67,7 +49,6 @@ export const GetTileName = (def : TILE_DEF) => {
 const getBase = (base : number) : string => {
   return ["blank", "grass", "dirt", "stone", "sand", "snow", "water"][base];
 }
-
 const getType = (type : number) : string => {
   return ["empty", "mtn", "tree", "hut"][type];
 }

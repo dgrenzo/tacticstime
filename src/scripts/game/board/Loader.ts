@@ -37,7 +37,7 @@ export interface ILoadedUnit {
   },
 }
 
-interface IMissionUnit {
+export interface IMissionUnit {
   unit : ILoadedUnit,
   pos : {
     x : number,

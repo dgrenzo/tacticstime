@@ -1,11 +1,12 @@
 import * as _ from 'lodash';
-import { Tile, TILE_DEF } from './Tile';
+import { List, updateIn} from 'immutable';
+import { ITile, TILE_DEF, isTile } from './Tile';
 import { Scene } from '../../engine/scene/Scene';
-import { Entity } from '../../engine/scene/Entity';
-import { Unit } from './Unit';
-import { ILoadedTeam } from './Loader';
-import { UNIT_TYPE } from '../assets/units';
+import { IEntity } from '../../engine/scene/Entity';
+import { IUnit, isUnit } from './Unit';
+import { ILoadedTeam, IMissionUnit } from './Loader';
 import { IRangeDef } from '../play/action/abilities';
+import { ActionStack } from '../play/action/ActionStack';
 
 export interface IBoardConfig {
   layout : {
@@ -15,33 +16,22 @@ export interface IBoardConfig {
   }
 }
 
-export interface ITilePos {
+export interface IBoardPos {
   x : number,
   y : number,
 }
 
+export type UpdateFunction = (keyPath:Iterable<any>, updator:(value:any) => any) => void;
+
 export class GameBoard extends Scene {
 
-  private width : number;
-  private height : number;
-
-  private m_tiles : Tile[][];
+  private m_action_stack : ActionStack;
 
   constructor() {
     super();
   }
 
   public init (board_config : IBoardConfig) {
-    this.m_elements = [];
-
-    this.width = board_config.layout.width;
-    this.height = board_config.layout.height;
-
-    this.m_tiles = [];
-    for(let i = 0; i < this.height; i ++) {
-      this.m_tiles.push([]);
-    }
-
     _.forEach(board_config.layout.tiles, (tile, index) => {
       let x : number = index % board_config.layout.width;
       let y : number = Math.floor(index / board_config.layout.width);
@@ -49,45 +39,20 @@ export class GameBoard extends Scene {
     });
   }
 
-  public initTeams = (teams : ILoadedTeam[]) : Unit[] => {
-    let units : Unit[] = [];
-    _.forEach(teams, team => {
-      _.forEach(team.units, data => {
-        let x = data.pos.x;
-        let y = data.pos.y;
-        let unit = this.addUnit(new Unit(x, y, data.unit));
-        units.push(unit);
-      })
-    });
-    return units;
-  }
-
-  private addUnit = (unit : Unit) : Unit => {
-    this.addElement(unit);
-    return unit;
-  }
-
   private addTile = (x : number, y : number, def : TILE_DEF) => {
-    this.m_tiles[x][y] = this.addElement(new Tile(x, y, def));
+    this.addElement(CreateTile(x, y, def));
   }
 
-  public getElementsAt(pos : ITilePos) : Entity[] {
-    if (!pos) {
-      return []
-    }
-    let elements : Entity[] = [];
-    this.m_elements.forEach( (ent) => {
-      if (ent.x === pos.x && ent.y === pos.y) {
-        elements.push(ent);
-      }
-    });
-    return elements;
+  public getElementsAt(pos : IBoardPos) : List<IEntity> {
+    return this.m_elements.filter( entity => {
+      return pos && entity.pos.x === pos.x && entity.pos.y === pos.y
+     }).toList();
   }
 
-  public getUnit = (pos : ITilePos) : Unit => {
-    let unit = null;
-    _.forEach(this.getElementsAt(pos), element => {
-      if (element instanceof Unit) {
+  public getUnitAtPosition = (pos : IBoardPos) : IUnit => {
+    let unit : IUnit = null;
+    this.getElementsAt(pos).forEach( element => {
+      if (isUnit(element)) {
         unit = element;
         return false;
       }
@@ -96,48 +61,75 @@ export class GameBoard extends Scene {
     return unit;
   }
 
-  public getTilesInRange = (pos : ITilePos, range : IRangeDef) : Tile[] => {
-    let tiles : Tile[] = [];
-      //TODO filter options with target_def.target_type
+  public getUnit = (id : number) : IUnit => {
+    return this.m_elements.get(id) as IUnit;
+  }
 
-    for (let offset_x = -range.max; offset_x <= range.max; offset_x ++) {
-      let max_y = range.max - Math.abs(offset_x);
-      for (let offset_y = -max_y; offset_y <= max_y; offset_y ++) {
-        if (Math.abs(offset_x) + Math.abs(offset_y) < range.min) {
-          continue;
-        }
-        let tile = this.getTile({x : pos.x + offset_x, y : pos.y + offset_y});
-        if (tile) {
-          tiles.push(tile)
-        }
+  public getUnits = () : List<IUnit> => {
+    return this.m_elements.filter( element => {
+      return isUnit(element);
+    }).toList() as List<IUnit>;
+  }
+
+  public getTiles = () : List<ITile> => {
+    return this.m_elements.filter( element => {
+      return isTile(element);
+    }).toList() as List<ITile>;
+  }
+
+  public getTilesInRange = (pos : IBoardPos, range : IRangeDef) : List<ITile> => {
+    return this.getTiles().filter( tile => {
+      let distance = Math.abs(tile.pos.x - pos.x) + Math.abs(tile.pos.y - pos .y);
+      return range.max >= distance && range.min <= distance;
+    });
+  }
+
+  public getTileAtPos = (pos : IBoardPos) : ITile => {
+    let tile : ITile = null;
+    this.getElementsAt(pos).forEach(element => {
+      if (isTile(element)) {
+        tile = element;
+        return false;
       }
-    }
-    return tiles;
+      return true;
+    });
+    return tile;
   }
+}
 
-  
-  public getTile = (pos : ITilePos) : Tile => {
-    if (!this.m_tiles[pos.x] || !this.m_tiles[pos.x][pos.y]) {
-      return null;
-    }
-    return this.m_tiles[pos.x][pos.y];
+let _ID : number = 0;
+
+export function CreateUnit(def : IMissionUnit) : IUnit {
+  return {
+    id : _ID ++,
+    entity_type : "UNIT",
+    pos : {
+      x : def.pos.x,
+      y : def.pos.y,
+    },
+    data : {
+      unit_type : def.unit.display.sprite,
+    },
+    stats : _.cloneDeep(def.unit.stats),
+    status : {
+      hp : def.unit.stats.hp,
+    },
+    abilities : _.cloneDeep(def.unit.abilities),
+    depth_offset : 2,
   }
+}
 
-  private tileExists = (pos) : boolean => {
-    return this.getTile(pos) !== null;
-  }
-
-  public getConfig = () => {
-    let cfg = [];
-    cfg.push(String.fromCharCode(this.width));
-    cfg.push(String.fromCharCode(this.height));
-
-    for (let y = 0; y < this.height; y ++) {
-      for (let x = 0; x < this.width; x ++) {
-        let type : number = this.getTile({x : x, y : y}).type;
-        cfg.push(String.fromCharCode(type))
-      }
-    }
-    return cfg.join('');
+function CreateTile(x : number, y : number, type : TILE_DEF) : ITile {
+  return {
+    id : _ID ++,
+    entity_type : "TILE",
+    pos : {
+      x : x,
+      y : y,
+    },
+    data : {
+      tile_type : type,
+    },
+    depth_offset : 0,
   }
 }

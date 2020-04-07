@@ -1,7 +1,8 @@
 import * as PIXI from 'pixi.js'
 import { RenderEntity } from '../RenderEntity';
 import { SceneRenderer } from '../SceneRenderer';
-import { Entity } from '../../../scene/Entity';
+import { IEntity } from '../../../scene/Entity';
+import { IElementMap } from '../../../scene/Scene';
 
 const TILE_WIDTH : number = 16;
 const TILE_HEIGHT : number = 8;
@@ -17,6 +18,8 @@ export class SceneRendererIsometric extends SceneRenderer {
     super(pixi);
     this.m_container.position.set(500, 50);
     this.m_container.scale.set(4);
+    this.m_screen_effects_container.position.set(500,50);
+    this.m_screen_effects_container.scale.set(4);
 
     pixi.renderer.plugins.interaction.on('pointermove', (evt : PIXI.interaction.InteractionEvent) => {
       this.m_event_manager.emit("POINTER_MOVE", this.screenToTilePos(evt.data.global));
@@ -43,6 +46,10 @@ export class SceneRendererIsometric extends SceneRenderer {
       y : game_y
     }
   }
+  public getScreenPosition = (x : number, y : number) => {
+    let point = new PIXI.Point((x - y) * this.HALF_TILE_WIDTH, (x + y) * this.HALF_TILE_HEIGHT);
+    return point;
+  }
 
   public positionElement = (element : RenderEntity, x : number, y : number) => {
     element.setPosition(
@@ -51,7 +58,7 @@ export class SceneRendererIsometric extends SceneRenderer {
     );
   }
 
-  public sortElements = (elements : Entity[]) => {
+  public sortElements = (elements : IElementMap) => {
     elements
       .sort( (a, b) => {
         return this.getElementDepth(a) - this.getElementDepth(b) 
@@ -61,7 +68,7 @@ export class SceneRendererIsometric extends SceneRenderer {
       });
   }
 
-  public getElementDepth = (element : Entity) : number => {
-    return (element.x + element.y) + element.depthOffset;
+  public getElementDepth = (element : IEntity) : number => {
+    return (element.pos.x + element.pos.y) + element.depth_offset;
   }
 }

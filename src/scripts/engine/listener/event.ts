@@ -54,7 +54,6 @@ export class EventManager<T> {
   }
 
   public emit(signal_type : T, data ?: any) {
-    //console.log(signal_type, data);
     if (!this.m_signalMap.has(signal_type)) {
       return;
     } else {

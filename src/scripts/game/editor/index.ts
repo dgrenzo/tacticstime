@@ -1,8 +1,8 @@
 import * as PIXI from 'pixi.js';
 
 import { TilePalette } from "./interface/tile_palette";
-import { TILE_DEF } from "../board/Tile";
-import { GameBoard, ITilePos } from "../board/GameBoard";
+import { TILE_DEF, GetTileName } from "../board/Tile";
+import { GameBoard, IBoardPos } from "../board/GameBoard";
 import { SceneRenderer } from "../../engine/render/scene/SceneRenderer";
 import AssetManager from "../assets";
 
@@ -17,12 +17,13 @@ export class BoardEditor {
 
     let painting : boolean = false;
     
-    let paintTile = (pos : ITilePos, type : TILE_DEF) => {
-      let tile = this.m_board.getTile(pos);
+    let paintTile = (pos : IBoardPos, type : TILE_DEF) => {
+      let tile = this.m_board.getTileAtPos(pos);
       if (!tile) { return; }
-      if (tile.type !== type) {
-        tile.setTileType(type);
-        this.m_renderer.getRenderable(tile.id).setSprite(AssetManager.getTile(tile.tile_name));
+      if (tile.data.tile_type !== type) {
+        //TODO FIX
+        //tile.setTileType(type);
+        this.m_renderer.getRenderable(tile.id).setSprite(AssetManager.getTile(GetTileName(tile.data.tile_type)));
 
         // let cfg = this.m_board.getConfig();
         // let url =  location.origin + location.pathname ;

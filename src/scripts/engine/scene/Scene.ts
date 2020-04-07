@@ -1,37 +1,30 @@
-import { Entity } from "./Entity";
+import { IEntity } from "./Entity";
+import { Map } from 'immutable';
+
+export type IElementMap = Map<number, IEntity>;
 
 export class Scene {
-  protected m_elements : Entity[];
+  protected m_elements : Map<number, IEntity> = Map();
 
-
-  public addElement<T extends Entity>(element : T) : T {
-    this.m_elements.push(element);
+  public addElement<T extends IEntity>(element : T) : T {
+    this.m_elements = this.m_elements.set(element.id, element);
     return element;
   }
 
-  public getElements = () : Entity[] => {
+  public get elements() : IElementMap {
     return this.m_elements;
   }
-
-  public getElement = (id : number) : Entity => {
-    for (let i = 0; i < this.m_elements.length; i ++) {
-      if (this.m_elements[i].id === id) {
-        return this.m_elements[i];
-      }
-    }
-    return null;
+  public set elements(val:IElementMap) {
+    this.m_elements = val;
   }
 
-  public removeElement = (id : number) : Entity => {
-    for (let i = 0; i < this.m_elements.length; i ++) {
-      if (this.m_elements[i].id === id) {
-
-        this.m_elements.splice(i, 1);
-
-        return this.m_elements[i];
-      }
-    }
-    return null;
+  public getElement = (id : number) : IEntity => {
+    return this.m_elements.get(id);
   }
 
+  public removeElement = (id : number) : IEntity => {
+    let element = this.getElement(id);
+    this.m_elements = this.m_elements.remove(id);
+    return element;
+  }
 }

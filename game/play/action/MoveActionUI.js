@@ -28,26 +28,11 @@ var MoveActionUI = (function (_super) {
         var _this = _super.call(this, m_active_unit, m_controller) || this;
         _this.m_active_unit = m_active_unit;
         _this.m_controller = m_controller;
-        _this.showOptions = function () {
-            _.forEach(_this.m_options, function (path) {
-                if (!_this.m_controller.getUnit(path.tile)) {
-                    _this.m_controller.emit("SET_PLUGIN", { id: path.tile.id, plugin: 'highlight_blue' });
-                }
-            });
-        };
-        _this.hideOptions = function () {
-            _.forEach(_this.m_options, function (path) {
-                if (!_this.m_controller.getUnit(path.tile)) {
-                    _this.m_controller.emit("SET_PLUGIN", { id: path.tile.id, plugin: 'batch' });
-                }
-            });
-        };
         _this.getAction = function (tile) {
             var option = _this.getOptionFromTile(tile);
             return option ? _this.toMoveAction(option) : null;
         };
         _this.m_options = _this.m_controller.getMoveOptions(_this.m_active_unit);
-        _this.showOptions();
         return _this;
     }
     MoveActionUI.prototype.toMoveAction = function (path) {
@@ -56,8 +41,13 @@ var MoveActionUI = (function (_super) {
             action.unshift({
                 type: "MOVE",
                 data: {
-                    unit: this.m_active_unit,
-                    tile: path.tile,
+                    entity_id: this.m_active_unit.id,
+                    move: {
+                        to: {
+                            x: path.tile.pos.x,
+                            y: path.tile.pos.y,
+                        }
+                    }
                 }
             });
             path = path.last;

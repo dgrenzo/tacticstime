@@ -1,7 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _ = require("lodash");
-var executors_1 = require("./executors");
+var Movement_1 = require("./executors/action/Movement");
+var Damage_1 = require("./executors/action/Damage");
+var Killed_1 = require("./executors/action/Killed");
+var Ability_1 = require("./executors/action/Ability");
+var CreateUnit_1 = require("./executors/action/CreateUnit");
 var ActionStack = (function () {
     function ActionStack(m_controller) {
         var _this = this;
@@ -10,19 +14,34 @@ var ActionStack = (function () {
             action: null,
             next: null,
         };
-        this.execute = function () {
+        this.execute = function (elements) {
             return new Promise(function (resolve) {
                 var next_action = _this.shift();
                 if (!next_action) {
-                    resolve();
+                    return resolve(null);
                 }
                 else {
-                    executors_1.ExecuteGameEvent(next_action, _this.m_controller).then(function () {
-                        _this.m_controller.emit(next_action.type, next_action.data);
-                        return _this.execute();
-                    }).then(resolve);
+                    return resolve(_this.executeEvent(elements, next_action));
                 }
             });
+        };
+        this.executeEvent = function (elements, action) {
+            var controller = _this.m_controller;
+            _this.m_controller.emit(action.type, action.data);
+            switch (action.type) {
+                case "MOVE":
+                    return Movement_1.ExecuteMove(action, elements, controller);
+                case "ABILITY":
+                    return Ability_1.ExecuteAbility(action, elements, controller);
+                case "DAMAGE":
+                    return Damage_1.ExecuteDamage(action, elements, controller);
+                case "UNIT_KILLED":
+                    return Killed_1.ExecuteKilled(action, elements, controller);
+                case "CREATE_UNIT":
+                    return CreateUnit_1.ExecuteCreateUnit(action, elements, controller);
+                default:
+                    return ExecuteDefault(action, elements, controller);
+            }
         };
         this.push = function (actions) {
             actions = _.concat(actions);
@@ -56,3 +75,10 @@ var ActionStack = (function () {
     return ActionStack;
 }());
 exports.ActionStack = ActionStack;
+function ExecuteDefault(action, elements, controller) {
+    return new Promise(function (resolve) {
+        controller.getActionCallback(action).then(function () {
+            resolve(elements);
+        });
+    });
+}

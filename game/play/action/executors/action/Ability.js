@@ -1,24 +1,24 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _ = require("lodash");
-function ExecuteAbility(data, controller) {
-    return new Promise(function (resolve) {
-        _.forEach(data.ability.effects, function (effect) {
-            var tiles = controller.getTilesInRange(data.target, effect.range);
-            _.forEach(tiles, function (tile) {
-                var unit = controller.getUnit(tile);
+function ExecuteAbility(action, elements, controller) {
+    return controller.getActionCallback(action).then(function () {
+        _.forEach(action.data.ability.effects, function (effect) {
+            var tiles = controller.getTilesInRange(action.data.target.pos, effect.range);
+            tiles.forEach(function (tile) {
+                var unit = controller.getUnitAtPosition(tile.pos);
                 if (unit) {
                     controller.sendAction({
                         type: effect.type,
                         data: {
-                            unit: unit,
+                            entity_id: unit.id,
                             amount: effect.amount,
                         }
                     });
                 }
             });
         });
-        controller.createEffect(data, resolve);
+        return elements;
     });
 }
 exports.ExecuteAbility = ExecuteAbility;

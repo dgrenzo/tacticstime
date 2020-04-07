@@ -13,6 +13,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+var PIXI = require("pixi.js");
 var SceneRenderer_1 = require("../SceneRenderer");
 var TILE_WIDTH = 16;
 var TILE_HEIGHT = 8;
@@ -34,6 +35,10 @@ var SceneRendererIsometric = (function (_super) {
                 y: game_y
             };
         };
+        _this.getScreenPosition = function (x, y) {
+            var point = new PIXI.Point((x - y) * _this.HALF_TILE_WIDTH, (x + y) * _this.HALF_TILE_HEIGHT);
+            return point;
+        };
         _this.positionElement = function (element, x, y) {
             element.setPosition((x - y) * _this.HALF_TILE_WIDTH, (x + y) * _this.HALF_TILE_HEIGHT);
         };
@@ -47,10 +52,12 @@ var SceneRendererIsometric = (function (_super) {
             });
         };
         _this.getElementDepth = function (element) {
-            return (element.x + element.y) + element.depthOffset;
+            return (element.pos.x + element.pos.y) + element.depth_offset;
         };
         _this.m_container.position.set(500, 50);
         _this.m_container.scale.set(4);
+        _this.m_screen_effects_container.position.set(500, 50);
+        _this.m_screen_effects_container.scale.set(4);
         pixi.renderer.plugins.interaction.on('pointermove', function (evt) {
             _this.m_event_manager.emit("POINTER_MOVE", _this.screenToTilePos(evt.data.global));
         });

@@ -40,22 +40,11 @@ var AbilityTargetUI = (function (_super) {
             }
             return options;
         };
-        _this.showOptions = function () {
-            _.forEach(_this.m_options, function (path) {
-                _this.m_controller.emit("SET_PLUGIN", { id: path.tile.id, plugin: 'highlight_red' });
-            });
-        };
-        _this.hideOptions = function () {
-            _.forEach(_this.m_options, function (path) {
-                _this.m_controller.emit("SET_PLUGIN", { id: path.tile.id, plugin: 'batch' });
-            });
-        };
         _this.getAction = function (tile) {
             var option = _this.getOptionFromTile(tile);
             return _this.toAction(option);
         };
-        _this.m_options = _this.getTileOptionsInRange(_this.m_active_unit, _this.m_ability_def.target);
-        _this.showOptions();
+        _this.m_options = _this.getTileOptionsInRange(_this.m_active_unit.pos, _this.m_ability_def.target);
         return _this;
     }
     AbilityTargetUI.prototype.toAction = function (option) {

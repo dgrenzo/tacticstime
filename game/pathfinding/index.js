@@ -72,15 +72,15 @@ function GetMoveOptions(unit, board) {
     if (!unit) {
         return [];
     }
-    var max_cost = unit.getMove();
+    var max_cost = unit.stats.move;
     var closed_list = new PathList();
     var open_list = new PathList();
-    var current_tile = board.getTile(unit);
+    var current_tile = board.getTileAtPos(unit.pos);
     open_list.push({ tile: current_tile, cost: 0, last: null });
     var _loop_1 = function () {
         var next = open_list.getLowestCost();
         closed_list.push(next);
-        var adjacent = GetAdjacent(next.tile, board);
+        var adjacent = GetAdjacent(next.tile.pos, board);
         _.forEach(adjacent, function (tile) {
             var path = ToPathTile(tile, next.cost, next);
             if (closed_list.exists(path) || path.cost > max_cost || !CanPassTile(unit, tile, board)) {
@@ -100,17 +100,17 @@ function CanOccupyTile(unit, tile, board) {
     return true;
 }
 function CanPassTile(unit, tile, board) {
-    if (board.getUnit(tile)) {
+    if (board.getUnitAtPosition(tile.pos)) {
         return false;
     }
     return true;
 }
 function GetAdjacent(tile, board) {
     return _.shuffle([
-        board.getTile({ x: tile.x - 1, y: tile.y }),
-        board.getTile({ x: tile.x + 1, y: tile.y }),
-        board.getTile({ x: tile.x, y: tile.y - 1 }),
-        board.getTile({ x: tile.x, y: tile.y + 1 }),
+        board.getTileAtPos({ x: tile.x - 1, y: tile.y }),
+        board.getTileAtPos({ x: tile.x + 1, y: tile.y }),
+        board.getTileAtPos({ x: tile.x, y: tile.y - 1 }),
+        board.getTileAtPos({ x: tile.x, y: tile.y + 1 }),
     ]);
 }
 function ToPathTile(tile, cost, last) {
@@ -124,7 +124,7 @@ function GetTileCost(tile) {
     if (!tile) {
         return Infinity;
     }
-    if (tile.type === Tile_1.TILE_DEF.WATER_EMPTY) {
+    if (tile.data.tile_type === Tile_1.TILE_DEF.WATER_EMPTY) {
         return 2;
     }
     return 1;

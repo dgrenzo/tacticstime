@@ -16,7 +16,7 @@ var UnitSelectedPanel = (function () {
             if (!unit) {
                 return;
             }
-            _this.showAbilities(unit.getAbilities());
+            _this.showAbilities(unit.abilities);
         };
         this.hide = function () {
             _this.m_container.visible = false;

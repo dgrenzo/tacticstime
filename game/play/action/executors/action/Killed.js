@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-function ExecuteKilled(data, controller) {
-    return new Promise(function (resolve) {
-        controller.removeEntity(data.unit);
-        resolve();
+function ExecuteKilled(action, elements, controller) {
+    return controller.getActionCallback(action).then(function () {
+        controller.removeEntity(action.data.entity_id);
+        return elements.remove(action.data.entity_id);
     });
 }
 exports.ExecuteKilled = ExecuteKilled;

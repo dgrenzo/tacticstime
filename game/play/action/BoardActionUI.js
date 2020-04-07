@@ -12,13 +12,13 @@ var BoardActionUI = (function () {
         this.m_active_unit = m_active_unit;
         this.m_controller = m_controller;
     }
-    BoardActionUI.prototype.showOptions = function () {
-    };
-    BoardActionUI.prototype.hideOptions = function () {
-    };
-    BoardActionUI.prototype.getAction = function (tile) {
-        return [];
-    };
+    Object.defineProperty(BoardActionUI.prototype, "options", {
+        get: function () {
+            return this.m_options;
+        },
+        enumerable: true,
+        configurable: true
+    });
     return BoardActionUI;
 }());
 exports.BoardActionUI = BoardActionUI;

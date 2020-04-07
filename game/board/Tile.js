@@ -1,19 +1,5 @@
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
-var Entity_1 = require("../../engine/scene/Entity");
 var TILE_DEF;
 (function (TILE_DEF) {
     TILE_DEF[TILE_DEF["GRASS_EMPTY"] = 10] = "GRASS_EMPTY";
@@ -38,42 +24,16 @@ var TILE_DEF;
     TILE_DEF[TILE_DEF["SNOW_HUT"] = 53] = "SNOW_HUT";
     TILE_DEF[TILE_DEF["WATER_EMPTY"] = 60] = "WATER_EMPTY";
 })(TILE_DEF = exports.TILE_DEF || (exports.TILE_DEF = {}));
-var Tile = (function (_super) {
-    __extends(Tile, _super);
-    function Tile(x, y, m_definition) {
-        var _this = _super.call(this, x, y) || this;
-        _this.m_definition = m_definition;
-        _this.depth_offset = -1;
-        _this.setTileType = function (def) {
-            _this.m_definition = def;
-            _this.m_tile_name = exports.GetTileName(def);
-        };
-        _this.getCurrentAsset = function () {
-            return {
-                type: "SPRITE",
-                name: _this.m_tile_name,
-            };
-        };
-        _this.setTileType(m_definition);
-        return _this;
-    }
-    Object.defineProperty(Tile.prototype, "type", {
-        get: function () {
-            return this.m_definition;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Tile.prototype, "tile_name", {
-        get: function () {
-            return this.m_tile_name;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    return Tile;
-}(Entity_1.Entity));
-exports.Tile = Tile;
+function isTile(entity) {
+    return entity.entity_type === "TILE";
+}
+exports.isTile = isTile;
+function asset() {
+    return {
+        type: "SPRITE",
+        name: this.m_tile_name,
+    };
+}
 exports.GetTileName = function (def) {
     var base = Math.floor(def / 10);
     var type = def % 10;

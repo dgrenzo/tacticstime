@@ -1,0 +1,94 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var _ = require("lodash");
+var pathfinding_1 = require("../pathfinding");
+var abilities_1 = require("./action/abilities");
+var AbilityTargetUI_1 = require("./action/AbilityTargetUI");
+var TURN_STATE;
+(function (TURN_STATE) {
+    TURN_STATE[TURN_STATE["BEFORE_MOVE"] = 0] = "BEFORE_MOVE";
+    TURN_STATE[TURN_STATE["MOVING"] = 1] = "MOVING";
+    TURN_STATE[TURN_STATE["BEFORE_ACTING"] = 2] = "BEFORE_ACTING";
+    TURN_STATE[TURN_STATE["ACTING"] = 3] = "ACTING";
+    TURN_STATE[TURN_STATE["AFTER_ACTING"] = 4] = "AFTER_ACTING";
+})(TURN_STATE || (TURN_STATE = {}));
+var EnemyTurn = (function () {
+    function EnemyTurn(m_unit_id, m_controller, m_board_controller, m_onComplete) {
+        var _this = this;
+        this.m_unit_id = m_unit_id;
+        this.m_controller = m_controller;
+        this.m_board_controller = m_board_controller;
+        this.m_onComplete = m_onComplete;
+        this.scoreBoard = function (board) {
+            var score = Math.random() * 5;
+            board.getUnits().forEach(function (unit) {
+                score -= unit.status.hp;
+            });
+            return score;
+        };
+        var ai_ctrl = this.m_board_controller.createClone();
+        var move_options = pathfinding_1.GetMoveOptions(ai_ctrl.getUnit(m_unit_id), ai_ctrl.board);
+        var ai_options = [];
+        _.forEach(move_options, function (option) {
+            var move_ctrl = ai_ctrl.createClone();
+            var move_action = _this.toMoveAction(option);
+            move_ctrl.sendAction(move_action);
+            move_ctrl.executeActionStack().then(function () {
+                var active_unit = move_ctrl.getUnit(_this.m_unit_id);
+                _.forEach(active_unit.abilities, function (ability_name) {
+                    var ability_def = abilities_1.GetAbilityDef(ability_name);
+                    var ability_ui = new AbilityTargetUI_1.AbilityTargetUI(ability_def, active_unit, move_ctrl);
+                    _.forEach(ability_ui.options, function (ability_option) {
+                        var ability_action = ability_ui.getAction(ability_option.tile);
+                        var ability_ctrl = move_ctrl.createClone();
+                        ability_ctrl.sendAction(ability_action);
+                        ability_ctrl.executeActionStack().then(function () {
+                            var opt = {
+                                score: _this.scoreBoard(ability_ctrl.board),
+                                move_action: move_action,
+                                ability_action: ability_action,
+                            };
+                            ai_options.push(opt);
+                        });
+                    });
+                });
+            });
+        });
+        setTimeout(function () {
+            var best = null;
+            _.forEach(ai_options, function (option) {
+                if (best === null || option.score > best.score) {
+                    best = option;
+                }
+            });
+            _this.m_board_controller.sendAction(best.move_action);
+            _this.m_board_controller.executeActionStack().then(function () {
+                _this.m_board_controller.sendAction(best.ability_action);
+                _this.m_board_controller.executeActionStack().then(function () {
+                    setTimeout(_this.m_onComplete, 25);
+                });
+            });
+        }, 25);
+    }
+    EnemyTurn.prototype.toMoveAction = function (path) {
+        var action = [];
+        while (path) {
+            action.unshift({
+                type: "MOVE",
+                data: {
+                    entity_id: this.m_unit_id,
+                    move: {
+                        to: {
+                            x: path.tile.pos.x,
+                            y: path.tile.pos.y,
+                        }
+                    }
+                }
+            });
+            path = path.last;
+        }
+        return action;
+    };
+    return EnemyTurn;
+}());
+exports.EnemyTurn = EnemyTurn;

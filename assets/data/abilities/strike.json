@@ -10,7 +10,7 @@
   "effects" : [
     {
       "type" : "DAMAGE",
-      "amount" : 2,
+      "amount" : 4,
       "range" : {
         "min" : 0,
         "max" : 0

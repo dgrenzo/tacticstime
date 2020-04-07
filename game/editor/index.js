@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
 var tile_palette_1 = require("./interface/tile_palette");
+var Tile_1 = require("../board/Tile");
 var assets_1 = require("../assets");
 var BoardEditor = (function () {
     function BoardEditor(m_board, m_renderer) {
@@ -12,13 +13,12 @@ var BoardEditor = (function () {
         var m_palette = new tile_palette_1.TilePalette();
         var painting = false;
         var paintTile = function (pos, type) {
-            var tile = _this.m_board.getTile(pos);
+            var tile = _this.m_board.getTileAtPos(pos);
             if (!tile) {
                 return;
             }
-            if (tile.type !== type) {
-                tile.setTileType(type);
-                _this.m_renderer.getRenderable(tile.id).setSprite(assets_1.default.getTile(tile.tile_name));
+            if (tile.data.tile_type !== type) {
+                _this.m_renderer.getRenderable(tile.id).setSprite(assets_1.default.getTile(Tile_1.GetTileName(tile.data.tile_type)));
             }
         };
         this.m_renderer.on("POINTER_DOWN", function (data) {

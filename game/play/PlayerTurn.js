@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+var _ = require("lodash");
 var FSM_1 = require("../../engine/FSM");
 var MoveActionUI_1 = require("./action/MoveActionUI");
 var UnitSelectedPanel_1 = require("./interface/UnitSelectedPanel");
@@ -13,31 +14,35 @@ var TURN_STATE;
     TURN_STATE[TURN_STATE["AFTER_ACTING"] = 4] = "AFTER_ACTING";
 })(TURN_STATE || (TURN_STATE = {}));
 var PlayerTurn = (function () {
-    function PlayerTurn(m_active_unit, m_controller, m_onComplete) {
+    function PlayerTurn(m_selected_id, m_controller, m_board_controller, m_onComplete) {
         var _this = this;
-        this.m_active_unit = m_active_unit;
+        this.m_selected_id = m_selected_id;
         this.m_controller = m_controller;
+        this.m_board_controller = m_board_controller;
         this.m_onComplete = m_onComplete;
         this.initFSM = function () {
             _this.m_fsm = new FSM_1.FSM();
             _this.m_fsm.registerState(TURN_STATE.BEFORE_MOVE, {
                 enter: function () {
-                    _this.selectTile(_this.m_controller.getTile(_this.m_active_unit));
-                    _this.m_action_ui = new MoveActionUI_1.MoveActionUI(_this.m_active_unit, _this.m_controller);
+                    var active = _this.m_board_controller.getUnit(_this.m_selected_id);
+                    _this.selectTile(_this.m_board_controller.getTile(active.pos));
+                    _this.m_action_ui = new MoveActionUI_1.MoveActionUI(active, _this.m_board_controller);
+                    _this.markTiles(_this.m_action_ui.options, "highlight_blue");
                     _this.m_controller.on("TILE_CLICKED", _this.onTileClicked);
                 },
                 exit: function () {
                     _this.m_controller.off("TILE_CLICKED", _this.onTileClicked);
                     _this.selectTile(null);
-                    _this.m_action_ui.hideOptions();
+                    _this.markTiles(_this.m_action_ui.options, "batch");
                     _this.m_action_ui = null;
                 }
             });
             _this.m_fsm.registerState(TURN_STATE.MOVING, {});
             _this.m_fsm.registerState(TURN_STATE.BEFORE_ACTING, {
                 enter: function () {
-                    _this.m_selected_tile = _this.m_controller.getTile(_this.m_active_unit);
-                    _this.m_selected_panel.showUnitPanel(_this.m_active_unit);
+                    var active = _this.m_board_controller.getUnit(_this.m_selected_id);
+                    _this.m_selected_tile = _this.m_board_controller.getTile(active.pos);
+                    _this.m_selected_panel.showUnitPanel(active);
                     _this.m_controller.on("TILE_CLICKED", _this.onTileClicked);
                 },
                 exit: function () {
@@ -45,7 +50,7 @@ var PlayerTurn = (function () {
                     _this.m_selected_panel.hide();
                     if (_this.m_action_ui) {
                         _this.selectTile(null);
-                        _this.m_action_ui.hideOptions();
+                        _this.markTiles(_this.m_action_ui.options, "batch");
                         _this.m_action_ui = null;
                     }
                 }
@@ -59,13 +64,14 @@ var PlayerTurn = (function () {
         };
         this.onAbilitySelected = function (ability) {
             if (_this.m_action_ui) {
-                _this.m_action_ui.hideOptions();
+                _this.markTiles(_this.m_action_ui.options, "batch");
             }
             switch (ability.name) {
                 default:
-                    _this.m_action_ui = new AbilityTargetUI_1.AbilityTargetUI(ability, _this.m_active_unit, _this.m_controller);
+                    _this.m_action_ui = new AbilityTargetUI_1.AbilityTargetUI(ability, _this.m_board_controller.getUnit(_this.m_selected_id), _this.m_board_controller);
                     break;
             }
+            _this.markTiles(_this.m_action_ui.options, "highlight_red");
         };
         this.onTileClicked = function (tile) {
             var action = _this.m_action_ui.getAction(tile);
@@ -83,8 +89,8 @@ var PlayerTurn = (function () {
                     _this.m_fsm.setState(TURN_STATE.ACTING);
                     break;
             }
-            _this.m_controller.sendAction(action);
-            _this.m_controller.executeActionStack(_this.onActionComplete);
+            _this.m_board_controller.sendAction(action);
+            _this.m_board_controller.executeActionStack().then(_this.onActionComplete);
         };
         this.onActionComplete = function () {
             switch (_this.m_fsm.state) {
@@ -104,8 +110,15 @@ var PlayerTurn = (function () {
                 return;
             }
             _this.m_selected_tile = tile;
-            _this.m_controller.emit("SET_PLUGIN", { id: _this.m_selected_tile.id, plugin: 'highlight_green' });
-            _this.m_controller.emit("TILE_SELECTED", _this.m_selected_tile);
+            _this.markTile(tile, "highlight_green");
+        };
+        this.markTile = function (tile, plugin) {
+            _this.m_controller.emit("SET_PLUGIN", { id: tile.id, plugin: plugin });
+        };
+        this.markTiles = function (options, plugin) {
+            _.forEach(options, function (option) {
+                _this.markTile(option.tile, plugin);
+            });
         };
         this.m_selected_panel = new UnitSelectedPanel_1.UnitSelectedPanel(this.m_controller);
         this.m_selected_panel.onAbilitySelected(this.onAbilitySelected);

@@ -21,29 +21,13 @@ var GameBoard = (function (_super) {
     __extends(GameBoard, _super);
     function GameBoard() {
         var _this = _super.call(this) || this;
-        _this.initTeams = function (teams) {
-            var units = [];
-            _.forEach(teams, function (team) {
-                _.forEach(team.units, function (data) {
-                    var x = data.pos.x;
-                    var y = data.pos.y;
-                    var unit = _this.addUnit(new Unit_1.Unit(x, y, data.unit));
-                    units.push(unit);
-                });
-            });
-            return units;
-        };
-        _this.addUnit = function (unit) {
-            _this.addElement(unit);
-            return unit;
-        };
         _this.addTile = function (x, y, def) {
-            _this.m_tiles[x][y] = _this.addElement(new Tile_1.Tile(x, y, def));
+            _this.addElement(CreateTile(x, y, def));
         };
-        _this.getUnit = function (pos) {
+        _this.getUnitAtPosition = function (pos) {
             var unit = null;
-            _.forEach(_this.getElementsAt(pos), function (element) {
-                if (element instanceof Unit_1.Unit) {
+            _this.getElementsAt(pos).forEach(function (element) {
+                if (Unit_1.isUnit(element)) {
                     unit = element;
                     return false;
                 }
@@ -51,54 +35,40 @@ var GameBoard = (function (_super) {
             });
             return unit;
         };
+        _this.getUnit = function (id) {
+            return _this.m_elements.get(id);
+        };
+        _this.getUnits = function () {
+            return _this.m_elements.filter(function (element) {
+                return Unit_1.isUnit(element);
+            }).toList();
+        };
+        _this.getTiles = function () {
+            return _this.m_elements.filter(function (element) {
+                return Tile_1.isTile(element);
+            }).toList();
+        };
         _this.getTilesInRange = function (pos, range) {
-            var tiles = [];
-            for (var offset_x = -range.max; offset_x <= range.max; offset_x++) {
-                var max_y = range.max - Math.abs(offset_x);
-                for (var offset_y = -max_y; offset_y <= max_y; offset_y++) {
-                    if (Math.abs(offset_x) + Math.abs(offset_y) < range.min) {
-                        continue;
-                    }
-                    var tile = _this.getTile({ x: pos.x + offset_x, y: pos.y + offset_y });
-                    if (tile) {
-                        tiles.push(tile);
-                    }
+            return _this.getTiles().filter(function (tile) {
+                var distance = Math.abs(tile.pos.x - pos.x) + Math.abs(tile.pos.y - pos.y);
+                return range.max >= distance && range.min <= distance;
+            });
+        };
+        _this.getTileAtPos = function (pos) {
+            var tile = null;
+            _this.getElementsAt(pos).forEach(function (element) {
+                if (Tile_1.isTile(element)) {
+                    tile = element;
+                    return false;
                 }
-            }
-            return tiles;
-        };
-        _this.getTile = function (pos) {
-            if (!_this.m_tiles[pos.x] || !_this.m_tiles[pos.x][pos.y]) {
-                return null;
-            }
-            return _this.m_tiles[pos.x][pos.y];
-        };
-        _this.tileExists = function (pos) {
-            return _this.getTile(pos) !== null;
-        };
-        _this.getConfig = function () {
-            var cfg = [];
-            cfg.push(String.fromCharCode(_this.width));
-            cfg.push(String.fromCharCode(_this.height));
-            for (var y = 0; y < _this.height; y++) {
-                for (var x = 0; x < _this.width; x++) {
-                    var type = _this.getTile({ x: x, y: y }).type;
-                    cfg.push(String.fromCharCode(type));
-                }
-            }
-            return cfg.join('');
+                return true;
+            });
+            return tile;
         };
         return _this;
     }
     GameBoard.prototype.init = function (board_config) {
         var _this = this;
-        this.m_elements = [];
-        this.width = board_config.layout.width;
-        this.height = board_config.layout.height;
-        this.m_tiles = [];
-        for (var i = 0; i < this.height; i++) {
-            this.m_tiles.push([]);
-        }
         _.forEach(board_config.layout.tiles, function (tile, index) {
             var x = index % board_config.layout.width;
             var y = Math.floor(index / board_config.layout.width);
@@ -106,17 +76,45 @@ var GameBoard = (function (_super) {
         });
     };
     GameBoard.prototype.getElementsAt = function (pos) {
-        if (!pos) {
-            return [];
-        }
-        var elements = [];
-        this.m_elements.forEach(function (ent) {
-            if (ent.x === pos.x && ent.y === pos.y) {
-                elements.push(ent);
-            }
-        });
-        return elements;
+        return this.m_elements.filter(function (entity) {
+            return pos && entity.pos.x === pos.x && entity.pos.y === pos.y;
+        }).toList();
     };
     return GameBoard;
 }(Scene_1.Scene));
 exports.GameBoard = GameBoard;
+var _ID = 0;
+function CreateUnit(def) {
+    return {
+        id: _ID++,
+        entity_type: "UNIT",
+        pos: {
+            x: def.pos.x,
+            y: def.pos.y,
+        },
+        data: {
+            unit_type: def.unit.display.sprite,
+        },
+        stats: _.cloneDeep(def.unit.stats),
+        status: {
+            hp: def.unit.stats.hp,
+        },
+        abilities: _.cloneDeep(def.unit.abilities),
+        depth_offset: 2,
+    };
+}
+exports.CreateUnit = CreateUnit;
+function CreateTile(x, y, type) {
+    return {
+        id: _ID++,
+        entity_type: "TILE",
+        pos: {
+            x: x,
+            y: y,
+        },
+        data: {
+            tile_type: type,
+        },
+        depth_offset: 0,
+    };
+}

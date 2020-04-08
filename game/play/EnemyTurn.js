@@ -21,14 +21,13 @@ var EnemyTurn = (function () {
         this.m_onComplete = m_onComplete;
         this.m_faction = null;
         this.scoreBoard = function (board) {
-            var score = Math.random() * .5;
+            var score = Math.random() / 4;
             board.getUnits().forEach(function (unit) {
                 if (unit.data.faction !== _this.m_faction) {
                     score -= unit.status.hp;
                     score -= 5;
                 }
                 else {
-                    score += 5;
                     score += unit.status.hp;
                 }
             });
@@ -37,7 +36,7 @@ var EnemyTurn = (function () {
                 var closest_1 = Infinity;
                 board.getUnits().forEach(function (unit) {
                     if (unit.data.faction !== _this.m_faction) {
-                        var distance = Math.random() + Math.abs(active_unit.pos.x - unit.pos.x) + Math.abs(active_unit.pos.y - unit.pos.y);
+                        var distance = Math.random() / 4 + Math.abs(active_unit.pos.x - unit.pos.x) + Math.abs(active_unit.pos.y - unit.pos.y);
                         if (distance < closest_1) {
                             closest_1 = distance;
                         }

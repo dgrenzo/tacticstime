@@ -40,15 +40,12 @@ export class UnitSelectedPanel {
       let ability_def = GetAbilityDef(name);
 
       let btn =  new PIXI.Sprite();
-      
-      let bg = new PIXI.Graphics();
-
       btn.addChild(new PIXI.Graphics().beginFill(0x333333).drawRoundedRect(0,0, 200, 60, 5).endFill());
       btn.interactive = btn.buttonMode = true;
+      
       btn.on('pointerdown', (evt : PIXI.interaction.InteractionEvent) => {
         evt.stopPropagation();
         this.m_event_manager.emit("ABILITY_SELECTED", ability_def);
-
       });
 
       btn.position.set(0, 80 + index * 80);

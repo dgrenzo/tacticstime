@@ -34,6 +34,16 @@ export class UnitQueue {
     }
   }
 
+  public removeUnit = (id : number) => {
+    let target = this.m_root;
+    while (target && target.next) {
+      if (target.next.unit.id === id) {
+        target.next = target.next.next;
+      }
+      target = target.next;
+    }
+  }
+
   public getNextQueued = () : number => {
     this.m_current = this.m_current.next;
     if (this.m_current) {

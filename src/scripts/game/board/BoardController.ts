@@ -50,7 +50,7 @@ export class BoardController {
         let create_action : ICreateUnitAction = {
           type : "CREATE_UNIT",
           data : {
-            unit : CreateUnit(unit_def),
+            unit : CreateUnit(unit_def, team.name),
           }
         }
         this.sendAction(create_action);
@@ -101,7 +101,7 @@ export class BoardController {
 
   public addUnit = (unit : IUnit) => {
     if (this.m_renderer) {
-      
+
     }
   }
   
@@ -150,6 +150,10 @@ export class BoardController {
 
   public getTilesInRange = (pos : IBoardPos, range : IRangeDef) : List<ITile>  => {
     return this.m_board.getTilesInRange(pos, range);
+  }
+
+  public getElementsAt = (pos : IBoardPos) : List<IEntity> => {
+    return this.m_board.getElementsAt(pos);
   }
 }
 

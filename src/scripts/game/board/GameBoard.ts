@@ -99,7 +99,7 @@ export class GameBoard extends Scene {
 
 let _ID : number = 0;
 
-export function CreateUnit(def : IMissionUnit) : IUnit {
+export function CreateUnit(def : IMissionUnit, faction : string = null) : IUnit {
   return {
     id : _ID ++,
     entity_type : "UNIT",
@@ -109,6 +109,7 @@ export function CreateUnit(def : IMissionUnit) : IUnit {
     },
     data : {
       unit_type : def.unit.display.sprite,
+      faction,
     },
     stats : _.cloneDeep(def.unit.stats),
     status : {

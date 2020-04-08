@@ -8,7 +8,7 @@ import { SceneRenderer, getAsset } from '../engine/render/scene/SceneRenderer';
 import { EventManager } from '../engine/listener/event';
 import { LoadMission } from './board/Loader';
 import { PlayerTurn } from './play/PlayerTurn';
-import { GameEvent } from './play/action/ActionStack';
+import { GameEvent, IActionData } from './play/action/ActionStack';
 import { RENDER_PLUGIN } from './extras/plugins';
 import { UnitQueue } from './play/UnitQueue';
 import { BoardController } from './board/BoardController';
@@ -16,6 +16,7 @@ import { EnemyTurn } from './play/EnemyTurn';
 import EffectsManager from './effects';
 import { ICreateUnitActionData } from './play/action/executors/action/CreateUnit';
 import { HealthBar } from './play/interface/HealthBar';
+import TileHighlighter from './extras/TileHighlighter';
 
 export type GameConfig = {
   pixi_app : PIXI.Application,
@@ -70,6 +71,10 @@ export class GameController {
         renderable.render(getAsset(data.unit));
       });
 
+      this.m_board_controller.on("UNIT_KILLED", (data : IActionData) => {
+        this.m_unit_queue.removeUnit(data.entity_id);
+      })
+
       this.m_board_controller.on("UNIT_CREATED", (data : ICreateUnitActionData) => {
         let health_bar = new HealthBar(data.unit.id, this.m_board_controller, this.m_renderer);
         this.m_renderer.effects_container.addChild(health_bar.sprite);
@@ -87,8 +92,8 @@ export class GameController {
 
     this.m_config.pixi_app.stage.addChild(this.m_interface_container);
 
-    //let highlighter = new TileHighlighter(this.m_renderer, this.m_board);
-    //this.m_config.pixi_app.ticker.add(highlighter.update);
+    let highlighter = new TileHighlighter(this.m_renderer, this.m_board_controller);
+    this.m_config.pixi_app.ticker.add(highlighter.update);
 
     EffectsManager.init(this.m_renderer);
 
@@ -102,7 +107,23 @@ export class GameController {
   }
 
   private startGame = () => {
-    new PlayerTurn(this.m_unit_queue.getNextQueued(), this, this.m_board_controller, this.onTurnComplete);
+    this.startTurn();
+  }
+
+  private startTurn = () => {
+    let id : number = this.m_unit_queue.getNextQueued();
+    let unit = this.m_board_controller.getUnit(id);
+
+    if (!unit) {
+      console.log('no units');
+      return;
+    }
+
+    if (unit.data.faction === 'PLAYER') {
+      new PlayerTurn(id, this, this.m_board_controller, this.onTurnComplete);
+    } else {
+      new EnemyTurn(id, this, this.m_board_controller, this.onTurnComplete);   
+    }
   }
 
   public addInterfaceElement(element : PIXI.Container) {
@@ -110,16 +131,7 @@ export class GameController {
   }
 
   private onTurnComplete = () => {
-    let next_unit = this.m_unit_queue.getNextQueued();
-    if (!next_unit) {
-      console.log('done');
-      return;
-    }
-    if (!this.m_board_controller.getUnit(next_unit)){
-      this.onTurnComplete();
-      return;
-    }
-    let player = new EnemyTurn(next_unit, this, this.m_board_controller, this.onTurnComplete);   
+    this.startTurn();
   }
   
   public on = (event_name : GameSignal, cb : (data:any) => void) => {

@@ -28,10 +28,15 @@ interface ITurnOption {
 }
 
 export class EnemyTurn {
+
+  private m_faction : string = null;
+
   constructor ( private m_unit_id : number, 
                 private m_controller : GameController, 
                 private m_board_controller : BoardController, 
                 private m_onComplete : ()=>void ) {
+
+    this.m_faction = this.m_board_controller.getUnit(this.m_unit_id).data.faction;
                   
     let ai_ctrl = this.m_board_controller.createClone();
 
@@ -89,10 +94,34 @@ export class EnemyTurn {
     }, 25)
   }
   private scoreBoard = (board : GameBoard) => {
-    let score = Math.random() * 5;
+    let score = Math.random() * .5;
+
     board.getUnits().forEach( unit => {
-     score -= unit.status.hp;
+      if (unit.data.faction !== this.m_faction) {
+        score -= unit.status.hp;
+        score -= 5;
+      } else {
+        score += 5;
+        score += unit.status.hp;
+      }
     });
+
+    let active_unit = board.getUnit(this.m_unit_id);
+    if (active_unit) {
+
+      let closest = Infinity;
+      board.getUnits().forEach( unit => {
+        if (unit.data.faction !== this.m_faction) {
+          let distance = Math.random() + Math.abs(active_unit.pos.x - unit.pos.x) + Math.abs(active_unit.pos.y - unit.pos.y);
+          if (distance < closest) {
+            closest = distance;
+          }
+        }
+      });
+      if (closest != Infinity) {
+        score -= closest;
+      }
+    }
     return score;
   }
 

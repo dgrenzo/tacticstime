@@ -37,7 +37,7 @@ var FSM = (function () {
 }());
 exports.FSM = FSM;
 
-},{"lodash":75}],2:[function(require,module,exports){
+},{"lodash":76}],2:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Signal = (function () {
@@ -197,7 +197,7 @@ var RenderEntity = (function () {
 }());
 exports.RenderEntity = RenderEntity;
 
-},{"../../../game/assets":9,"pixi.js":79}],5:[function(require,module,exports){
+},{"../../../game/assets":9,"pixi.js":80}],5:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
@@ -296,7 +296,7 @@ function CreateRenderable(entity) {
     return new RenderEntity_1.RenderEntity(entity.id);
 }
 
-},{"../../../game/board/Tile":13,"../../../game/board/Unit":14,"../../listener/event":2,"./RenderEntity":4,"pixi.js":79}],6:[function(require,module,exports){
+},{"../../../game/board/Tile":13,"../../../game/board/Unit":14,"../../listener/event":2,"./RenderEntity":4,"pixi.js":80}],6:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -375,7 +375,7 @@ var SceneRendererIsometric = (function (_super) {
 }(SceneRenderer_1.SceneRenderer));
 exports.SceneRendererIsometric = SceneRendererIsometric;
 
-},{"../SceneRenderer":5,"pixi.js":79}],7:[function(require,module,exports){
+},{"../SceneRenderer":5,"pixi.js":80}],7:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var immutable_1 = require("immutable");
@@ -410,7 +410,7 @@ var Scene = (function () {
 }());
 exports.Scene = Scene;
 
-},{"immutable":73}],8:[function(require,module,exports){
+},{"immutable":74}],8:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
@@ -425,6 +425,7 @@ var BoardController_1 = require("./board/BoardController");
 var EnemyTurn_1 = require("./play/EnemyTurn");
 var effects_1 = require("./effects");
 var HealthBar_1 = require("./play/interface/HealthBar");
+var TileHighlighter_1 = require("./extras/TileHighlighter");
 var GameState;
 (function (GameState) {
     GameState[GameState["SETUP"] = 0] = "SETUP";
@@ -440,6 +441,8 @@ var GameController = (function () {
             _this.m_config.pixi_app.stage.addChild(_this.m_renderer.stage);
             _this.m_config.pixi_app.stage.addChild(_this.m_renderer.effects_container);
             _this.m_config.pixi_app.stage.addChild(_this.m_interface_container);
+            var highlighter = new TileHighlighter_1.default(_this.m_renderer, _this.m_board_controller);
+            _this.m_config.pixi_app.ticker.add(highlighter.update);
             effects_1.default.init(_this.m_renderer);
             _this.on("SET_PLUGIN", function (data) {
                 _this.m_renderer.getRenderable(data.id).setPlugin(data.plugin);
@@ -448,19 +451,24 @@ var GameController = (function () {
             _this.m_board_controller.executeActionStack().then(_this.startGame);
         };
         this.startGame = function () {
-            new PlayerTurn_1.PlayerTurn(_this.m_unit_queue.getNextQueued(), _this, _this.m_board_controller, _this.onTurnComplete);
+            _this.startTurn();
+        };
+        this.startTurn = function () {
+            var id = _this.m_unit_queue.getNextQueued();
+            var unit = _this.m_board_controller.getUnit(id);
+            if (!unit) {
+                console.log('no units');
+                return;
+            }
+            if (unit.data.faction === 'PLAYER') {
+                new PlayerTurn_1.PlayerTurn(id, _this, _this.m_board_controller, _this.onTurnComplete);
+            }
+            else {
+                new EnemyTurn_1.EnemyTurn(id, _this, _this.m_board_controller, _this.onTurnComplete);
+            }
         };
         this.onTurnComplete = function () {
-            var next_unit = _this.m_unit_queue.getNextQueued();
-            if (!next_unit) {
-                console.log('done');
-                return;
-            }
-            if (!_this.m_board_controller.getUnit(next_unit)) {
-                _this.onTurnComplete();
-                return;
-            }
-            var player = new EnemyTurn_1.EnemyTurn(next_unit, _this, _this.m_board_controller, _this.onTurnComplete);
+            _this.startTurn();
         };
         this.on = function (event_name, cb) {
             _this.m_event_manager.add(event_name, cb);
@@ -486,6 +494,9 @@ var GameController = (function () {
                 var renderable = _this.m_renderer.addEntity(data.unit);
                 renderable.render(SceneRenderer_1.getAsset(data.unit));
             });
+            _this.m_board_controller.on("UNIT_KILLED", function (data) {
+                _this.m_unit_queue.removeUnit(data.entity_id);
+            });
             _this.m_board_controller.on("UNIT_CREATED", function (data) {
                 var health_bar = new HealthBar_1.HealthBar(data.unit.id, _this.m_board_controller, _this.m_renderer);
                 _this.m_renderer.effects_container.addChild(health_bar.sprite);
@@ -501,7 +512,7 @@ var GameController = (function () {
 }());
 exports.GameController = GameController;
 
-},{"../engine/FSM":1,"../engine/listener/event":2,"../engine/render/render":3,"../engine/render/scene/SceneRenderer":5,"./board/BoardController":10,"./board/Loader":12,"./effects":16,"./play/EnemyTurn":19,"./play/PlayerTurn":20,"./play/UnitQueue":21,"./play/interface/HealthBar":32,"pixi.js":79}],9:[function(require,module,exports){
+},{"../engine/FSM":1,"../engine/listener/event":2,"../engine/render/render":3,"../engine/render/scene/SceneRenderer":5,"./board/BoardController":10,"./board/Loader":12,"./effects":16,"./extras/TileHighlighter":17,"./play/EnemyTurn":20,"./play/PlayerTurn":21,"./play/UnitQueue":22,"./play/interface/HealthBar":33,"pixi.js":80}],9:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
@@ -551,7 +562,7 @@ var AssetManager = (function () {
 }());
 exports.default = AssetManager;
 
-},{"lodash":75,"pixi.js":79}],10:[function(require,module,exports){
+},{"lodash":76,"pixi.js":80}],10:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -593,7 +604,7 @@ var BoardController = (function () {
                     var create_action = {
                         type: "CREATE_UNIT",
                         data: {
-                            unit: GameBoard_1.CreateUnit(unit_def),
+                            unit: GameBoard_1.CreateUnit(unit_def, team.name),
                         }
                     };
                     _this.sendAction(create_action);
@@ -659,6 +670,9 @@ var BoardController = (function () {
         this.getTilesInRange = function (pos, range) {
             return _this.m_board.getTilesInRange(pos, range);
         };
+        this.getElementsAt = function (pos) {
+            return _this.m_board.getElementsAt(pos);
+        };
         this.m_action_stack = new ActionStack_1.ActionStack(this);
     }
     BoardController.prototype.getActionCallback = function (action) {
@@ -705,7 +719,7 @@ var AIBoardController = (function (_super) {
 }(BoardController));
 exports.AIBoardController = AIBoardController;
 
-},{"../../engine/listener/event":2,"../effects":16,"../pathfinding":18,"../play/action/ActionStack":23,"./GameBoard":11,"lodash":75}],11:[function(require,module,exports){
+},{"../../engine/listener/event":2,"../effects":16,"../pathfinding":19,"../play/action/ActionStack":24,"./GameBoard":11,"lodash":76}],11:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -792,7 +806,8 @@ var GameBoard = (function (_super) {
 }(Scene_1.Scene));
 exports.GameBoard = GameBoard;
 var _ID = 0;
-function CreateUnit(def) {
+function CreateUnit(def, faction) {
+    if (faction === void 0) { faction = null; }
     return {
         id: _ID++,
         entity_type: "UNIT",
@@ -802,6 +817,7 @@ function CreateUnit(def) {
         },
         data: {
             unit_type: def.unit.display.sprite,
+            faction: faction,
         },
         stats: _.cloneDeep(def.unit.stats),
         status: {
@@ -827,7 +843,7 @@ function CreateTile(x, y, type) {
     };
 }
 
-},{"../../engine/scene/Scene":7,"./Tile":13,"./Unit":14,"lodash":75}],12:[function(require,module,exports){
+},{"../../engine/scene/Scene":7,"./Tile":13,"./Unit":14,"lodash":76}],12:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
@@ -917,7 +933,7 @@ function LoadFromURLParam() {
 }
 exports.LoadFromURLParam = LoadFromURLParam;
 
-},{"lodash":75,"pixi.js":79}],13:[function(require,module,exports){
+},{"lodash":76,"pixi.js":80}],13:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var TILE_DEF;
@@ -1032,7 +1048,7 @@ var DamageNumberEffect = (function (_super) {
 }(GameEffect));
 exports.DamageNumberEffect = DamageNumberEffect;
 
-},{"@tweenjs/tween.js":70,"pixi.js":79}],16:[function(require,module,exports){
+},{"@tweenjs/tween.js":71,"pixi.js":80}],16:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var TWEEN = require("@tweenjs/tween.js");
@@ -1061,7 +1077,38 @@ var EffectsManager = (function () {
 }());
 exports.default = EffectsManager;
 
-},{"./damage":15,"@tweenjs/tween.js":70}],17:[function(require,module,exports){
+},{"./damage":15,"@tweenjs/tween.js":71}],17:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var TileHighlighter = (function () {
+    function TileHighlighter(m_renderer, m_board) {
+        var _this = this;
+        this.m_renderer = m_renderer;
+        this.m_board = m_board;
+        this.onPointerMove = function (data) {
+            _this.m_current_pos = {
+                x: data.x,
+                y: data.y,
+            };
+        };
+        this.update = function () {
+            var targets = _this.m_board.getElementsAt(_this.m_last_pos);
+            targets.forEach(function (entity) {
+                _this.m_renderer.getRenderable(entity.id).offsetY = 0;
+            });
+            targets = _this.m_board.getElementsAt(_this.m_current_pos);
+            targets.forEach(function (entity) {
+                _this.m_renderer.getRenderable(entity.id).offsetY = -2;
+            });
+            _this.m_last_pos = _this.m_current_pos;
+        };
+        this.m_renderer.on('POINTER_MOVE', this.onPointerMove);
+    }
+    return TileHighlighter;
+}());
+exports.default = TileHighlighter;
+
+},{}],18:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
@@ -1075,7 +1122,7 @@ function InitRenderPlugins() {
 }
 exports.InitRenderPlugins = InitRenderPlugins;
 
-},{"pixi.js":79}],18:[function(require,module,exports){
+},{"pixi.js":80}],19:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _ = require("lodash");
@@ -1208,7 +1255,7 @@ function GetTileCost(tile) {
     return 1;
 }
 
-},{"../board/Tile":13,"lodash":75}],19:[function(require,module,exports){
+},{"../board/Tile":13,"lodash":76}],20:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _ = require("lodash");
@@ -1230,13 +1277,37 @@ var EnemyTurn = (function () {
         this.m_controller = m_controller;
         this.m_board_controller = m_board_controller;
         this.m_onComplete = m_onComplete;
+        this.m_faction = null;
         this.scoreBoard = function (board) {
-            var score = Math.random() * 5;
+            var score = Math.random() * .5;
             board.getUnits().forEach(function (unit) {
-                score -= unit.status.hp;
+                if (unit.data.faction !== _this.m_faction) {
+                    score -= unit.status.hp;
+                    score -= 5;
+                }
+                else {
+                    score += 5;
+                    score += unit.status.hp;
+                }
             });
+            var active_unit = board.getUnit(_this.m_unit_id);
+            if (active_unit) {
+                var closest_1 = Infinity;
+                board.getUnits().forEach(function (unit) {
+                    if (unit.data.faction !== _this.m_faction) {
+                        var distance = Math.random() + Math.abs(active_unit.pos.x - unit.pos.x) + Math.abs(active_unit.pos.y - unit.pos.y);
+                        if (distance < closest_1) {
+                            closest_1 = distance;
+                        }
+                    }
+                });
+                if (closest_1 != Infinity) {
+                    score -= closest_1;
+                }
+            }
             return score;
         };
+        this.m_faction = this.m_board_controller.getUnit(this.m_unit_id).data.faction;
         var ai_ctrl = this.m_board_controller.createClone();
         var move_options = pathfinding_1.GetMoveOptions(ai_ctrl.getUnit(m_unit_id), ai_ctrl.board);
         var ai_options = [];
@@ -1304,7 +1375,7 @@ var EnemyTurn = (function () {
 }());
 exports.EnemyTurn = EnemyTurn;
 
-},{"../pathfinding":18,"./action/AbilityTargetUI":22,"./action/abilities":26,"lodash":75}],20:[function(require,module,exports){
+},{"../pathfinding":19,"./action/AbilityTargetUI":23,"./action/abilities":27,"lodash":76}],21:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _ = require("lodash");
@@ -1436,7 +1507,7 @@ var PlayerTurn = (function () {
 }());
 exports.PlayerTurn = PlayerTurn;
 
-},{"../../engine/FSM":1,"./action/AbilityTargetUI":22,"./action/MoveActionUI":25,"./interface/UnitSelectedPanel":33,"lodash":75}],21:[function(require,module,exports){
+},{"../../engine/FSM":1,"./action/AbilityTargetUI":23,"./action/MoveActionUI":26,"./interface/UnitSelectedPanel":34,"lodash":76}],22:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var UnitQueue = (function () {
@@ -1461,6 +1532,15 @@ var UnitQueue = (function () {
                 next: next,
             };
         };
+        this.removeUnit = function (id) {
+            var target = _this.m_root;
+            while (target && target.next) {
+                if (target.next.unit.id === id) {
+                    target.next = target.next.next;
+                }
+                target = target.next;
+            }
+        };
         this.getNextQueued = function () {
             _this.m_current = _this.m_current.next;
             if (_this.m_current) {
@@ -1477,7 +1557,7 @@ var UnitQueue = (function () {
 }());
 exports.UnitQueue = UnitQueue;
 
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1554,7 +1634,7 @@ var AbilityTargetUI = (function (_super) {
 }(BoardActionUI_1.BoardActionUI));
 exports.AbilityTargetUI = AbilityTargetUI;
 
-},{"./BoardActionUI":24,"lodash":75}],23:[function(require,module,exports){
+},{"./BoardActionUI":25,"lodash":76}],24:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _ = require("lodash");
@@ -1640,7 +1720,7 @@ function ExecuteDefault(action, elements, controller) {
     });
 }
 
-},{"./executors/action/Ability":27,"./executors/action/CreateUnit":28,"./executors/action/Damage":29,"./executors/action/Killed":30,"./executors/action/Movement":31,"lodash":75}],24:[function(require,module,exports){
+},{"./executors/action/Ability":28,"./executors/action/CreateUnit":29,"./executors/action/Damage":30,"./executors/action/Killed":31,"./executors/action/Movement":32,"lodash":76}],25:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var UNIT_COLLISION;
@@ -1666,7 +1746,7 @@ var BoardActionUI = (function () {
 }());
 exports.BoardActionUI = BoardActionUI;
 
-},{}],25:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1738,7 +1818,7 @@ var MoveActionUI = (function (_super) {
 }(BoardActionUI_1.BoardActionUI));
 exports.MoveActionUI = MoveActionUI;
 
-},{"./BoardActionUI":24,"lodash":75}],26:[function(require,module,exports){
+},{"./BoardActionUI":25,"lodash":76}],27:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _ = require("lodash");
@@ -1762,7 +1842,7 @@ function GetAbilityDef(ability_name) {
 }
 exports.GetAbilityDef = GetAbilityDef;
 
-},{"../../../board/Loader":12,"lodash":75}],27:[function(require,module,exports){
+},{"../../../board/Loader":12,"lodash":76}],28:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _ = require("lodash");
@@ -1788,7 +1868,7 @@ function ExecuteAbility(action, elements, controller) {
 }
 exports.ExecuteAbility = ExecuteAbility;
 
-},{"lodash":75}],28:[function(require,module,exports){
+},{"lodash":76}],29:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function ExecuteCreateUnit(action, elements, controller) {
@@ -1805,7 +1885,7 @@ function ExecuteCreateUnit(action, elements, controller) {
 }
 exports.ExecuteCreateUnit = ExecuteCreateUnit;
 
-},{}],29:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function ExecuteDamage(action, elements, controller) {
@@ -1839,7 +1919,7 @@ function ExecuteDamage(action, elements, controller) {
 }
 exports.ExecuteDamage = ExecuteDamage;
 
-},{}],30:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function ExecuteKilled(action, elements, controller) {
@@ -1850,7 +1930,7 @@ function ExecuteKilled(action, elements, controller) {
 }
 exports.ExecuteKilled = ExecuteKilled;
 
-},{}],31:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function ExecuteMove(action, elements, controller) {
@@ -1864,7 +1944,7 @@ function ExecuteMove(action, elements, controller) {
 }
 exports.ExecuteMove = ExecuteMove;
 
-},{}],32:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
@@ -1872,23 +1952,31 @@ var HealthBar = (function () {
     function HealthBar(unit_id, controller, renderer) {
         var _this = this;
         this.m_container = new PIXI.Container();
-        var bg = new PIXI.Graphics().beginFill(0xFF0000).drawRect(5, 5, 10, 2).endFill();
-        var hp = new PIXI.Graphics().beginFill(0x00FF00).drawRect(5, 5, 10, 2).endFill();
-        this.m_container.addChild(bg, hp);
+        this.m_container.addChild(new PIXI.Graphics().beginFill(0x333333).drawRect(4, 4, 12, 4).endFill());
+        this.m_container.addChild(new PIXI.Graphics().beginFill(0x000000).drawRect(5, 5, 10, 2).endFill());
+        var hp = new PIXI.Graphics().beginFill(0x00CC00).drawRect(5, 5, 10, 2).endFill();
+        this.m_container.addChild(hp);
         var unit = controller.getUnit(unit_id);
         var screen_pos = renderer.getScreenPosition(unit.pos.x, unit.pos.y);
-        this.m_container.position.set(screen_pos.x, screen_pos.y - 8);
+        this.m_container.position.set(screen_pos.x - 1, screen_pos.y - 10);
         controller.on("MOVE", function (data) {
             if (data.entity_id === unit_id) {
                 var screen_pos_1 = renderer.getScreenPosition(data.move.to.x, data.move.to.y);
-                _this.m_container.position.set(screen_pos_1.x, screen_pos_1.y - 8);
+                _this.m_container.position.set(screen_pos_1.x - 1, screen_pos_1.y - 10);
             }
         });
         controller.on("DAMAGE_DEALT", function (data) {
             if (data.entity_id === unit_id) {
                 var unit_1 = controller.getUnit(unit_id);
                 var bar_width = Math.floor(unit_1.status.hp / unit_1.stats.hp * 10);
-                hp.clear().beginFill(0x00FF00).drawRect(5, 5, bar_width, 2).endFill();
+                var color = 0x00CC00;
+                if (bar_width <= 3) {
+                    color = 0xCC0000;
+                }
+                else if (bar_width <= 6) {
+                    color = 0xCCCC00;
+                }
+                hp.clear().beginFill(color).drawRect(5, 5, bar_width, 2).endFill();
             }
         });
         controller.on("UNIT_KILLED", function (data) {
@@ -1908,7 +1996,7 @@ var HealthBar = (function () {
 }());
 exports.HealthBar = HealthBar;
 
-},{"pixi.js":79}],33:[function(require,module,exports){
+},{"pixi.js":80}],34:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _ = require("lodash");
@@ -1939,7 +2027,6 @@ var UnitSelectedPanel = (function () {
             _.forEach(abiliy_list, function (name, index) {
                 var ability_def = abilities_1.GetAbilityDef(name);
                 var btn = new PIXI.Sprite();
-                var bg = new PIXI.Graphics();
                 btn.addChild(new PIXI.Graphics().beginFill(0x333333).drawRoundedRect(0, 0, 200, 60, 5).endFill());
                 btn.interactive = btn.buttonMode = true;
                 btn.on('pointerdown', function (evt) {
@@ -1961,7 +2048,7 @@ var UnitSelectedPanel = (function () {
 }());
 exports.UnitSelectedPanel = UnitSelectedPanel;
 
-},{"../../../engine/listener/event":2,"../action/abilities":26,"lodash":75,"pixi.js":79}],34:[function(require,module,exports){
+},{"../../../engine/listener/event":2,"../action/abilities":27,"lodash":76,"pixi.js":80}],35:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
@@ -1989,7 +2076,7 @@ assets_1.default.init(function () {
     });
 });
 
-},{"./engine/render/render":3,"./game/GameController":8,"./game/assets":9,"./game/extras/plugins":17,"pixi.js":79}],35:[function(require,module,exports){
+},{"./engine/render/render":3,"./game/GameController":8,"./game/assets":9,"./game/extras/plugins":18,"pixi.js":80}],36:[function(require,module,exports){
 /*!
  * @pixi/accessibility - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -2640,7 +2727,7 @@ exports.AccessibilityManager = AccessibilityManager;
 exports.accessibleTarget = accessibleTarget;
 
 
-},{"@pixi/display":39,"@pixi/utils":68}],36:[function(require,module,exports){
+},{"@pixi/display":40,"@pixi/utils":69}],37:[function(require,module,exports){
 /*!
  * @pixi/app - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -2875,7 +2962,7 @@ Application.registerPlugin(ResizePlugin);
 exports.Application = Application;
 
 
-},{"@pixi/core":38,"@pixi/display":39}],37:[function(require,module,exports){
+},{"@pixi/core":39,"@pixi/display":40}],38:[function(require,module,exports){
 /*!
  * @pixi/constants - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -3225,7 +3312,7 @@ exports.TYPES = TYPES;
 exports.WRAP_MODES = WRAP_MODES;
 
 
-},{}],38:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 /*!
  * @pixi/core - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -15705,7 +15792,7 @@ exports.resources = index;
 exports.systems = systems;
 
 
-},{"@pixi/constants":37,"@pixi/display":39,"@pixi/math":50,"@pixi/runner":59,"@pixi/settings":60,"@pixi/ticker":67,"@pixi/utils":68}],39:[function(require,module,exports){
+},{"@pixi/constants":38,"@pixi/display":40,"@pixi/math":51,"@pixi/runner":60,"@pixi/settings":61,"@pixi/ticker":68,"@pixi/utils":69}],40:[function(require,module,exports){
 /*!
  * @pixi/display - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -17513,7 +17600,7 @@ exports.Container = Container;
 exports.DisplayObject = DisplayObject;
 
 
-},{"@pixi/math":50,"@pixi/settings":60,"@pixi/utils":68}],40:[function(require,module,exports){
+},{"@pixi/math":51,"@pixi/settings":61,"@pixi/utils":69}],41:[function(require,module,exports){
 /*!
  * @pixi/extract - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -17816,7 +17903,7 @@ Extract.arrayPostDivide = function arrayPostDivide (pixels, out)
 exports.Extract = Extract;
 
 
-},{"@pixi/core":38,"@pixi/math":50,"@pixi/utils":68}],41:[function(require,module,exports){
+},{"@pixi/core":39,"@pixi/math":51,"@pixi/utils":69}],42:[function(require,module,exports){
 /*!
  * @pixi/filter-alpha - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -17889,7 +17976,7 @@ var AlphaFilter = /*@__PURE__*/(function (Filter) {
 exports.AlphaFilter = AlphaFilter;
 
 
-},{"@pixi/core":38}],42:[function(require,module,exports){
+},{"@pixi/core":39}],43:[function(require,module,exports){
 /*!
  * @pixi/filter-blur - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -18325,7 +18412,7 @@ exports.BlurFilter = BlurFilter;
 exports.BlurFilterPass = BlurFilterPass;
 
 
-},{"@pixi/core":38,"@pixi/settings":60}],43:[function(require,module,exports){
+},{"@pixi/core":39,"@pixi/settings":61}],44:[function(require,module,exports){
 /*!
  * @pixi/filter-color-matrix - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -18932,7 +19019,7 @@ ColorMatrixFilter.prototype.grayscale = ColorMatrixFilter.prototype.greyscale;
 exports.ColorMatrixFilter = ColorMatrixFilter;
 
 
-},{"@pixi/core":38}],44:[function(require,module,exports){
+},{"@pixi/core":39}],45:[function(require,module,exports){
 /*!
  * @pixi/filter-displacement - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -19059,7 +19146,7 @@ var DisplacementFilter = /*@__PURE__*/(function (Filter) {
 exports.DisplacementFilter = DisplacementFilter;
 
 
-},{"@pixi/core":38,"@pixi/math":50}],45:[function(require,module,exports){
+},{"@pixi/core":39,"@pixi/math":51}],46:[function(require,module,exports){
 /*!
  * @pixi/filter-fxaa - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -19105,7 +19192,7 @@ var FXAAFilter = /*@__PURE__*/(function (Filter) {
 exports.FXAAFilter = FXAAFilter;
 
 
-},{"@pixi/core":38}],46:[function(require,module,exports){
+},{"@pixi/core":39}],47:[function(require,module,exports){
 /*!
  * @pixi/filter-noise - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -19193,7 +19280,7 @@ var NoiseFilter = /*@__PURE__*/(function (Filter) {
 exports.NoiseFilter = NoiseFilter;
 
 
-},{"@pixi/core":38}],47:[function(require,module,exports){
+},{"@pixi/core":39}],48:[function(require,module,exports){
 /*!
  * @pixi/graphics - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -22721,7 +22808,7 @@ exports.GraphicsGeometry = GraphicsGeometry;
 exports.LineStyle = LineStyle;
 
 
-},{"@pixi/constants":37,"@pixi/core":38,"@pixi/display":39,"@pixi/math":50,"@pixi/utils":68}],48:[function(require,module,exports){
+},{"@pixi/constants":38,"@pixi/core":39,"@pixi/display":40,"@pixi/math":51,"@pixi/utils":69}],49:[function(require,module,exports){
 /*!
  * @pixi/interaction - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -25199,7 +25286,7 @@ exports.InteractionTrackingData = InteractionTrackingData;
 exports.interactiveTarget = interactiveTarget;
 
 
-},{"@pixi/display":39,"@pixi/math":50,"@pixi/ticker":67,"@pixi/utils":68}],49:[function(require,module,exports){
+},{"@pixi/display":40,"@pixi/math":51,"@pixi/ticker":68,"@pixi/utils":69}],50:[function(require,module,exports){
 /*!
  * @pixi/loaders - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -25514,7 +25601,7 @@ exports.LoaderResource = LoaderResource;
 exports.TextureLoader = TextureLoader;
 
 
-},{"@pixi/core":38,"@pixi/utils":68,"resource-loader":85}],50:[function(require,module,exports){
+},{"@pixi/core":39,"@pixi/utils":69,"resource-loader":86}],51:[function(require,module,exports){
 /*!
  * @pixi/math - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -27636,7 +27723,7 @@ exports.SHAPES = SHAPES;
 exports.Transform = Transform;
 
 
-},{}],51:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 /*!
  * @pixi/mesh-extras - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -28406,7 +28493,7 @@ exports.SimplePlane = SimplePlane;
 exports.SimpleRope = SimpleRope;
 
 
-},{"@pixi/core":38,"@pixi/mesh":52}],52:[function(require,module,exports){
+},{"@pixi/core":39,"@pixi/mesh":53}],53:[function(require,module,exports){
 /*!
  * @pixi/mesh - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -29201,7 +29288,7 @@ exports.MeshGeometry = MeshGeometry;
 exports.MeshMaterial = MeshMaterial;
 
 
-},{"@pixi/constants":37,"@pixi/core":38,"@pixi/display":39,"@pixi/math":50,"@pixi/settings":60,"@pixi/utils":68}],53:[function(require,module,exports){
+},{"@pixi/constants":38,"@pixi/core":39,"@pixi/display":40,"@pixi/math":51,"@pixi/settings":61,"@pixi/utils":69}],54:[function(require,module,exports){
 /*!
  * @pixi/mixin-cache-as-bitmap - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -29636,7 +29723,7 @@ display.DisplayObject.prototype._cacheAsBitmapDestroy = function _cacheAsBitmapD
 };
 
 
-},{"@pixi/core":38,"@pixi/display":39,"@pixi/math":50,"@pixi/settings":60,"@pixi/sprite":63,"@pixi/utils":68}],54:[function(require,module,exports){
+},{"@pixi/core":39,"@pixi/display":40,"@pixi/math":51,"@pixi/settings":61,"@pixi/sprite":64,"@pixi/utils":69}],55:[function(require,module,exports){
 /*!
  * @pixi/mixin-get-child-by-name - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -29678,7 +29765,7 @@ display.Container.prototype.getChildByName = function getChildByName(name)
 };
 
 
-},{"@pixi/display":39}],55:[function(require,module,exports){
+},{"@pixi/display":40}],56:[function(require,module,exports){
 /*!
  * @pixi/mixin-get-global-position - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -29721,7 +29808,7 @@ display.DisplayObject.prototype.getGlobalPosition = function getGlobalPosition(p
 };
 
 
-},{"@pixi/display":39,"@pixi/math":50}],56:[function(require,module,exports){
+},{"@pixi/display":40,"@pixi/math":51}],57:[function(require,module,exports){
 /*!
  * @pixi/particles - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -30703,7 +30790,7 @@ exports.ParticleContainer = ParticleContainer;
 exports.ParticleRenderer = ParticleRenderer;
 
 
-},{"@pixi/constants":37,"@pixi/core":38,"@pixi/display":39,"@pixi/math":50,"@pixi/utils":68}],57:[function(require,module,exports){
+},{"@pixi/constants":38,"@pixi/core":39,"@pixi/display":40,"@pixi/math":51,"@pixi/utils":69}],58:[function(require,module,exports){
 (function (global){
 /*!
  * @pixi/polyfill - v5.1.6
@@ -30872,7 +30959,7 @@ if (!window.Int32Array)
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"es6-promise-polyfill":72,"object-assign":77}],58:[function(require,module,exports){
+},{"es6-promise-polyfill":73,"object-assign":78}],59:[function(require,module,exports){
 /*!
  * @pixi/prepare - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -31602,7 +31689,7 @@ exports.Prepare = Prepare;
 exports.TimeLimiter = TimeLimiter;
 
 
-},{"@pixi/core":38,"@pixi/display":39,"@pixi/graphics":47,"@pixi/settings":60,"@pixi/text":66,"@pixi/ticker":67}],59:[function(require,module,exports){
+},{"@pixi/core":39,"@pixi/display":40,"@pixi/graphics":48,"@pixi/settings":61,"@pixi/text":67,"@pixi/ticker":68}],60:[function(require,module,exports){
 /*!
  * @pixi/runner - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -31822,7 +31909,7 @@ Runner.prototype.run = Runner.prototype.emit;
 exports.Runner = Runner;
 
 
-},{}],60:[function(require,module,exports){
+},{}],61:[function(require,module,exports){
 /*!
  * @pixi/settings - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -32146,7 +32233,7 @@ exports.isMobile = isMobile;
 exports.settings = settings;
 
 
-},{"ismobilejs":74}],61:[function(require,module,exports){
+},{"ismobilejs":75}],62:[function(require,module,exports){
 /*!
  * @pixi/sprite-animated - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -32607,7 +32694,7 @@ var AnimatedSprite = /*@__PURE__*/(function (Sprite) {
 exports.AnimatedSprite = AnimatedSprite;
 
 
-},{"@pixi/core":38,"@pixi/sprite":63,"@pixi/ticker":67}],62:[function(require,module,exports){
+},{"@pixi/core":39,"@pixi/sprite":64,"@pixi/ticker":68}],63:[function(require,module,exports){
 /*!
  * @pixi/sprite-tiling - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -33117,7 +33204,7 @@ exports.TilingSprite = TilingSprite;
 exports.TilingSpriteRenderer = TilingSpriteRenderer;
 
 
-},{"@pixi/constants":37,"@pixi/core":38,"@pixi/math":50,"@pixi/sprite":63,"@pixi/utils":68}],63:[function(require,module,exports){
+},{"@pixi/constants":38,"@pixi/core":39,"@pixi/math":51,"@pixi/sprite":64,"@pixi/utils":69}],64:[function(require,module,exports){
 /*!
  * @pixi/sprite - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -33801,7 +33888,7 @@ var Sprite = /*@__PURE__*/(function (Container) {
 exports.Sprite = Sprite;
 
 
-},{"@pixi/constants":37,"@pixi/core":38,"@pixi/display":39,"@pixi/math":50,"@pixi/settings":60,"@pixi/utils":68}],64:[function(require,module,exports){
+},{"@pixi/constants":38,"@pixi/core":39,"@pixi/display":40,"@pixi/math":51,"@pixi/settings":61,"@pixi/utils":69}],65:[function(require,module,exports){
 /*!
  * @pixi/spritesheet - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -34222,7 +34309,7 @@ exports.Spritesheet = Spritesheet;
 exports.SpritesheetLoader = SpritesheetLoader;
 
 
-},{"@pixi/core":38,"@pixi/loaders":49,"@pixi/math":50,"@pixi/utils":68}],65:[function(require,module,exports){
+},{"@pixi/core":39,"@pixi/loaders":50,"@pixi/math":51,"@pixi/utils":69}],66:[function(require,module,exports){
 /*!
  * @pixi/text-bitmap - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -35063,7 +35150,7 @@ exports.BitmapFontLoader = BitmapFontLoader;
 exports.BitmapText = BitmapText;
 
 
-},{"@pixi/core":38,"@pixi/display":39,"@pixi/loaders":49,"@pixi/math":50,"@pixi/settings":60,"@pixi/sprite":63,"@pixi/utils":68}],66:[function(require,module,exports){
+},{"@pixi/core":39,"@pixi/display":40,"@pixi/loaders":50,"@pixi/math":51,"@pixi/settings":61,"@pixi/sprite":64,"@pixi/utils":69}],67:[function(require,module,exports){
 /*!
  * @pixi/text - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -37350,7 +37437,7 @@ exports.TextMetrics = TextMetrics;
 exports.TextStyle = TextStyle;
 
 
-},{"@pixi/core":38,"@pixi/math":50,"@pixi/settings":60,"@pixi/sprite":63,"@pixi/utils":68}],67:[function(require,module,exports){
+},{"@pixi/core":39,"@pixi/math":51,"@pixi/settings":61,"@pixi/sprite":64,"@pixi/utils":69}],68:[function(require,module,exports){
 /*!
  * @pixi/ticker - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -38313,7 +38400,7 @@ exports.TickerPlugin = TickerPlugin;
 exports.UPDATE_PRIORITY = UPDATE_PRIORITY;
 
 
-},{"@pixi/settings":60}],68:[function(require,module,exports){
+},{"@pixi/settings":61}],69:[function(require,module,exports){
 /*!
  * @pixi/utils - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -39340,7 +39427,7 @@ exports.trimCanvas = trimCanvas;
 exports.uid = uid;
 
 
-},{"@pixi/constants":37,"@pixi/settings":60,"earcut":71,"eventemitter3":69,"url":87}],69:[function(require,module,exports){
+},{"@pixi/constants":38,"@pixi/settings":61,"earcut":72,"eventemitter3":70,"url":88}],70:[function(require,module,exports){
 'use strict';
 
 var has = Object.prototype.hasOwnProperty
@@ -39678,7 +39765,7 @@ if ('undefined' !== typeof module) {
   module.exports = EventEmitter;
 }
 
-},{}],70:[function(require,module,exports){
+},{}],71:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -40648,7 +40735,7 @@ TWEEN.version = version;
 module.exports = TWEEN;
 
 }).call(this,require('_process'))
-},{"_process":80}],71:[function(require,module,exports){
+},{"_process":81}],72:[function(require,module,exports){
 'use strict';
 
 module.exports = earcut;
@@ -41329,7 +41416,7 @@ earcut.flatten = function (data) {
     return result;
 };
 
-},{}],72:[function(require,module,exports){
+},{}],73:[function(require,module,exports){
 (function (global,setImmediate){
 (function(global){
 
@@ -41679,7 +41766,7 @@ Promise.reject = function(reason){
 })(typeof window != 'undefined' ? window : typeof global != 'undefined' ? global : typeof self != 'undefined' ? self : this);
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("timers").setImmediate)
-},{"timers":86}],73:[function(require,module,exports){
+},{"timers":87}],74:[function(require,module,exports){
 /**
  * Copyright (c) 2014-present, Facebook, Inc.
  *
@@ -47545,9 +47632,9 @@ Promise.reject = function(reason){
 
 })));
 
-},{}],74:[function(require,module,exports){
-!function(e){var n=/iPhone/i,t=/iPod/i,r=/iPad/i,a=/\bAndroid(?:.+)Mobile\b/i,p=/Android/i,b=/\bAndroid(?:.+)SD4930UR\b/i,l=/\bAndroid(?:.+)(?:KF[A-Z]{2,4})\b/i,f=/Windows Phone/i,s=/\bWindows(?:.+)ARM\b/i,u=/BlackBerry/i,c=/BB10/i,h=/Opera Mini/i,v=/\b(CriOS|Chrome)(?:.+)Mobile/i,w=/Mobile(?:.+)Firefox\b/i;function m(e,i){return e.test(i)}function i(e){var i=e||("undefined"!=typeof navigator?navigator.userAgent:""),o=i.split("[FBAN");void 0!==o[1]&&(i=o[0]),void 0!==(o=i.split("Twitter"))[1]&&(i=o[0]);var d={apple:{phone:m(n,i)&&!m(f,i),ipod:m(t,i),tablet:!m(n,i)&&m(r,i)&&!m(f,i),device:(m(n,i)||m(t,i)||m(r,i))&&!m(f,i)},amazon:{phone:m(b,i),tablet:!m(b,i)&&m(l,i),device:m(b,i)||m(l,i)},android:{phone:!m(f,i)&&m(b,i)||!m(f,i)&&m(a,i),tablet:!m(f,i)&&!m(b,i)&&!m(a,i)&&(m(l,i)||m(p,i)),device:!m(f,i)&&(m(b,i)||m(l,i)||m(a,i)||m(p,i))||m(/\bokhttp\b/i,i)},windows:{phone:m(f,i),tablet:m(s,i),device:m(f,i)||m(s,i)},other:{blackberry:m(u,i),blackberry10:m(c,i),opera:m(h,i),firefox:m(w,i),chrome:m(v,i),device:m(u,i)||m(c,i)||m(h,i)||m(w,i)||m(v,i)}};return d.any=d.apple.device||d.android.device||d.windows.device||d.other.device,d.phone=d.apple.phone||d.android.phone||d.windows.phone,d.tablet=d.apple.tablet||d.android.tablet||d.windows.tablet,d}"undefined"!=typeof module&&module.exports&&"undefined"==typeof window?module.exports=i:"undefined"!=typeof module&&module.exports&&"undefined"!=typeof window?(module.exports=i(),module.exports.isMobile=i):"function"==typeof define&&define.amd?define([],e.isMobile=i()):e.isMobile=i()}(this);
 },{}],75:[function(require,module,exports){
+!function(e){var n=/iPhone/i,t=/iPod/i,r=/iPad/i,a=/\bAndroid(?:.+)Mobile\b/i,p=/Android/i,b=/\bAndroid(?:.+)SD4930UR\b/i,l=/\bAndroid(?:.+)(?:KF[A-Z]{2,4})\b/i,f=/Windows Phone/i,s=/\bWindows(?:.+)ARM\b/i,u=/BlackBerry/i,c=/BB10/i,h=/Opera Mini/i,v=/\b(CriOS|Chrome)(?:.+)Mobile/i,w=/Mobile(?:.+)Firefox\b/i;function m(e,i){return e.test(i)}function i(e){var i=e||("undefined"!=typeof navigator?navigator.userAgent:""),o=i.split("[FBAN");void 0!==o[1]&&(i=o[0]),void 0!==(o=i.split("Twitter"))[1]&&(i=o[0]);var d={apple:{phone:m(n,i)&&!m(f,i),ipod:m(t,i),tablet:!m(n,i)&&m(r,i)&&!m(f,i),device:(m(n,i)||m(t,i)||m(r,i))&&!m(f,i)},amazon:{phone:m(b,i),tablet:!m(b,i)&&m(l,i),device:m(b,i)||m(l,i)},android:{phone:!m(f,i)&&m(b,i)||!m(f,i)&&m(a,i),tablet:!m(f,i)&&!m(b,i)&&!m(a,i)&&(m(l,i)||m(p,i)),device:!m(f,i)&&(m(b,i)||m(l,i)||m(a,i)||m(p,i))||m(/\bokhttp\b/i,i)},windows:{phone:m(f,i),tablet:m(s,i),device:m(f,i)||m(s,i)},other:{blackberry:m(u,i),blackberry10:m(c,i),opera:m(h,i),firefox:m(w,i),chrome:m(v,i),device:m(u,i)||m(c,i)||m(h,i)||m(w,i)||m(v,i)}};return d.any=d.apple.device||d.android.device||d.windows.device||d.other.device,d.phone=d.apple.phone||d.android.phone||d.windows.phone,d.tablet=d.apple.tablet||d.android.tablet||d.windows.tablet,d}"undefined"!=typeof module&&module.exports&&"undefined"==typeof window?module.exports=i:"undefined"!=typeof module&&module.exports&&"undefined"!=typeof window?(module.exports=i(),module.exports.isMobile=i):"function"==typeof define&&define.amd?define([],e.isMobile=i()):e.isMobile=i()}(this);
+},{}],76:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -64663,7 +64750,7 @@ Promise.reject = function(reason){
 }.call(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],76:[function(require,module,exports){
+},{}],77:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -64830,7 +64917,7 @@ MiniSignal.MiniSignalBinding = MiniSignalBinding;
 exports['default'] = MiniSignal;
 module.exports = exports['default'];
 
-},{}],77:[function(require,module,exports){
+},{}],78:[function(require,module,exports){
 /*
 object-assign
 (c) Sindre Sorhus
@@ -64922,7 +65009,7 @@ module.exports = shouldUseNative() ? Object.assign : function (target, source) {
 	return to;
 };
 
-},{}],78:[function(require,module,exports){
+},{}],79:[function(require,module,exports){
 'use strict'
 
 module.exports = function parseURI (str, opts) {
@@ -64954,7 +65041,7 @@ module.exports = function parseURI (str, opts) {
   return uri
 }
 
-},{}],79:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
 /*!
  * pixi.js - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -66388,7 +66475,7 @@ exports.filters = filters;
 exports.useDeprecated = useDeprecated;
 
 
-},{"@pixi/accessibility":35,"@pixi/app":36,"@pixi/constants":37,"@pixi/core":38,"@pixi/display":39,"@pixi/extract":40,"@pixi/filter-alpha":41,"@pixi/filter-blur":42,"@pixi/filter-color-matrix":43,"@pixi/filter-displacement":44,"@pixi/filter-fxaa":45,"@pixi/filter-noise":46,"@pixi/graphics":47,"@pixi/interaction":48,"@pixi/loaders":49,"@pixi/math":50,"@pixi/mesh":52,"@pixi/mesh-extras":51,"@pixi/mixin-cache-as-bitmap":53,"@pixi/mixin-get-child-by-name":54,"@pixi/mixin-get-global-position":55,"@pixi/particles":56,"@pixi/polyfill":57,"@pixi/prepare":58,"@pixi/runner":59,"@pixi/settings":60,"@pixi/sprite":63,"@pixi/sprite-animated":61,"@pixi/sprite-tiling":62,"@pixi/spritesheet":64,"@pixi/text":66,"@pixi/text-bitmap":65,"@pixi/ticker":67,"@pixi/utils":68}],80:[function(require,module,exports){
+},{"@pixi/accessibility":36,"@pixi/app":37,"@pixi/constants":38,"@pixi/core":39,"@pixi/display":40,"@pixi/extract":41,"@pixi/filter-alpha":42,"@pixi/filter-blur":43,"@pixi/filter-color-matrix":44,"@pixi/filter-displacement":45,"@pixi/filter-fxaa":46,"@pixi/filter-noise":47,"@pixi/graphics":48,"@pixi/interaction":49,"@pixi/loaders":50,"@pixi/math":51,"@pixi/mesh":53,"@pixi/mesh-extras":52,"@pixi/mixin-cache-as-bitmap":54,"@pixi/mixin-get-child-by-name":55,"@pixi/mixin-get-global-position":56,"@pixi/particles":57,"@pixi/polyfill":58,"@pixi/prepare":59,"@pixi/runner":60,"@pixi/settings":61,"@pixi/sprite":64,"@pixi/sprite-animated":62,"@pixi/sprite-tiling":63,"@pixi/spritesheet":65,"@pixi/text":67,"@pixi/text-bitmap":66,"@pixi/ticker":68,"@pixi/utils":69}],81:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -66574,7 +66661,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],81:[function(require,module,exports){
+},{}],82:[function(require,module,exports){
 (function (global){
 /*! https://mths.be/punycode v1.4.1 by @mathias */
 ;(function(root) {
@@ -67111,7 +67198,7 @@ process.umask = function() { return 0; };
 }(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],82:[function(require,module,exports){
+},{}],83:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -67197,7 +67284,7 @@ var isArray = Array.isArray || function (xs) {
   return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{}],83:[function(require,module,exports){
+},{}],84:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -67284,13 +67371,13 @@ var objectKeys = Object.keys || function (obj) {
   return res;
 };
 
-},{}],84:[function(require,module,exports){
+},{}],85:[function(require,module,exports){
 'use strict';
 
 exports.decode = exports.parse = require('./decode');
 exports.encode = exports.stringify = require('./encode');
 
-},{"./decode":82,"./encode":83}],85:[function(require,module,exports){
+},{"./decode":83,"./encode":84}],86:[function(require,module,exports){
 /*!
  * resource-loader - v3.0.1
  * https://github.com/pixijs/pixi-sound
@@ -69641,7 +69728,7 @@ exports.encodeBinary = encodeBinary;
 exports.middleware = index;
 
 
-},{"mini-signals":76,"parse-uri":78}],86:[function(require,module,exports){
+},{"mini-signals":77,"parse-uri":79}],87:[function(require,module,exports){
 (function (setImmediate,clearImmediate){
 var nextTick = require('process/browser.js').nextTick;
 var apply = Function.prototype.apply;
@@ -69720,7 +69807,7 @@ exports.clearImmediate = typeof clearImmediate === "function" ? clearImmediate :
   delete immediateIds[id];
 };
 }).call(this,require("timers").setImmediate,require("timers").clearImmediate)
-},{"process/browser.js":80,"timers":86}],87:[function(require,module,exports){
+},{"process/browser.js":81,"timers":87}],88:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -70454,7 +70541,7 @@ Url.prototype.parseHost = function() {
   if (host) this.hostname = host;
 };
 
-},{"./util":88,"punycode":81,"querystring":84}],88:[function(require,module,exports){
+},{"./util":89,"punycode":82,"querystring":85}],89:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -70472,4 +70559,4 @@ module.exports = {
   }
 };
 
-},{}]},{},[34]);
+},{}]},{},[35]);

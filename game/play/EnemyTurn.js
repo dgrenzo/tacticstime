@@ -19,13 +19,37 @@ var EnemyTurn = (function () {
         this.m_controller = m_controller;
         this.m_board_controller = m_board_controller;
         this.m_onComplete = m_onComplete;
+        this.m_faction = null;
         this.scoreBoard = function (board) {
-            var score = Math.random() * 5;
+            var score = Math.random() * .5;
             board.getUnits().forEach(function (unit) {
-                score -= unit.status.hp;
+                if (unit.data.faction !== _this.m_faction) {
+                    score -= unit.status.hp;
+                    score -= 5;
+                }
+                else {
+                    score += 5;
+                    score += unit.status.hp;
+                }
             });
+            var active_unit = board.getUnit(_this.m_unit_id);
+            if (active_unit) {
+                var closest_1 = Infinity;
+                board.getUnits().forEach(function (unit) {
+                    if (unit.data.faction !== _this.m_faction) {
+                        var distance = Math.random() + Math.abs(active_unit.pos.x - unit.pos.x) + Math.abs(active_unit.pos.y - unit.pos.y);
+                        if (distance < closest_1) {
+                            closest_1 = distance;
+                        }
+                    }
+                });
+                if (closest_1 != Infinity) {
+                    score -= closest_1;
+                }
+            }
             return score;
         };
+        this.m_faction = this.m_board_controller.getUnit(this.m_unit_id).data.faction;
         var ai_ctrl = this.m_board_controller.createClone();
         var move_options = pathfinding_1.GetMoveOptions(ai_ctrl.getUnit(m_unit_id), ai_ctrl.board);
         var ai_options = [];

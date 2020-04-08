@@ -39,7 +39,7 @@ var BoardController = (function () {
                     var create_action = {
                         type: "CREATE_UNIT",
                         data: {
-                            unit: GameBoard_1.CreateUnit(unit_def),
+                            unit: GameBoard_1.CreateUnit(unit_def, team.name),
                         }
                     };
                     _this.sendAction(create_action);
@@ -104,6 +104,9 @@ var BoardController = (function () {
         };
         this.getTilesInRange = function (pos, range) {
             return _this.m_board.getTilesInRange(pos, range);
+        };
+        this.getElementsAt = function (pos) {
+            return _this.m_board.getElementsAt(pos);
         };
         this.m_action_stack = new ActionStack_1.ActionStack(this);
     }

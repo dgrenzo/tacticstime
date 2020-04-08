@@ -28,7 +28,6 @@ var UnitSelectedPanel = (function () {
             _.forEach(abiliy_list, function (name, index) {
                 var ability_def = abilities_1.GetAbilityDef(name);
                 var btn = new PIXI.Sprite();
-                var bg = new PIXI.Graphics();
                 btn.addChild(new PIXI.Graphics().beginFill(0x333333).drawRoundedRect(0, 0, 200, 60, 5).endFill());
                 btn.interactive = btn.buttonMode = true;
                 btn.on('pointerdown', function (evt) {

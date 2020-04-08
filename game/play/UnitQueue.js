@@ -22,6 +22,15 @@ var UnitQueue = (function () {
                 next: next,
             };
         };
+        this.removeUnit = function (id) {
+            var target = _this.m_root;
+            while (target && target.next) {
+                if (target.next.unit.id === id) {
+                    target.next = target.next.next;
+                }
+                target = target.next;
+            }
+        };
         this.getNextQueued = function () {
             _this.m_current = _this.m_current.next;
             if (_this.m_current) {

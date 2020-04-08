@@ -12,6 +12,7 @@ var BoardController_1 = require("./board/BoardController");
 var EnemyTurn_1 = require("./play/EnemyTurn");
 var effects_1 = require("./effects");
 var HealthBar_1 = require("./play/interface/HealthBar");
+var TileHighlighter_1 = require("./extras/TileHighlighter");
 var GameState;
 (function (GameState) {
     GameState[GameState["SETUP"] = 0] = "SETUP";
@@ -27,6 +28,8 @@ var GameController = (function () {
             _this.m_config.pixi_app.stage.addChild(_this.m_renderer.stage);
             _this.m_config.pixi_app.stage.addChild(_this.m_renderer.effects_container);
             _this.m_config.pixi_app.stage.addChild(_this.m_interface_container);
+            var highlighter = new TileHighlighter_1.default(_this.m_renderer, _this.m_board_controller);
+            _this.m_config.pixi_app.ticker.add(highlighter.update);
             effects_1.default.init(_this.m_renderer);
             _this.on("SET_PLUGIN", function (data) {
                 _this.m_renderer.getRenderable(data.id).setPlugin(data.plugin);
@@ -35,19 +38,24 @@ var GameController = (function () {
             _this.m_board_controller.executeActionStack().then(_this.startGame);
         };
         this.startGame = function () {
-            new PlayerTurn_1.PlayerTurn(_this.m_unit_queue.getNextQueued(), _this, _this.m_board_controller, _this.onTurnComplete);
+            _this.startTurn();
+        };
+        this.startTurn = function () {
+            var id = _this.m_unit_queue.getNextQueued();
+            var unit = _this.m_board_controller.getUnit(id);
+            if (!unit) {
+                console.log('no units');
+                return;
+            }
+            if (unit.data.faction === 'PLAYER') {
+                new PlayerTurn_1.PlayerTurn(id, _this, _this.m_board_controller, _this.onTurnComplete);
+            }
+            else {
+                new EnemyTurn_1.EnemyTurn(id, _this, _this.m_board_controller, _this.onTurnComplete);
+            }
         };
         this.onTurnComplete = function () {
-            var next_unit = _this.m_unit_queue.getNextQueued();
-            if (!next_unit) {
-                console.log('done');
-                return;
-            }
-            if (!_this.m_board_controller.getUnit(next_unit)) {
-                _this.onTurnComplete();
-                return;
-            }
-            var player = new EnemyTurn_1.EnemyTurn(next_unit, _this, _this.m_board_controller, _this.onTurnComplete);
+            _this.startTurn();
         };
         this.on = function (event_name, cb) {
             _this.m_event_manager.add(event_name, cb);
@@ -72,6 +80,9 @@ var GameController = (function () {
                 _this.m_unit_queue.addUnit(data.unit);
                 var renderable = _this.m_renderer.addEntity(data.unit);
                 renderable.render(SceneRenderer_1.getAsset(data.unit));
+            });
+            _this.m_board_controller.on("UNIT_KILLED", function (data) {
+                _this.m_unit_queue.removeUnit(data.entity_id);
             });
             _this.m_board_controller.on("UNIT_CREATED", function (data) {
                 var health_bar = new HealthBar_1.HealthBar(data.unit.id, _this.m_board_controller, _this.m_renderer);

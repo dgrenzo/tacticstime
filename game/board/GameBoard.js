@@ -84,7 +84,8 @@ var GameBoard = (function (_super) {
 }(Scene_1.Scene));
 exports.GameBoard = GameBoard;
 var _ID = 0;
-function CreateUnit(def) {
+function CreateUnit(def, faction) {
+    if (faction === void 0) { faction = null; }
     return {
         id: _ID++,
         entity_type: "UNIT",
@@ -94,6 +95,7 @@ function CreateUnit(def) {
         },
         data: {
             unit_type: def.unit.display.sprite,
+            faction: faction,
         },
         stats: _.cloneDeep(def.unit.stats),
         status: {

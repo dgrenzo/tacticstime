@@ -12,6 +12,20 @@
           }
         },
         {
+          "type" : "assets/data/units/oldman.json",
+          "pos" : {
+            "x" : 6,
+            "y" : 12
+          }
+        },
+        {
+          "type" : "assets/data/units/dwarf.json",
+          "pos" : {
+            "x" : 8,
+            "y" : 9
+          }
+        },
+        {
           "type" : "assets/data/units/dwarf.json",
           "pos" : {
             "x" : 11,

@@ -94,14 +94,14 @@ export class EnemyTurn {
     }, 25)
   }
   private scoreBoard = (board : GameBoard) => {
-    let score = Math.random() * .5;
+    let score = Math.random() / 4;
 
     board.getUnits().forEach( unit => {
       if (unit.data.faction !== this.m_faction) {
         score -= unit.status.hp;
         score -= 5;
       } else {
-        score += 5;
+        //score += 5;
         score += unit.status.hp;
       }
     });
@@ -112,7 +112,7 @@ export class EnemyTurn {
       let closest = Infinity;
       board.getUnits().forEach( unit => {
         if (unit.data.faction !== this.m_faction) {
-          let distance = Math.random() + Math.abs(active_unit.pos.x - unit.pos.x) + Math.abs(active_unit.pos.y - unit.pos.y);
+          let distance = Math.random()/4 + Math.abs(active_unit.pos.x - unit.pos.x) + Math.abs(active_unit.pos.y - unit.pos.y);
           if (distance < closest) {
             closest = distance;
           }

@@ -32,14 +32,14 @@ export class EnemyTurn {
   private m_faction : string = null;
 
   constructor ( private m_unit_id : number, 
-                private m_controller : GameController, 
                 private m_board_controller : BoardController, 
                 private m_onComplete : ()=>void ) {
 
-    this.m_faction = this.m_board_controller.getUnit(this.m_unit_id).data.faction;
-                  
-    let ai_ctrl = this.m_board_controller.createClone();
+    let move_promises : Promise<any>[] = [];
+    let action_promises : Promise<any>[] = [];
 
+    this.m_faction = this.m_board_controller.getUnit(this.m_unit_id).data.faction;
+    let ai_ctrl = this.m_board_controller.createClone();
     let move_options = GetMoveOptions(ai_ctrl.getUnit(m_unit_id), ai_ctrl.board)
     
     let ai_options : ITurnOption[] = [];
@@ -49,7 +49,8 @@ export class EnemyTurn {
       let move_action = this.toMoveAction(option);
 
       move_ctrl.sendAction(move_action);
-      move_ctrl.executeActionStack().then(() => {
+
+      move_promises.push(move_ctrl.executeActionStack().then(() => {
         
         let active_unit = move_ctrl.getUnit(this.m_unit_id);
         _.forEach(active_unit.abilities, (ability_name) => {
@@ -61,37 +62,38 @@ export class EnemyTurn {
             let ability_ctrl = move_ctrl.createClone();
 
             ability_ctrl.sendAction(ability_action as any);
-            ability_ctrl.executeActionStack().then(() => {
+            action_promises.push(ability_ctrl.executeActionStack().then(() => {
               let opt = {
                 score : this.scoreBoard(ability_ctrl.board),
                 move_action,
                 ability_action,
               };
               
-              ai_options.push(opt)
-            });
+              return ai_options.push(opt)
+            }));
           })
         })
-      });
+      }));
     });
 
-
-    setTimeout(() => {
-      let best : ITurnOption = null;
-      _.forEach(ai_options, option => {
-        if (best === null || option.score > best.score) {
-          best = option;
-        }
+      Promise.all(move_promises)
+      .then(() => {
+        return Promise.all(action_promises);
       })
-      this.m_board_controller.sendAction(best.move_action);
-      this.m_board_controller.executeActionStack().then(() => {
-        this.m_board_controller.sendAction(best.ability_action);
-        this.m_board_controller.executeActionStack().then(
-          () => {
-            setTimeout(this.m_onComplete, 25)
-          });
+      .then(() => {
+        let best : ITurnOption = null;
+        _.forEach(ai_options, option => {
+          if (best === null || option.score > best.score) {
+            best = option;
+          }
+        })
+        this.m_board_controller.sendAction(best.move_action);
+        this.m_board_controller.executeActionStack().then(() => {
+          this.m_board_controller.sendAction(best.ability_action);
+          this.m_board_controller.executeActionStack().then(this.m_onComplete)
+        });
       });
-    }, 25)
+
   }
   private scoreBoard = (board : GameBoard) => {
     let score = Math.random() / 4;
@@ -101,7 +103,7 @@ export class EnemyTurn {
         score -= unit.status.hp;
         score -= 5;
       } else {
-        //score += 5;
+        score += 5;
         score += unit.status.hp;
       }
     });

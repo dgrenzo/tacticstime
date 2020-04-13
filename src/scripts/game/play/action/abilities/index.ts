@@ -18,7 +18,7 @@ export interface IRangeDef {
 }
 export interface IEffectDef {
   type : EffectType,
-  amount : number,
+  data : any,
   range : IRangeDef,
   target_type : TargetType,
 }
@@ -35,7 +35,7 @@ export interface IAbilityDef {
 
 const s_ability_map : Map<string, IAbilityDef> = new Map();
 
-_.forEach( ["meteor", "strike"], ability_name => {
+_.forEach( ["meteor", "strike", "shoot", "summon_mooseman"], ability_name => {
   LoadJSON<IAbilityDef>('assets/data/abilities/' + ability_name + '.json').then(def => {
     s_ability_map.set(ability_name, def);
   })

@@ -1,14 +1,16 @@
 {
   "display" : {
-    "sprite" : "rhino"
+    "sprite" : "monk"
   },
   "abilities" : [
     "strike"
   ],
+  "auras" : [
+  ],
   "stats" : {
-    "speed": 2,
+    "speed": 5,
     "move" : 2,
-    "hp" : 6,
+    "hp" : 12,
     "magic" : 2
   }
 }

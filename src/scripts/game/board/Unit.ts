@@ -1,5 +1,4 @@
 import { IAssetInfo, IEntity } from "../../engine/scene/Entity";
-import { ILoadedUnit } from "./Loader";
 
 
 export interface IUnit extends IEntity {

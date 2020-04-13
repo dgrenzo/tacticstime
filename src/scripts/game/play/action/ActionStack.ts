@@ -8,8 +8,9 @@ import { ExecuteKilled } from "./executors/action/Killed";
 import { ExecuteAbility, IAbilityActionData, IAbilityAction } from "./executors/action/Ability";
 import { IElementMap } from '../../../engine/scene/Scene';
 import { ExecuteCreateUnit, ICreateUnitAction } from './executors/action/CreateUnit';
+import { ExecuteSummonUnit, ISummonUnitAction } from './executors/action/SummonUnit';
 
-export type GameEvent = "MOVE" | "ABILITY" | "STRIKE" | "DAMAGE" | "HEAL" | "DAMAGE_DEALT" | "CREATE_UNIT" | "UNIT_CREATED" | "UNIT_KILLED";
+export type GameEvent = "MOVE" | "ABILITY" | "STRIKE" | "DAMAGE" | "HEAL" | "DAMAGE_DEALT" | "SUMMON_UNIT" | "CREATE_UNIT" | "UNIT_CREATED" | "UNIT_KILLED";
 
 export interface IActionData {
   //[index : string] : any,
@@ -68,6 +69,8 @@ export class ActionStack {
         return ExecuteKilled(action, elements, controller);
       case "CREATE_UNIT" :
         return ExecuteCreateUnit(action as ICreateUnitAction, elements, controller);
+      case "SUMMON_UNIT" :
+        return ExecuteSummonUnit(action as ISummonUnitAction, elements, controller);
       default :
         return ExecuteDefault(action, elements, controller);
         

@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js';
 import * as _ from 'lodash';
 import { TILE_DEF, GetTileName } from '../../board/Tile';
-import AssetManager from '../../assets';
+import AssetManager from '../../assets/AssetManager';
 
 export class TilePalette {
   

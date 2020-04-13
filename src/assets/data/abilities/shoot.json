@@ -1,9 +1,9 @@
 {
-  "name" : "Strike",
+  "name" : "Shoot",
   "target" : {
     "range" : {
-      "min" : 1,
-      "max" : 1
+      "min" : 3,
+      "max" : 4 
     },
     "target_type" : "ENEMY"
   },

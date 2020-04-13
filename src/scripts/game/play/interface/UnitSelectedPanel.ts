@@ -15,7 +15,7 @@ export class UnitSelectedPanel {
 
   constructor (private m_controller : GameController) {
     this.m_container.position.set(10, 500);
-    m_controller.addInterfaceElement(this.m_container);
+    //m_controller.addInterfaceElement(this.m_container);
   }
 
   public showUnitPanel = (unit : IUnit) => {

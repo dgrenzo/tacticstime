@@ -10,7 +10,9 @@
   "effects" : [
     {
       "type" : "DAMAGE",
-      "amount" : 6,
+      "data" : {
+        "amount" : 6
+      },
       "range" : {
         "min" : 0,
         "max" : 0
@@ -18,7 +20,9 @@
     },
     {
       "type" : "DAMAGE",
-      "amount" : 2,
+      "data" : {
+        "amount" : 2
+      },
       "range" : {
         "min" : 1,
         "max" : 2

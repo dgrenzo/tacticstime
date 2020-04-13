@@ -5,31 +5,31 @@
       "name" : "PLAYER",
       "units" : [
         {
-          "type" : "assets/data/units/oldman.json",
+          "type" : "oldman",
           "pos" : {
-            "x" : 8,
-            "y" : 12
+            "x" : 2,
+            "y" : 15
           }
         },
         {
-          "type" : "assets/data/units/oldman.json",
+          "type" : "oldman",
+          "pos" : {
+            "x" : 3,
+            "y" : 14
+          }
+        },
+        {
+          "type" : "dwarf",
           "pos" : {
             "x" : 6,
-            "y" : 12
+            "y" : 11
           }
         },
         {
-          "type" : "assets/data/units/dwarf.json",
+          "type" : "dwarf",
           "pos" : {
-            "x" : 8,
-            "y" : 9
-          }
-        },
-        {
-          "type" : "assets/data/units/dwarf.json",
-          "pos" : {
-            "x" : 11,
-            "y" : 9
+            "x" : 6,
+            "y" : 13
           }
         }
       ]
@@ -38,63 +38,63 @@
       "name" : "Dorks",
       "units" : [
         {
-          "type" : "assets/data/units/troll.json",
+          "type" : "troll",
           "pos" : {
             "x" : 8,
             "y" : 8
           }
         },
         {
-          "type" : "assets/data/units/rhino.json",
+          "type" : "rhino",
           "pos" : {
             "x" : 9,
             "y" : 7
           }
         },
         {
-          "type" : "assets/data/units/rhino.json",
+          "type" : "rhino",
           "pos" : {
             "x" : 9,
             "y" : 8
           }
         },
         {
-          "type" : "assets/data/units/rhino.json",
+          "type" : "rhino",
           "pos" : {
             "x" : 4,
             "y" : 7
           }
         },
         {
-          "type" : "assets/data/units/rhino.json",
+          "type" : "rhino",
           "pos" : {
             "x" : 6,
             "y" : 7
           }
         },
         {
-          "type" : "assets/data/units/rhino.json",
+          "type" : "rhino",
           "pos" : {
             "x" : 12,
             "y" : 13
           }
         },
         {
-          "type" : "assets/data/units/rhino.json",
+          "type" : "rhino",
           "pos" : {
             "x" : 11,
             "y" : 7
           }
         },
         {
-          "type" : "assets/data/units/rhino.json",
+          "type" : "rhino",
           "pos" : {
             "x" : 11,
             "y" : 5
           }
         },
         {
-          "type" : "assets/data/units/rhino.json",
+          "type" : "rhino",
           "pos" : {
             "x" : 10,
             "y" : 8

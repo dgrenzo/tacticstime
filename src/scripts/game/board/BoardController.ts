@@ -1,7 +1,7 @@
 import { List } from 'immutable';
 import * as _ from 'lodash';
 
-import { GameBoard, IBoardPos, CreateUnit } from "./GameBoard";
+import { GameBoard, IBoardPos, CreateUnit, IBoardConfig } from "./GameBoard";
 import { ActionStack, IGameAction, GameEvent, IActionData } from "../play/action/ActionStack";
 import { GetMoveOptions } from "../pathfinding";
 import { IRangeDef } from "../play/action/abilities";
@@ -35,13 +35,10 @@ export class BoardController {
     return ctrl;
   }
 
-  public initBoard = (data : ILoadedMission) => {
+  public initBoard = (data : IBoardConfig) => {
     this.m_board = new GameBoard();
-    this.m_board.init(data.board);
-
-    this.initUnits(data.teams);
-    //this.m_board.initTeams(data.teams);
-  }
+    this.m_board.init(data);
+  }  
 
   private initUnits = (teams : ILoadedTeam[]) : IUnit[] => {
     let units : IUnit[] = [];
@@ -100,9 +97,13 @@ export class BoardController {
   }
 
   public addUnit = (unit : IUnit) => {
-    if (this.m_renderer) {
-
+    let create_action : ICreateUnitAction = {
+      type : "CREATE_UNIT",
+      data : {
+        unit
+      }
     }
+    this.sendAction(create_action);
   }
   
   public createEffect = (ability : IGameAction, cb : ()=>void) : GameEffect => {
@@ -149,6 +150,12 @@ export class BoardController {
   }
 
   public getTilesInRange = (pos : IBoardPos, range : IRangeDef) : List<ITile>  => {
+    if (!range) {
+      range = {
+        max : 0,
+        min : 0,
+      }
+    }
     return this.m_board.getTilesInRange(pos, range);
   }
 

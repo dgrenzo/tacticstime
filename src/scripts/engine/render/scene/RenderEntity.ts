@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js'
-import { IEntity, IAssetInfo } from '../../scene/Entity'
-import AssetManager from '../../../game/assets';
+import { IAssetInfo } from '../../scene/Entity'
 import { RENDER_PLUGIN } from '../../../game/extras/plugins';
+import AssetManager from '../../../game/assets/AssetManager';
 
 export type RenderableType = "TILE" | "SPRITE" | "ANIMATED_SPRITE";
 

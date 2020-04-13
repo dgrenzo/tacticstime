@@ -4,7 +4,7 @@ import { TilePalette } from "./interface/tile_palette";
 import { TILE_DEF, GetTileName } from "../board/Tile";
 import { GameBoard, IBoardPos } from "../board/GameBoard";
 import { SceneRenderer } from "../../engine/render/scene/SceneRenderer";
-import AssetManager from "../assets";
+import AssetManager from '../assets/AssetManager';
 
 export class BoardEditor {
 

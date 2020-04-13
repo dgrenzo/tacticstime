@@ -11,7 +11,6 @@ export default class AssetManager {
   private loader : PIXI.Loader;
   private m_tilesheet : PIXI.Spritesheet;
   private m_spritesheet : PIXI.Spritesheet;
-
   private m_animationMap : Map<string, PIXI.AnimatedSprite.FrameObject[]> = new Map();
 
   private constructor() {

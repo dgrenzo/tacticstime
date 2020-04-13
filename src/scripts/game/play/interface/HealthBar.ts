@@ -1,9 +1,7 @@
 import * as PIXI from 'pixi.js';
 
-import { RenderEntity } from "../../../engine/render/scene/RenderEntity";
 import { BoardController } from "../../board/BoardController";
 import { IMoveActionData } from "../action/executors/action/Movement";
-import { IUnit } from "../../board/Unit";
 import { SceneRenderer } from "../../../engine/render/scene/SceneRenderer";
 import { IDamageActionData } from '../action/executors/action/Damage';
 
@@ -24,7 +22,7 @@ export class HealthBar {
     let unit = controller.getUnit(unit_id);
     let screen_pos = renderer.getScreenPosition(unit.pos.x, unit.pos.y);
     this.m_container.position.set(screen_pos.x - 1, screen_pos.y - 10);
-
+    this.m_container.visible = false;
     controller.on("MOVE", (data : IMoveActionData) => {
       if (data.entity_id === unit_id) {
         let screen_pos = renderer.getScreenPosition(data.move.to.x, data.move.to.y);
@@ -34,6 +32,7 @@ export class HealthBar {
 
     controller.on("DAMAGE_DEALT", (data : IDamageActionData) => {
       if (data.entity_id === unit_id) {
+        this.m_container.visible = true;
         let unit = controller.getUnit(unit_id);
         let bar_width = Math.floor( unit.status.hp / unit.stats.hp * 10 );
 

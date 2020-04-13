@@ -1,8 +1,8 @@
 import * as PIXI from "pixi.js";
 import { GameController } from "./game/GameController";
 import { RenderMode } from "./engine/render/render";
-import AssetManager from "./game/assets";
 import { InitRenderPlugins } from "./game/extras/plugins";
+import AssetManager from "./game/assets/AssetManager";
 
 export const DEBUG = false;
 

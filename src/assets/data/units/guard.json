@@ -1,14 +1,14 @@
 {
   "display" : {
-    "sprite" : "rhino"
+    "sprite" : "guard"
   },
   "abilities" : [
     "strike"
   ],
   "stats" : {
-    "speed": 2,
-    "move" : 2,
-    "hp" : 6,
+    "speed": 4,
+    "move" : 1,
+    "hp" : 12,
     "magic" : 2
   }
 }

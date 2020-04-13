@@ -20,6 +20,9 @@ export interface IDamageDealtAction extends IGameAction {
 export function ExecuteDamage(action : IDamageAction, elements : IElementMap, controller : BoardController):Promise<IElementMap> {
   return new Promise((resolve) => {
     let unit = controller.getUnit(action.data.entity_id);
+    if (!unit) {
+      return resolve(elements);
+    }
 
     let starting_hp = unit.status.hp;
 

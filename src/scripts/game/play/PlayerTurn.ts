@@ -55,10 +55,10 @@ export class PlayerTurn {
         this.selectTile(this.m_board_controller.getTile(active.pos));
         this.m_action_ui = new MoveActionUI(active, this.m_board_controller);
         this.markTiles(this.m_action_ui.options, "highlight_blue");
-        this.m_controller.on("TILE_CLICKED", this.onTileClicked);
+        // this.m_controller.on("TILE_CLICKED", this.onTileClicked);
       },
       exit : () => {
-        this.m_controller.off("TILE_CLICKED", this.onTileClicked);
+        // this.m_controller.off("TILE_CLICKED", this.onTileClicked);
         this.selectTile(null);
         this.markTiles(this.m_action_ui.options, "batch");
         this.m_action_ui = null;
@@ -72,10 +72,10 @@ export class PlayerTurn {
           let active = this.m_board_controller.getUnit(this.m_selected_id);
           this.m_selected_tile = this.m_board_controller.getTile(active.pos);
           this.m_selected_panel.showUnitPanel(active);
-          this.m_controller.on("TILE_CLICKED", this.onTileClicked);
+          // this.m_controller.on("TILE_CLICKED", this.onTileClicked);
         },
         exit : () => {
-          this.m_controller.off("TILE_CLICKED", this.onTileClicked);
+          // this.m_controller.off("TILE_CLICKED", this.onTileClicked);
           this.m_selected_panel.hide();
           if (this.m_action_ui) {
             this.selectTile(null);
@@ -138,7 +138,7 @@ export class PlayerTurn {
 
   private selectTile = (tile : ITile) => {
     if (this.m_selected_tile) {
-      this.m_controller.emit("SET_PLUGIN", {id :  this.m_selected_tile.id, plugin : 'batch'});
+      // this.m_controller.emit("SET_PLUGIN", {id :  this.m_selected_tile.id, plugin : 'batch'});
     }
     if (!tile) {
       return;
@@ -148,7 +148,7 @@ export class PlayerTurn {
   }
 
   private markTile = (tile : ITile , plugin : "highlight_green" | "highlight_blue" | "highlight_red" | "batch") => {
-    this.m_controller.emit("SET_PLUGIN", { id : tile.id, plugin });
+    // this.m_controller.emit("SET_PLUGIN", { id : tile.id, plugin });
   }
 
   private markTiles = (options:{tile}[] , plugin : "highlight_green" | "highlight_blue" | "highlight_red" | "batch") => {

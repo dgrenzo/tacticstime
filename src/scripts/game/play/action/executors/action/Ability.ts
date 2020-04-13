@@ -31,16 +31,26 @@ export function ExecuteAbility(action : IAbilityAction, elements : IElementMap, 
     _.forEach(action.data.ability.effects, effect => {
      let tiles = controller.getTilesInRange(action.data.target.pos, effect.range);
      tiles.forEach(tile => {
+       let data = _.cloneDeep(effect.data);
+
+       data = _.defaults(data, {tile});
+
        let unit = controller.getUnitAtPosition(tile.pos);
        if (unit) {
+
         controller.sendAction({
           type : effect.type,
-          data : {
-            entity_id : unit.id,
-            amount : effect.amount,
-          }
+          data : _.defaults(data, {entity_id : unit.id})
         } as IEffectAction);
-       }
+
+      } else {
+
+        controller.sendAction({
+          type : effect.type,
+          data
+        } as IEffectAction);
+
+      }
      });
     });
     return elements;

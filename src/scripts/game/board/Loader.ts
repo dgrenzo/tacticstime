@@ -1,6 +1,8 @@
 import * as PIXI from 'pixi.js';
 import * as _ from 'lodash';
 import { IBoardConfig } from './GameBoard';
+import { UnitLoader, IUnitDef } from '../assets/UnitLoader';
+import { UNIT_TYPE } from '../types/units';
 
 interface IBoardFile {
   version : string,
@@ -8,7 +10,7 @@ interface IBoardFile {
 }
 
 interface IUnitData {
-  type : string,
+  type : UNIT_TYPE,
   pos : {
     x : number,
     y : number,
@@ -24,21 +26,9 @@ interface IMissionData {
   teams : ITeamData[],
 }
 
-export interface ILoadedUnit {
-  display : {
-    sprite : string,
-  },
-  abilities : string[],
-  stats : {
-    speed : number,
-    move : number,
-    hp : number,
-    magic : number,
-  },
-}
 
 export interface IMissionUnit {
-  unit : ILoadedUnit,
+  unit : IUnitDef,
   pos : {
     x : number,
     y : number,
@@ -74,12 +64,10 @@ export function LoadMission(path : string) : Promise<ILoadedMission> {
         units : [],
       });
       _.forEach(team.units, (unit, unit_index) => {
-        promises.push(LoadJSON<ILoadedUnit>(unit.type).then (unit_data => {
-          loaded_mission.teams[team_index].units[unit_index] = {
-            pos : unit.pos,
-            unit : unit_data,
-          }
-        }))
+        loaded_mission.teams[team_index].units[unit_index] = {
+          pos : unit.pos,
+          unit : UnitLoader.GetUnitDefinition(unit.type),
+        }
       });
     });
     return Promise.all(promises);

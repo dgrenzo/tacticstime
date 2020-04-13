@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
-var assets_1 = require("../../../game/assets");
+var AssetManager_1 = require("../../../game/assets/AssetManager");
 var RenderEntity = (function () {
     function RenderEntity(id) {
         var _this = this;
@@ -26,11 +26,11 @@ var RenderEntity = (function () {
         };
         this.setSprite = function (asset_name) {
             _this.m_container.removeChildren();
-            _this.m_container.addChild(_this.m_image = new PIXI.Sprite(assets_1.default.getTile(asset_name)));
+            _this.m_container.addChild(_this.m_image = new PIXI.Sprite(AssetManager_1.default.getTile(asset_name)));
         };
         this.setAnimatedSprite = function (animation_name) {
             _this.m_container.removeChildren();
-            var animation_data = assets_1.default.getAnimatedSprite(animation_name);
+            var animation_data = AssetManager_1.default.getAnimatedSprite(animation_name);
             var animated_sprite = new PIXI.AnimatedSprite(animation_data, true);
             animated_sprite.position.set(3, -7);
             animated_sprite.play();

@@ -1,14 +1,14 @@
 {
   "display" : {
-    "sprite" : "rhino"
+    "sprite" : "knight_green"
   },
   "abilities" : [
     "strike"
   ],
   "stats" : {
-    "speed": 2,
-    "move" : 2,
-    "hp" : 6,
+    "speed": 4,
+    "move" : 1,
+    "hp" : 14,
     "magic" : 2
   }
 }

@@ -1,14 +1,14 @@
 {
   "display" : {
-    "sprite" : "lizard"
+    "sprite" : "basic_bow"
   },
   "abilities" : [
-    "strike"
+    "shoot"
   ],
   "stats" : {
     "speed": 4,
-    "move" : 1,
-    "hp" : 3,
+    "move" : 3,
+    "hp" : 8,
     "magic" : 2
   }
 }

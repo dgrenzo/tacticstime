@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
 var _ = require("lodash");
+var UnitLoader_1 = require("../assets/UnitLoader");
 function LoadMission(path) {
     var loaded_mission = {
         board: null,
@@ -19,12 +20,10 @@ function LoadMission(path) {
                 units: [],
             });
             _.forEach(team.units, function (unit, unit_index) {
-                promises.push(LoadJSON(unit.type).then(function (unit_data) {
-                    loaded_mission.teams[team_index].units[unit_index] = {
-                        pos: unit.pos,
-                        unit: unit_data,
-                    };
-                }));
+                loaded_mission.teams[team_index].units[unit_index] = {
+                    pos: unit.pos,
+                    unit: UnitLoader_1.UnitLoader.GetUnitDefinition(unit.type),
+                };
             });
         });
         return Promise.all(promises);

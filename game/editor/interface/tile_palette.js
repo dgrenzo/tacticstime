@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
 var _ = require("lodash");
 var Tile_1 = require("../../board/Tile");
-var assets_1 = require("../../assets");
+var AssetManager_1 = require("../../assets/AssetManager");
 var TilePalette = (function () {
     function TilePalette() {
         var _this = this;
@@ -19,7 +19,7 @@ var TilePalette = (function () {
                 }
                 var x = tile_type % 10;
                 var y = Math.floor(tile_type / 10);
-                var btn = new PIXI.Sprite(assets_1.default.getTile(Tile_1.GetTileName(tile_type)));
+                var btn = new PIXI.Sprite(AssetManager_1.default.getTile(Tile_1.GetTileName(tile_type)));
                 _this.m_container.addChild(btn);
                 btn.position.set(50 + x * 24, y * 24);
                 btn.buttonMode = btn.interactive = true;
@@ -30,7 +30,7 @@ var TilePalette = (function () {
         };
         this.setBrush = function (def) {
             _this.m_activeBrush = def;
-            _this.m_brushIcon = assets_1.default.getTile(Tile_1.GetTileName(def));
+            _this.m_brushIcon = AssetManager_1.default.getTile(Tile_1.GetTileName(def));
         };
         this.m_container = new PIXI.Container();
         this.m_container.interactive = this.m_container.interactiveChildren = true;

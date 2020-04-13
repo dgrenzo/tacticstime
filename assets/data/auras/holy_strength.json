@@ -1,0 +1,22 @@
+{
+  "type" : "PASSIVE",
+  "effects" : 
+  [
+    {
+      "type" : "MODIFY_STAT",
+      "data" : {
+        "stat" : "hp",
+        "operation" : "add",
+        "amount" : 2
+      }
+    },
+    {
+      "type" : "MODIFY_STAT",
+      "data" : {
+        "stat" : "strength",
+        "operation" : "add",
+        "amount" : 1
+      }
+    }
+  ]
+}

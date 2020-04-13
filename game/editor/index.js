@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
 var tile_palette_1 = require("./interface/tile_palette");
 var Tile_1 = require("../board/Tile");
-var assets_1 = require("../assets");
+var AssetManager_1 = require("../assets/AssetManager");
 var BoardEditor = (function () {
     function BoardEditor(m_board, m_renderer) {
         var _this = this;
@@ -18,7 +18,7 @@ var BoardEditor = (function () {
                 return;
             }
             if (tile.data.tile_type !== type) {
-                _this.m_renderer.getRenderable(tile.id).setSprite(assets_1.default.getTile(Tile_1.GetTileName(tile.data.tile_type)));
+                _this.m_renderer.getRenderable(tile.id).setSprite(AssetManager_1.default.getTile(Tile_1.GetTileName(tile.data.tile_type)));
             }
         };
         this.m_renderer.on("POINTER_DOWN", function (data) {

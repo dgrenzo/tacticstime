@@ -6,6 +6,7 @@ var Damage_1 = require("./executors/action/Damage");
 var Killed_1 = require("./executors/action/Killed");
 var Ability_1 = require("./executors/action/Ability");
 var CreateUnit_1 = require("./executors/action/CreateUnit");
+var SummonUnit_1 = require("./executors/action/SummonUnit");
 var ActionStack = (function () {
     function ActionStack(m_controller) {
         var _this = this;
@@ -39,6 +40,8 @@ var ActionStack = (function () {
                     return Killed_1.ExecuteKilled(action, elements, controller);
                 case "CREATE_UNIT":
                     return CreateUnit_1.ExecuteCreateUnit(action, elements, controller);
+                case "SUMMON_UNIT":
+                    return SummonUnit_1.ExecuteSummonUnit(action, elements, controller);
                 default:
                     return ExecuteDefault(action, elements, controller);
             }

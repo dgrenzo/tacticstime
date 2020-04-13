@@ -11,7 +11,7 @@ var TARGET_TYPE;
     TARGET_TYPE[TARGET_TYPE["ALLY"] = 4] = "ALLY";
 })(TARGET_TYPE || (TARGET_TYPE = {}));
 var s_ability_map = new Map();
-_.forEach(["meteor", "strike"], function (ability_name) {
+_.forEach(["meteor", "strike", "shoot", "summon_mooseman"], function (ability_name) {
     Loader_1.LoadJSON('assets/data/abilities/' + ability_name + '.json').then(function (def) {
         s_ability_map.set(ability_name, def);
     });

@@ -13,10 +13,9 @@ var TURN_STATE;
     TURN_STATE[TURN_STATE["AFTER_ACTING"] = 4] = "AFTER_ACTING";
 })(TURN_STATE || (TURN_STATE = {}));
 var EnemyTurn = (function () {
-    function EnemyTurn(m_unit_id, m_controller, m_board_controller, m_onComplete) {
+    function EnemyTurn(m_unit_id, m_board_controller, m_onComplete) {
         var _this = this;
         this.m_unit_id = m_unit_id;
-        this.m_controller = m_controller;
         this.m_board_controller = m_board_controller;
         this.m_onComplete = m_onComplete;
         this.m_faction = null;
@@ -28,6 +27,7 @@ var EnemyTurn = (function () {
                     score -= 5;
                 }
                 else {
+                    score += 5;
                     score += unit.status.hp;
                 }
             });
@@ -48,6 +48,8 @@ var EnemyTurn = (function () {
             }
             return score;
         };
+        var move_promises = [];
+        var action_promises = [];
         this.m_faction = this.m_board_controller.getUnit(this.m_unit_id).data.faction;
         var ai_ctrl = this.m_board_controller.createClone();
         var move_options = pathfinding_1.GetMoveOptions(ai_ctrl.getUnit(m_unit_id), ai_ctrl.board);
@@ -56,7 +58,7 @@ var EnemyTurn = (function () {
             var move_ctrl = ai_ctrl.createClone();
             var move_action = _this.toMoveAction(option);
             move_ctrl.sendAction(move_action);
-            move_ctrl.executeActionStack().then(function () {
+            move_promises.push(move_ctrl.executeActionStack().then(function () {
                 var active_unit = move_ctrl.getUnit(_this.m_unit_id);
                 _.forEach(active_unit.abilities, function (ability_name) {
                     var ability_def = abilities_1.GetAbilityDef(ability_name);
@@ -65,19 +67,23 @@ var EnemyTurn = (function () {
                         var ability_action = ability_ui.getAction(ability_option.tile);
                         var ability_ctrl = move_ctrl.createClone();
                         ability_ctrl.sendAction(ability_action);
-                        ability_ctrl.executeActionStack().then(function () {
+                        action_promises.push(ability_ctrl.executeActionStack().then(function () {
                             var opt = {
                                 score: _this.scoreBoard(ability_ctrl.board),
                                 move_action: move_action,
                                 ability_action: ability_action,
                             };
-                            ai_options.push(opt);
-                        });
+                            return ai_options.push(opt);
+                        }));
                     });
                 });
-            });
+            }));
         });
-        setTimeout(function () {
+        Promise.all(move_promises)
+            .then(function () {
+            return Promise.all(action_promises);
+        })
+            .then(function () {
             var best = null;
             _.forEach(ai_options, function (option) {
                 if (best === null || option.score > best.score) {
@@ -87,11 +93,9 @@ var EnemyTurn = (function () {
             _this.m_board_controller.sendAction(best.move_action);
             _this.m_board_controller.executeActionStack().then(function () {
                 _this.m_board_controller.sendAction(best.ability_action);
-                _this.m_board_controller.executeActionStack().then(function () {
-                    setTimeout(_this.m_onComplete, 25);
-                });
+                _this.m_board_controller.executeActionStack().then(_this.m_onComplete);
             });
-        }, 25);
+        });
     }
     EnemyTurn.prototype.toMoveAction = function (path) {
         var action = [];

@@ -1,18 +1,28 @@
 {
+  "type" : "ACTIVE",
   "trigger" : {
-    "event" : "DAMAGE_DEALT",
-    "target" : "ENEMY",
-    "conditions" : {
-      "fatal" : true
-    }
+    "event" : "UNIT_KILLED",
+    "conditions": [
+      {
+        "property" : "source",
+        "value" : "BEARER"
+      },
+      {
+        "property" : "target",
+        "value" : "ENEMY"
+      }
+    ]
   },
   "effects" : 
   [
     {
       "type" : "HEAL",
       "data" : {
-        "target" : "bearer",
-        "amount" : 4
+        "target" : "BEARER",
+        "amount" : {
+          "type" : "CONSTANT",
+          "value" : 8
+        }
       }
     }
   ]

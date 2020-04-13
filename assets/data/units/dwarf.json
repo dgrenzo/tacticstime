@@ -5,9 +5,12 @@
   "abilities" : [
     "strike"
   ],
+  "auras" : [
+    "cannibalize"
+  ],
   "stats" : {
     "speed": 3,
-    "move" : 2,
+    "move" : 1,
     "hp" : 14,
     "magic" : 2
   }

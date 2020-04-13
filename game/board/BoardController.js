@@ -29,8 +29,7 @@ var BoardController = (function () {
         };
         this.initBoard = function (data) {
             _this.m_board = new GameBoard_1.GameBoard();
-            _this.m_board.init(data.board);
-            _this.initUnits(data.teams);
+            _this.m_board.init(data);
         };
         this.initUnits = function (teams) {
             var units = [];
@@ -66,8 +65,13 @@ var BoardController = (function () {
             });
         };
         this.addUnit = function (unit) {
-            if (_this.m_renderer) {
-            }
+            var create_action = {
+                type: "CREATE_UNIT",
+                data: {
+                    unit: unit
+                }
+            };
+            _this.sendAction(create_action);
         };
         this.createEffect = function (ability, cb) {
             return effects_1.default.RenderEffect(ability, cb);
@@ -103,6 +107,12 @@ var BoardController = (function () {
             return _this.m_board.getUnitAtPosition(pos);
         };
         this.getTilesInRange = function (pos, range) {
+            if (!range) {
+                range = {
+                    max: 0,
+                    min: 0,
+                };
+            }
             return _this.m_board.getTilesInRange(pos, range);
         };
         this.getElementsAt = function (pos) {

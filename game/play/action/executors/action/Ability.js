@@ -6,14 +6,19 @@ function ExecuteAbility(action, elements, controller) {
         _.forEach(action.data.ability.effects, function (effect) {
             var tiles = controller.getTilesInRange(action.data.target.pos, effect.range);
             tiles.forEach(function (tile) {
+                var data = _.cloneDeep(effect.data);
+                data = _.defaults(data, { tile: tile });
                 var unit = controller.getUnitAtPosition(tile.pos);
                 if (unit) {
                     controller.sendAction({
                         type: effect.type,
-                        data: {
-                            entity_id: unit.id,
-                            amount: effect.amount,
-                        }
+                        data: _.defaults(data, { entity_id: unit.id })
+                    });
+                }
+                else {
+                    controller.sendAction({
+                        type: effect.type,
+                        data: data
                     });
                 }
             });

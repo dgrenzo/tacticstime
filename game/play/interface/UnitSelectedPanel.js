@@ -43,7 +43,6 @@ var UnitSelectedPanel = (function () {
             });
         };
         this.m_container.position.set(10, 500);
-        m_controller.addInterfaceElement(this.m_container);
     }
     return UnitSelectedPanel;
 }());

@@ -3,6 +3,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 function ExecuteDamage(action, elements, controller) {
     return new Promise(function (resolve) {
         var unit = controller.getUnit(action.data.entity_id);
+        if (!unit) {
+            return resolve(elements);
+        }
         var starting_hp = unit.status.hp;
         if (starting_hp === 0) {
             return resolve(elements);

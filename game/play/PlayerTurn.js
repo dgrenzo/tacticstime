@@ -28,10 +28,8 @@ var PlayerTurn = (function () {
                     _this.selectTile(_this.m_board_controller.getTile(active.pos));
                     _this.m_action_ui = new MoveActionUI_1.MoveActionUI(active, _this.m_board_controller);
                     _this.markTiles(_this.m_action_ui.options, "highlight_blue");
-                    _this.m_controller.on("TILE_CLICKED", _this.onTileClicked);
                 },
                 exit: function () {
-                    _this.m_controller.off("TILE_CLICKED", _this.onTileClicked);
                     _this.selectTile(null);
                     _this.markTiles(_this.m_action_ui.options, "batch");
                     _this.m_action_ui = null;
@@ -43,10 +41,8 @@ var PlayerTurn = (function () {
                     var active = _this.m_board_controller.getUnit(_this.m_selected_id);
                     _this.m_selected_tile = _this.m_board_controller.getTile(active.pos);
                     _this.m_selected_panel.showUnitPanel(active);
-                    _this.m_controller.on("TILE_CLICKED", _this.onTileClicked);
                 },
                 exit: function () {
-                    _this.m_controller.off("TILE_CLICKED", _this.onTileClicked);
                     _this.m_selected_panel.hide();
                     if (_this.m_action_ui) {
                         _this.selectTile(null);
@@ -104,7 +100,6 @@ var PlayerTurn = (function () {
         };
         this.selectTile = function (tile) {
             if (_this.m_selected_tile) {
-                _this.m_controller.emit("SET_PLUGIN", { id: _this.m_selected_tile.id, plugin: 'batch' });
             }
             if (!tile) {
                 return;
@@ -113,7 +108,6 @@ var PlayerTurn = (function () {
             _this.markTile(tile, "highlight_green");
         };
         this.markTile = function (tile, plugin) {
-            _this.m_controller.emit("SET_PLUGIN", { id: tile.id, plugin: plugin });
         };
         this.markTiles = function (options, plugin) {
             _.forEach(options, function (option) {

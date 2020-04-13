@@ -12,6 +12,7 @@ var HealthBar = (function () {
         var unit = controller.getUnit(unit_id);
         var screen_pos = renderer.getScreenPosition(unit.pos.x, unit.pos.y);
         this.m_container.position.set(screen_pos.x - 1, screen_pos.y - 10);
+        this.m_container.visible = false;
         controller.on("MOVE", function (data) {
             if (data.entity_id === unit_id) {
                 var screen_pos_1 = renderer.getScreenPosition(data.move.to.x, data.move.to.y);
@@ -20,6 +21,7 @@ var HealthBar = (function () {
         });
         controller.on("DAMAGE_DEALT", function (data) {
             if (data.entity_id === unit_id) {
+                _this.m_container.visible = true;
                 var unit_1 = controller.getUnit(unit_id);
                 var bar_width = Math.floor(unit_1.status.hp / unit_1.stats.hp * 10);
                 var color = 0x00CC00;

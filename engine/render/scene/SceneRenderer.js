@@ -9,6 +9,7 @@ var SceneRenderer = (function () {
     function SceneRenderer(m_pixi) {
         var _this = this;
         this.m_pixi = m_pixi;
+        this._dirty = true;
         this.m_event_manager = new event_1.EventManager();
         this.initializeScene = function (scene) {
             _this.m_renderables = new Map();
@@ -28,16 +29,16 @@ var SceneRenderer = (function () {
             _this.m_event_manager.remove(event_name, cb);
         };
         this.renderScene = function (scene) {
-            scene.elements.forEach(function (element) {
-                _this.positionElement(_this.m_renderables.get(element.id), element.pos.x, element.pos.y);
-            });
-            _this.sortElements(scene.elements);
+            if (_this._dirty) {
+                _this.sortElements(scene.elements);
+                _this._dirty = false;
+            }
             _this.m_container.render(_this.m_pixi.renderer);
         };
         this.removeEntity = function (id) {
             var renderable = _this.m_renderables.get(id);
             if (renderable) {
-                _this.m_container.removeChild(renderable.sprite);
+                _this.m_container.removeChild(renderable.root);
                 _this.m_renderables.delete(id);
             }
             return renderable;
@@ -45,7 +46,15 @@ var SceneRenderer = (function () {
         this.addEntity = function (entity) {
             var renderable = CreateRenderable(entity);
             _this.m_renderables.set(entity.id, renderable);
+            _this.positionElement(entity.id, entity.pos);
+            _this._dirty = true;
             return renderable;
+        };
+        this.setPlugin = function (id, plugin) {
+            _this.getRenderable(id).setPlugin(plugin);
+        };
+        this.getSprite = function (id) {
+            return _this.getRenderable(id).sprite;
         };
         this.getRenderable = function (id) {
             return _this.m_renderables.get(id);

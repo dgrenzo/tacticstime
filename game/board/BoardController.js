@@ -13,7 +13,6 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-var _ = require("lodash");
 var GameBoard_1 = require("./GameBoard");
 var ActionStack_1 = require("../play/action/ActionStack");
 var pathfinding_1 = require("../pathfinding");
@@ -31,24 +30,12 @@ var BoardController = (function () {
             _this.m_board = new GameBoard_1.GameBoard();
             _this.m_board.init(data);
         };
-        this.initUnits = function (teams) {
-            var units = [];
-            _.forEach(teams, function (team) {
-                _.forEach(team.units, function (unit_def) {
-                    var create_action = {
-                        type: "CREATE_UNIT",
-                        data: {
-                            unit: GameBoard_1.CreateUnit(unit_def, team.name),
-                        }
-                    };
-                    _this.sendAction(create_action);
-                });
-            });
-            return units;
-        };
         this.sendToRenderer = function (renderer) {
             _this.m_renderer = renderer;
             renderer.initializeScene(_this.m_board);
+            _this.on("MOVE", function (data) {
+                _this.m_renderer.positionElement(data.entity_id, data.move.to);
+            });
         };
         this.sendAction = function (action) {
             _this.m_action_stack.push(action);
@@ -98,6 +85,9 @@ var BoardController = (function () {
             return _this.m_board.getTileAtPos(pos);
         };
         this.getUnit = function (id) {
+            if (id === undefined) {
+                return null;
+            }
             return _this.m_board.getUnit(id);
         };
         this.getUnits = function () {
@@ -123,19 +113,43 @@ var BoardController = (function () {
     BoardController.prototype.getActionCallback = function (action) {
         var _this = this;
         if (!this.m_renderer) {
-            return new Promise(function (resolve) {
-                setTimeout(resolve, 100);
-            });
+            return Promise.resolve();
         }
         return new Promise(function (resolve) {
-            var effect = _this.createEffect(action, resolve);
-            if (effect) {
-                var action_target = _this.m_board.getElement(action.data.entity_id);
-                var screen_pos = _this.m_renderer.getScreenPosition(action_target.pos.x, action_target.pos.y);
-                effect.m_container.position.set(screen_pos.x, screen_pos.y);
+            if (action.type === "ABILITY" && action.data.target) {
+                var data = action.data;
+                if (!_this.m_board.getUnitAtPosition(data.target.pos)) {
+                    return resolve();
+                }
+                var sprite_1 = _this.m_renderer.getSprite(data.source.id);
+                var dir = {
+                    x: data.target.pos.x - data.source.pos.x,
+                    y: data.target.pos.y - data.source.pos.y,
+                };
+                var anim_dir_1 = _this.m_renderer.getProjection(dir);
+                anim_dir_1.x = Math.min(Math.max(-1, anim_dir_1.x), 1);
+                anim_dir_1.y = Math.min(Math.max(-1, anim_dir_1.y), 1);
+                sprite_1.position.x = -anim_dir_1.x;
+                sprite_1.position.y = -anim_dir_1.y;
+                setTimeout(function () {
+                    sprite_1.position.x = anim_dir_1.x * 3;
+                    sprite_1.position.y = anim_dir_1.y * 3;
+                    setTimeout(function () {
+                        sprite_1.position.set(0, 0);
+                    }, 150);
+                    resolve();
+                }, 250);
             }
             else {
-                setTimeout(resolve, 100);
+                var effect = _this.createEffect(action, resolve);
+                if (effect) {
+                    var action_target = _this.m_board.getElement(action.data.entity_id);
+                    var screen_pos = _this.m_renderer.getScreenPosition(action_target.pos.x, action_target.pos.y);
+                    effect.m_container.position.set(screen_pos.x, screen_pos.y);
+                }
+                else {
+                    setTimeout(resolve, 100);
+                }
             }
         });
     };

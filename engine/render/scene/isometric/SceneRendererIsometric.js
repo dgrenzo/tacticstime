@@ -39,8 +39,16 @@ var SceneRendererIsometric = (function (_super) {
             var point = new PIXI.Point((x - y) * _this.HALF_TILE_WIDTH, (x + y) * _this.HALF_TILE_HEIGHT);
             return point;
         };
-        _this.positionElement = function (element, x, y) {
-            element.setPosition((x - y) * _this.HALF_TILE_WIDTH, (x + y) * _this.HALF_TILE_HEIGHT);
+        _this.positionElement = function (id, pos) {
+            var element = _this.getRenderable(id);
+            element.setPosition((pos.x - pos.y) * _this.HALF_TILE_WIDTH, (pos.x + pos.y) * _this.HALF_TILE_HEIGHT);
+            _this._dirty = true;
+        };
+        _this.getProjection = function (pos) {
+            return {
+                x: (pos.x - pos.y),
+                y: (pos.x + pos.y),
+            };
         };
         _this.sortElements = function (elements) {
             elements
@@ -48,7 +56,7 @@ var SceneRendererIsometric = (function (_super) {
                 return _this.getElementDepth(a) - _this.getElementDepth(b);
             })
                 .forEach(function (e) {
-                _this.m_container.addChild(_this.m_renderables.get(e.id).sprite);
+                _this.m_container.addChild(_this.m_renderables.get(e.id).root);
             });
         };
         _this.getElementDepth = function (element) {

@@ -4,6 +4,8 @@ var PIXI = require("pixi.js");
 var _ = require("lodash");
 var event_1 = require("../../engine/listener/event");
 var AssetManager_1 = require("../assets/AssetManager");
+var GameBoard_1 = require("../board/GameBoard");
+var UnitLoader_1 = require("../assets/UnitLoader");
 var TIER_ONE = [
     "guard",
     "knight_green",
@@ -23,6 +25,9 @@ var Tavern = (function () {
         this.m_event_manager = new event_1.EventManager();
         this.m_available_slots = 5;
         this.m_available_recruits = [];
+        this.positionContainer = function (dimensions) {
+            _this.m_container.position.set(dimensions.width / 2 - _this.m_container.width / 2, dimensions.height - 175);
+        };
         this.on = function (event_name, callback) {
             _this.m_event_manager.add(event_name, callback);
         };
@@ -48,7 +53,8 @@ var Tavern = (function () {
         this.onButtonClicked = function (btn) {
             if (_this.m_player.chargeGold(3)) {
                 btn.onPurchase();
-                _this.m_player.addUnit(new RecruitableUnit(btn.type));
+                var unit_def = UnitLoader_1.UnitLoader.GetUnitDefinition(btn.type);
+                _this.m_player.addUnit(GameBoard_1.CreateUnit(unit_def, "PLAYER"));
             }
         };
         this.clearRecruits = function () {
@@ -76,7 +82,7 @@ var Tavern = (function () {
         label.scale.set(0.25);
         label.position.set(12, 4);
         finished_btn.addChild(label);
-        finished_btn.position.set(46, 30);
+        finished_btn.position.set(46, 25);
         finished_btn.interactive = finished_btn.buttonMode = true;
         finished_btn.on('pointertap', function () {
             _this.m_event_manager.emit("LEAVE_TAVERN");

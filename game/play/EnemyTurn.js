@@ -27,7 +27,7 @@ var EnemyTurn = (function () {
                     score -= 5;
                 }
                 else {
-                    score += 5;
+                    score += 50;
                     score += unit.status.hp;
                 }
             });
@@ -62,6 +62,9 @@ var EnemyTurn = (function () {
                 var active_unit = move_ctrl.getUnit(_this.m_unit_id);
                 _.forEach(active_unit.abilities, function (ability_name) {
                     var ability_def = abilities_1.GetAbilityDef(ability_name);
+                    if (active_unit.status.mana < ability_def.cost) {
+                        return;
+                    }
                     var ability_ui = new AbilityTargetUI_1.AbilityTargetUI(ability_def, active_unit, move_ctrl);
                     _.forEach(ability_ui.options, function (ability_option) {
                         var ability_action = ability_ui.getAction(ability_option.tile);

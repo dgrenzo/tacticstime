@@ -3,11 +3,12 @@
     "sprite" : "oldman"
   },
   "abilities" : [
-    "meteor"
+    "shoot",
+    "summon"
   ],
   "stats" : {
     "speed": 1,
-    "move" : 1,
+    "move" : 3,
     "hp" : 12,
     "magic" : 2
   }

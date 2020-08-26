@@ -37,11 +37,18 @@ var DamageNumberEffect = (function (_super) {
             strokeThickness: 4,
             fontWeight: 'bolder',
         });
-        text.scale.set(0.05);
+        text.scale.set(0.00);
         text.anchor.set(0.5);
         _this.m_container.addChild(effect);
         effect.addChild(text);
-        TWEEN.add(new TWEEN.Tween(text.scale).to({ x: 0.55, y: 0.55 }, 145).easing(TWEEN.Easing.Back.Out).onComplete(onComplete).start());
+        TWEEN.add(new TWEEN.Tween(text.scale)
+            .to({ x: 0.65, y: 0.55 }, 150)
+            .easing(TWEEN.Easing.Back.Out)
+            .onComplete(function () {
+            text.scale.set(0.4);
+            onComplete();
+        })
+            .start());
         TWEEN.add(new TWEEN.Tween(text).to({ alpha: 0, y: -6 }, 400).delay(100).start());
         return _this;
     }

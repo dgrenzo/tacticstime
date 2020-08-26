@@ -85,23 +85,23 @@ var GameBoard = (function (_super) {
 exports.GameBoard = GameBoard;
 var _ID = 0;
 function CreateUnit(def, faction) {
-    if (faction === void 0) { faction = null; }
     return {
         id: _ID++,
         entity_type: "UNIT",
         pos: {
-            x: def.pos.x,
-            y: def.pos.y,
+            x: -1,
+            y: -1,
         },
         data: {
-            unit_type: def.unit.display.sprite,
+            unit_type: def.display.sprite,
             faction: faction,
         },
-        stats: _.cloneDeep(def.unit.stats),
+        stats: _.cloneDeep(def.stats),
         status: {
-            hp: def.unit.stats.hp,
+            mana: 0,
+            hp: def.stats.hp,
         },
-        abilities: _.cloneDeep(def.unit.abilities),
+        abilities: _.cloneDeep(def.abilities),
         depth_offset: 2,
     };
 }
@@ -117,6 +117,6 @@ function CreateTile(x, y, type) {
         data: {
             tile_type: type,
         },
-        depth_offset: 0,
+        depth_offset: -8,
     };
 }

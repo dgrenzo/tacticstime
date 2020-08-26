@@ -134,9 +134,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
 var AssetManager_1 = require("../../../game/assets/AssetManager");
 var RenderEntity = (function () {
-    function RenderEntity(id) {
+    function RenderEntity(m_id) {
         var _this = this;
-        this.offsetY = 0;
+        this.m_id = m_id;
         this.render = function (asset_info) {
             switch (asset_info.type) {
                 case "SPRITE":
@@ -170,15 +170,22 @@ var RenderEntity = (function () {
         };
         this.setEffect = function (effect_name) {
         };
-        this.m_container = new PIXI.Sprite();
-        this.m_container.interactive = this.m_container.buttonMode = true;
-        this.m_id = id;
+        this.m_root = new PIXI.Container();
+        this.m_container = new PIXI.Container();
+        this.m_root.addChild(this.m_container);
         this.m_image = new PIXI.Sprite();
         this.m_container.addChild(this.m_image);
     }
     Object.defineProperty(RenderEntity.prototype, "id", {
         get: function () {
             return this.m_id;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(RenderEntity.prototype, "root", {
+        get: function () {
+            return this.m_root;
         },
         enumerable: true,
         configurable: true
@@ -191,7 +198,7 @@ var RenderEntity = (function () {
         configurable: true
     });
     RenderEntity.prototype.setPosition = function (x, y) {
-        this.m_container.position.set(x, y + this.offsetY);
+        this.m_root.position.set(x, y);
     };
     return RenderEntity;
 }());
@@ -209,6 +216,7 @@ var SceneRenderer = (function () {
     function SceneRenderer(m_pixi) {
         var _this = this;
         this.m_pixi = m_pixi;
+        this._dirty = true;
         this.m_event_manager = new event_1.EventManager();
         this.initializeScene = function (scene) {
             _this.m_renderables = new Map();
@@ -228,16 +236,16 @@ var SceneRenderer = (function () {
             _this.m_event_manager.remove(event_name, cb);
         };
         this.renderScene = function (scene) {
-            scene.elements.forEach(function (element) {
-                _this.positionElement(_this.m_renderables.get(element.id), element.pos.x, element.pos.y);
-            });
-            _this.sortElements(scene.elements);
+            if (_this._dirty) {
+                _this.sortElements(scene.elements);
+                _this._dirty = false;
+            }
             _this.m_container.render(_this.m_pixi.renderer);
         };
         this.removeEntity = function (id) {
             var renderable = _this.m_renderables.get(id);
             if (renderable) {
-                _this.m_container.removeChild(renderable.sprite);
+                _this.m_container.removeChild(renderable.root);
                 _this.m_renderables.delete(id);
             }
             return renderable;
@@ -245,7 +253,15 @@ var SceneRenderer = (function () {
         this.addEntity = function (entity) {
             var renderable = CreateRenderable(entity);
             _this.m_renderables.set(entity.id, renderable);
+            _this.positionElement(entity.id, entity.pos);
+            _this._dirty = true;
             return renderable;
+        };
+        this.setPlugin = function (id, plugin) {
+            _this.getRenderable(id).setPlugin(plugin);
+        };
+        this.getSprite = function (id) {
+            return _this.getRenderable(id).sprite;
         };
         this.getRenderable = function (id) {
             return _this.m_renderables.get(id);
@@ -338,8 +354,16 @@ var SceneRendererIsometric = (function (_super) {
             var point = new PIXI.Point((x - y) * _this.HALF_TILE_WIDTH, (x + y) * _this.HALF_TILE_HEIGHT);
             return point;
         };
-        _this.positionElement = function (element, x, y) {
-            element.setPosition((x - y) * _this.HALF_TILE_WIDTH, (x + y) * _this.HALF_TILE_HEIGHT);
+        _this.positionElement = function (id, pos) {
+            var element = _this.getRenderable(id);
+            element.setPosition((pos.x - pos.y) * _this.HALF_TILE_WIDTH, (pos.x + pos.y) * _this.HALF_TILE_HEIGHT);
+            _this._dirty = true;
+        };
+        _this.getProjection = function (pos) {
+            return {
+                x: (pos.x - pos.y),
+                y: (pos.x + pos.y),
+            };
         };
         _this.sortElements = function (elements) {
             elements
@@ -347,7 +371,7 @@ var SceneRendererIsometric = (function (_super) {
                 return _this.getElementDepth(a) - _this.getElementDepth(b);
             })
                 .forEach(function (e) {
-                _this.m_container.addChild(_this.m_renderables.get(e.id).sprite);
+                _this.m_container.addChild(_this.m_renderables.get(e.id).root);
             });
         };
         _this.getElementDepth = function (element) {
@@ -432,30 +456,18 @@ var GameController = (function () {
         this.startNextEncounter = function () {
             var encounter = new EncounterController_1.EncounterController(_this.m_config);
             encounter.loadMap('assets/data/boards/coast.json').then(function () {
-                var units = [];
-                _this.m_player_party.units.forEach(function (recruit, index) {
-                    var unit_def = UnitLoader_1.UnitLoader.GetUnitDefinition(recruit.type);
-                    var unit = GameBoard_1.CreateUnit({
-                        unit: unit_def,
-                        pos: {
-                            x: 4 + index,
-                            y: 12
-                        }
-                    }, "PLAYER");
-                    units.push(unit);
+                var units = _this.m_player_party.units;
+                units.forEach(function (unit, index) {
+                    unit.pos.x = 5 + index;
+                    unit.pos.y = 12;
                 });
-                encounter.addUnits(units);
-                units = [];
                 var types = ["lizard", "mooseman", "rhino"];
                 var amount = Math.round(Math.random() * 5) + 3;
                 for (var i = 0; i < amount; i++) {
-                    units.push(GameBoard_1.CreateUnit({
-                        unit: UnitLoader_1.UnitLoader.GetUnitDefinition(types[Math.floor(Math.random() * 3)]),
-                        pos: {
-                            x: 7 + i,
-                            y: 7,
-                        }
-                    }, "ENEMY"));
+                    var enemy = GameBoard_1.CreateUnit(UnitLoader_1.UnitLoader.GetUnitDefinition(types[Math.floor(Math.random() * 3)]), "ENEMY");
+                    enemy.pos.x = 7 + i;
+                    enemy.pos.y = 7;
+                    units = units.push(enemy);
                 }
                 encounter.addUnits(units);
                 encounter.startGame();
@@ -468,8 +480,14 @@ var GameController = (function () {
             _this.m_player_party = new party_1.PlayerParty();
             tavern.setPlayer(_this.m_player_party);
             _this.m_config.pixi_app.stage.addChild(tavern.sprite);
+            m_config.pixi_app.renderer.on("resize", tavern.positionContainer);
+            tavern.positionContainer({
+                width: m_config.pixi_app.renderer.width,
+                height: m_config.pixi_app.renderer.height,
+            });
             tavern.on("LEAVE_TAVERN", function () {
                 _this.m_config.pixi_app.stage.removeChild(tavern.sprite);
+                m_config.pixi_app.renderer.off("resize", tavern.positionContainer);
                 _this.startNextEncounter();
             });
         });
@@ -588,7 +606,6 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-var _ = require("lodash");
 var GameBoard_1 = require("./GameBoard");
 var ActionStack_1 = require("../play/action/ActionStack");
 var pathfinding_1 = require("../pathfinding");
@@ -606,24 +623,12 @@ var BoardController = (function () {
             _this.m_board = new GameBoard_1.GameBoard();
             _this.m_board.init(data);
         };
-        this.initUnits = function (teams) {
-            var units = [];
-            _.forEach(teams, function (team) {
-                _.forEach(team.units, function (unit_def) {
-                    var create_action = {
-                        type: "CREATE_UNIT",
-                        data: {
-                            unit: GameBoard_1.CreateUnit(unit_def, team.name),
-                        }
-                    };
-                    _this.sendAction(create_action);
-                });
-            });
-            return units;
-        };
         this.sendToRenderer = function (renderer) {
             _this.m_renderer = renderer;
             renderer.initializeScene(_this.m_board);
+            _this.on("MOVE", function (data) {
+                _this.m_renderer.positionElement(data.entity_id, data.move.to);
+            });
         };
         this.sendAction = function (action) {
             _this.m_action_stack.push(action);
@@ -673,6 +678,9 @@ var BoardController = (function () {
             return _this.m_board.getTileAtPos(pos);
         };
         this.getUnit = function (id) {
+            if (id === undefined) {
+                return null;
+            }
             return _this.m_board.getUnit(id);
         };
         this.getUnits = function () {
@@ -698,19 +706,43 @@ var BoardController = (function () {
     BoardController.prototype.getActionCallback = function (action) {
         var _this = this;
         if (!this.m_renderer) {
-            return new Promise(function (resolve) {
-                setTimeout(resolve, 100);
-            });
+            return Promise.resolve();
         }
         return new Promise(function (resolve) {
-            var effect = _this.createEffect(action, resolve);
-            if (effect) {
-                var action_target = _this.m_board.getElement(action.data.entity_id);
-                var screen_pos = _this.m_renderer.getScreenPosition(action_target.pos.x, action_target.pos.y);
-                effect.m_container.position.set(screen_pos.x, screen_pos.y);
+            if (action.type === "ABILITY" && action.data.target) {
+                var data = action.data;
+                if (!_this.m_board.getUnitAtPosition(data.target.pos)) {
+                    return resolve();
+                }
+                var sprite_1 = _this.m_renderer.getSprite(data.source.id);
+                var dir = {
+                    x: data.target.pos.x - data.source.pos.x,
+                    y: data.target.pos.y - data.source.pos.y,
+                };
+                var anim_dir_1 = _this.m_renderer.getProjection(dir);
+                anim_dir_1.x = Math.min(Math.max(-1, anim_dir_1.x), 1);
+                anim_dir_1.y = Math.min(Math.max(-1, anim_dir_1.y), 1);
+                sprite_1.position.x = -anim_dir_1.x;
+                sprite_1.position.y = -anim_dir_1.y;
+                setTimeout(function () {
+                    sprite_1.position.x = anim_dir_1.x * 3;
+                    sprite_1.position.y = anim_dir_1.y * 3;
+                    setTimeout(function () {
+                        sprite_1.position.set(0, 0);
+                    }, 150);
+                    resolve();
+                }, 250);
             }
             else {
-                setTimeout(resolve, 100);
+                var effect = _this.createEffect(action, resolve);
+                if (effect) {
+                    var action_target = _this.m_board.getElement(action.data.entity_id);
+                    var screen_pos = _this.m_renderer.getScreenPosition(action_target.pos.x, action_target.pos.y);
+                    effect.m_container.position.set(screen_pos.x, screen_pos.y);
+                }
+                else {
+                    setTimeout(resolve, 100);
+                }
             }
         });
     };
@@ -739,7 +771,7 @@ var AIBoardController = (function (_super) {
 }(BoardController));
 exports.AIBoardController = AIBoardController;
 
-},{"../../engine/listener/event":2,"../effects":17,"../pathfinding":22,"../play/action/ActionStack":26,"./GameBoard":12,"lodash":78}],12:[function(require,module,exports){
+},{"../../engine/listener/event":2,"../effects":17,"../pathfinding":22,"../play/action/ActionStack":26,"./GameBoard":12}],12:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -827,23 +859,23 @@ var GameBoard = (function (_super) {
 exports.GameBoard = GameBoard;
 var _ID = 0;
 function CreateUnit(def, faction) {
-    if (faction === void 0) { faction = null; }
     return {
         id: _ID++,
         entity_type: "UNIT",
         pos: {
-            x: def.pos.x,
-            y: def.pos.y,
+            x: -1,
+            y: -1,
         },
         data: {
-            unit_type: def.unit.display.sprite,
+            unit_type: def.display.sprite,
             faction: faction,
         },
-        stats: _.cloneDeep(def.unit.stats),
+        stats: _.cloneDeep(def.stats),
         status: {
-            hp: def.unit.stats.hp,
+            mana: 0,
+            hp: def.stats.hp,
         },
-        abilities: _.cloneDeep(def.unit.abilities),
+        abilities: _.cloneDeep(def.abilities),
         depth_offset: 2,
     };
 }
@@ -859,7 +891,7 @@ function CreateTile(x, y, type) {
         data: {
             tile_type: type,
         },
-        depth_offset: 0,
+        depth_offset: -8,
     };
 }
 
@@ -1055,11 +1087,18 @@ var DamageNumberEffect = (function (_super) {
             strokeThickness: 4,
             fontWeight: 'bolder',
         });
-        text.scale.set(0.05);
+        text.scale.set(0.00);
         text.anchor.set(0.5);
         _this.m_container.addChild(effect);
         effect.addChild(text);
-        TWEEN.add(new TWEEN.Tween(text.scale).to({ x: 0.55, y: 0.55 }, 145).easing(TWEEN.Easing.Back.Out).onComplete(onComplete).start());
+        TWEEN.add(new TWEEN.Tween(text.scale)
+            .to({ x: 0.65, y: 0.55 }, 150)
+            .easing(TWEEN.Easing.Back.Out)
+            .onComplete(function () {
+            text.scale.set(0.4);
+            onComplete();
+        })
+            .start());
         TWEEN.add(new TWEEN.Tween(text).to({ alpha: 0, y: -6 }, 400).delay(100).start());
         return _this;
     }
@@ -1099,7 +1138,6 @@ exports.default = EffectsManager;
 },{"./damage":16,"@tweenjs/tween.js":73}],18:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var _ = require("lodash");
 var PIXI = require("pixi.js");
 var BoardController_1 = require("../board/BoardController");
 var SceneRenderer_1 = require("../../engine/render/scene/SceneRenderer");
@@ -1135,7 +1173,7 @@ var EncounterController = (function () {
             });
         };
         this.addUnits = function (units) {
-            _.forEach(units, _this.m_board_controller.addUnit);
+            units.forEach(_this.m_board_controller.addUnit);
         };
         this.setupListeners = function () {
             _this.m_board_controller.on("CREATE_UNIT", function (data) {
@@ -1149,9 +1187,6 @@ var EncounterController = (function () {
             _this.m_board_controller.on("UNIT_CREATED", function (data) {
                 var health_bar = new HealthBar_1.HealthBar(data.unit.id, _this.m_board_controller, _this.m_renderer);
                 _this.m_renderer.effects_container.addChild(health_bar.sprite);
-            });
-            _this.on("SET_PLUGIN", function (data) {
-                _this.m_renderer.getRenderable(data.id).setPlugin(data.plugin);
             });
         };
         this.loadNextMisison = function () {
@@ -1172,6 +1207,10 @@ var EncounterController = (function () {
             _this.m_board_controller.executeActionStack().then(_this.startTurn);
         };
         this.startTurn = function () {
+            if (_this.checkVictory()) {
+                _this.emit("END");
+                return;
+            }
             var id = _this.m_unit_queue.getNextQueued();
             var unit = _this.m_board_controller.getUnit(id);
             if (!unit) {
@@ -1180,14 +1219,27 @@ var EncounterController = (function () {
             }
             new EnemyTurn_1.EnemyTurn(id, _this.m_board_controller, _this.onTurnComplete);
         };
+        this.checkVictory = function () {
+            var units = _this.m_board_controller.getUnits();
+            var remaining_teams = [];
+            units.forEach(function (unit) {
+                if (unit.data.faction && remaining_teams.indexOf(unit.data.faction) === -1) {
+                    remaining_teams.push(unit.data.faction);
+                }
+            });
+            if (remaining_teams.length < 2) {
+                return true;
+            }
+            return false;
+        };
         this.on = function (event_name, cb) {
             _this.m_event_manager.add(event_name, cb);
         };
         this.off = function (event_name, cb) {
             _this.m_event_manager.remove(event_name, cb);
         };
-        this.emit = function (event_name, data) {
-            _this.m_event_manager.emit(event_name, data);
+        this.emit = function (event_name) {
+            _this.m_event_manager.emit(event_name, _this);
         };
         this.onTurnComplete = function () {
             _this.startTurn();
@@ -1203,7 +1255,7 @@ var EncounterController = (function () {
 }());
 exports.EncounterController = EncounterController;
 
-},{"../../engine/listener/event":2,"../../engine/render/render":3,"../../engine/render/scene/SceneRenderer":5,"../board/BoardController":11,"../board/Loader":13,"../effects":17,"../extras/TileHighlighter":19,"../play/EnemyTurn":23,"../play/UnitQueue":24,"../play/interface/HealthBar":35,"lodash":78,"pixi.js":82}],19:[function(require,module,exports){
+},{"../../engine/listener/event":2,"../../engine/render/render":3,"../../engine/render/scene/SceneRenderer":5,"../board/BoardController":11,"../board/Loader":13,"../effects":17,"../extras/TileHighlighter":19,"../play/EnemyTurn":23,"../play/UnitQueue":24,"../play/interface/HealthBar":35,"pixi.js":82}],19:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var TileHighlighter = (function () {
@@ -1220,11 +1272,9 @@ var TileHighlighter = (function () {
         this.update = function () {
             var targets = _this.m_board.getElementsAt(_this.m_last_pos);
             targets.forEach(function (entity) {
-                _this.m_renderer.getRenderable(entity.id).offsetY = 0;
             });
             targets = _this.m_board.getElementsAt(_this.m_current_pos);
             targets.forEach(function (entity) {
-                _this.m_renderer.getRenderable(entity.id).offsetY = -2;
             });
             _this.m_last_pos = _this.m_current_pos;
         };
@@ -1444,7 +1494,7 @@ var EnemyTurn = (function () {
                     score -= 5;
                 }
                 else {
-                    score += 5;
+                    score += 50;
                     score += unit.status.hp;
                 }
             });
@@ -1479,6 +1529,9 @@ var EnemyTurn = (function () {
                 var active_unit = move_ctrl.getUnit(_this.m_unit_id);
                 _.forEach(active_unit.abilities, function (ability_name) {
                     var ability_def = abilities_1.GetAbilityDef(ability_name);
+                    if (active_unit.status.mana < ability_def.cost) {
+                        return;
+                    }
                     var ability_ui = new AbilityTargetUI_1.AbilityTargetUI(ability_def, active_unit, move_ctrl);
                     _.forEach(ability_ui.options, function (ability_option) {
                         var ability_action = ability_ui.getAction(ability_option.tile);
@@ -1793,7 +1846,7 @@ var TARGET_TYPE;
     TARGET_TYPE[TARGET_TYPE["ALLY"] = 4] = "ALLY";
 })(TARGET_TYPE || (TARGET_TYPE = {}));
 var s_ability_map = new Map();
-_.forEach(["meteor", "strike", "shoot", "summon_mooseman"], function (ability_name) {
+_.forEach(["meteor", "strike", "shoot", "summon"], function (ability_name) {
     Loader_1.LoadJSON('assets/data/abilities/' + ability_name + '.json').then(function (def) {
         s_ability_map.set(ability_name, def);
     });
@@ -1813,7 +1866,7 @@ function ExecuteAbility(action, elements, controller) {
             var tiles = controller.getTilesInRange(action.data.target.pos, effect.range);
             tiles.forEach(function (tile) {
                 var data = _.cloneDeep(effect.data);
-                data = _.defaults(data, { tile: tile });
+                data = _.defaults(data, { tile: tile, source: action.data.source });
                 var unit = controller.getUnitAtPosition(tile.pos);
                 if (unit) {
                     controller.sendAction({
@@ -1829,7 +1882,14 @@ function ExecuteAbility(action, elements, controller) {
                 }
             });
         });
-        return elements;
+        if (action.data.ability.cost > 0) {
+            var result = elements.setIn([action.data.source.id, 'status', 'mana'], action.data.source.status.mana - action.data.ability.cost);
+            return result;
+        }
+        else {
+            var result = elements.setIn([action.data.source.id, 'status', 'mana'], action.data.source.status.mana + 2);
+            return result;
+        }
     });
 }
 exports.ExecuteAbility = ExecuteAbility;
@@ -1921,10 +1981,11 @@ var UnitLoader_1 = require("../../../../assets/UnitLoader");
 function ExecuteSummonUnit(action, elements, controller) {
     return new Promise(function (resolve) {
         var unit_data = UnitLoader_1.UnitLoader.GetUnitDefinition(action.data.unit_type);
-        var unit = GameBoard_1.CreateUnit({
-            pos: action.data.tile.pos,
-            unit: unit_data,
-        });
+        var unit = GameBoard_1.CreateUnit(unit_data, action.data.source.data.faction);
+        unit.pos = {
+            x: action.data.tile.pos.x,
+            y: action.data.tile.pos.y,
+        };
         controller.sendAction({
             type: "CREATE_UNIT",
             data: {
@@ -1997,6 +2058,8 @@ var PIXI = require("pixi.js");
 var _ = require("lodash");
 var event_1 = require("../../engine/listener/event");
 var AssetManager_1 = require("../assets/AssetManager");
+var GameBoard_1 = require("../board/GameBoard");
+var UnitLoader_1 = require("../assets/UnitLoader");
 var TIER_ONE = [
     "guard",
     "knight_green",
@@ -2016,6 +2079,9 @@ var Tavern = (function () {
         this.m_event_manager = new event_1.EventManager();
         this.m_available_slots = 5;
         this.m_available_recruits = [];
+        this.positionContainer = function (dimensions) {
+            _this.m_container.position.set(dimensions.width / 2 - _this.m_container.width / 2, dimensions.height - 175);
+        };
         this.on = function (event_name, callback) {
             _this.m_event_manager.add(event_name, callback);
         };
@@ -2041,7 +2107,8 @@ var Tavern = (function () {
         this.onButtonClicked = function (btn) {
             if (_this.m_player.chargeGold(3)) {
                 btn.onPurchase();
-                _this.m_player.addUnit(new RecruitableUnit(btn.type));
+                var unit_def = UnitLoader_1.UnitLoader.GetUnitDefinition(btn.type);
+                _this.m_player.addUnit(GameBoard_1.CreateUnit(unit_def, "PLAYER"));
             }
         };
         this.clearRecruits = function () {
@@ -2069,7 +2136,7 @@ var Tavern = (function () {
         label.scale.set(0.25);
         label.position.set(12, 4);
         finished_btn.addChild(label);
-        finished_btn.position.set(46, 30);
+        finished_btn.position.set(46, 25);
         finished_btn.interactive = finished_btn.buttonMode = true;
         finished_btn.on('pointertap', function () {
             _this.m_event_manager.emit("LEAVE_TAVERN");
@@ -2193,7 +2260,7 @@ var RecruitableUnit = (function () {
 }());
 exports.RecruitableUnit = RecruitableUnit;
 
-},{"../../engine/listener/event":2,"../assets/AssetManager":9,"lodash":78,"pixi.js":82}],37:[function(require,module,exports){
+},{"../../engine/listener/event":2,"../assets/AssetManager":9,"../assets/UnitLoader":10,"../board/GameBoard":12,"lodash":78,"pixi.js":82}],37:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
@@ -2211,6 +2278,7 @@ var pixi_app = new PIXI.Application({
 });
 var WindowResize = function () {
     pixi_app.renderer.resize(window.innerWidth, window.innerHeight);
+    pixi_app.renderer.emit("resize", { width: window.innerWidth, height: window.innerHeight });
 };
 window.addEventListener('resize', WindowResize);
 Promise.resolve().then(WindowResize);

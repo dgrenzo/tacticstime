@@ -7,7 +7,7 @@ function ExecuteAbility(action, elements, controller) {
             var tiles = controller.getTilesInRange(action.data.target.pos, effect.range);
             tiles.forEach(function (tile) {
                 var data = _.cloneDeep(effect.data);
-                data = _.defaults(data, { tile: tile });
+                data = _.defaults(data, { tile: tile, source: action.data.source });
                 var unit = controller.getUnitAtPosition(tile.pos);
                 if (unit) {
                     controller.sendAction({
@@ -23,7 +23,14 @@ function ExecuteAbility(action, elements, controller) {
                 }
             });
         });
-        return elements;
+        if (action.data.ability.cost > 0) {
+            var result = elements.setIn([action.data.source.id, 'status', 'mana'], action.data.source.status.mana - action.data.ability.cost);
+            return result;
+        }
+        else {
+            var result = elements.setIn([action.data.source.id, 'status', 'mana'], action.data.source.status.mana + 2);
+            return result;
+        }
     });
 }
 exports.ExecuteAbility = ExecuteAbility;

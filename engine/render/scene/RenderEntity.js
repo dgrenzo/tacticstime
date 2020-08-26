@@ -3,9 +3,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
 var AssetManager_1 = require("../../../game/assets/AssetManager");
 var RenderEntity = (function () {
-    function RenderEntity(id) {
+    function RenderEntity(m_id) {
         var _this = this;
-        this.offsetY = 0;
+        this.m_id = m_id;
         this.render = function (asset_info) {
             switch (asset_info.type) {
                 case "SPRITE":
@@ -39,15 +39,22 @@ var RenderEntity = (function () {
         };
         this.setEffect = function (effect_name) {
         };
-        this.m_container = new PIXI.Sprite();
-        this.m_container.interactive = this.m_container.buttonMode = true;
-        this.m_id = id;
+        this.m_root = new PIXI.Container();
+        this.m_container = new PIXI.Container();
+        this.m_root.addChild(this.m_container);
         this.m_image = new PIXI.Sprite();
         this.m_container.addChild(this.m_image);
     }
     Object.defineProperty(RenderEntity.prototype, "id", {
         get: function () {
             return this.m_id;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(RenderEntity.prototype, "root", {
+        get: function () {
+            return this.m_root;
         },
         enumerable: true,
         configurable: true
@@ -60,7 +67,7 @@ var RenderEntity = (function () {
         configurable: true
     });
     RenderEntity.prototype.setPosition = function (x, y) {
-        this.m_container.position.set(x, y + this.offsetY);
+        this.m_root.position.set(x, y);
     };
     return RenderEntity;
 }());

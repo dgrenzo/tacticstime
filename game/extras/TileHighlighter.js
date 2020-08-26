@@ -14,11 +14,9 @@ var TileHighlighter = (function () {
         this.update = function () {
             var targets = _this.m_board.getElementsAt(_this.m_last_pos);
             targets.forEach(function (entity) {
-                _this.m_renderer.getRenderable(entity.id).offsetY = 0;
             });
             targets = _this.m_board.getElementsAt(_this.m_current_pos);
             targets.forEach(function (entity) {
-                _this.m_renderer.getRenderable(entity.id).offsetY = -2;
             });
             _this.m_last_pos = _this.m_current_pos;
         };

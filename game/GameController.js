@@ -19,30 +19,18 @@ var GameController = (function () {
         this.startNextEncounter = function () {
             var encounter = new EncounterController_1.EncounterController(_this.m_config);
             encounter.loadMap('assets/data/boards/coast.json').then(function () {
-                var units = [];
-                _this.m_player_party.units.forEach(function (recruit, index) {
-                    var unit_def = UnitLoader_1.UnitLoader.GetUnitDefinition(recruit.type);
-                    var unit = GameBoard_1.CreateUnit({
-                        unit: unit_def,
-                        pos: {
-                            x: 4 + index,
-                            y: 12
-                        }
-                    }, "PLAYER");
-                    units.push(unit);
+                var units = _this.m_player_party.units;
+                units.forEach(function (unit, index) {
+                    unit.pos.x = 5 + index;
+                    unit.pos.y = 12;
                 });
-                encounter.addUnits(units);
-                units = [];
                 var types = ["lizard", "mooseman", "rhino"];
                 var amount = Math.round(Math.random() * 5) + 3;
                 for (var i = 0; i < amount; i++) {
-                    units.push(GameBoard_1.CreateUnit({
-                        unit: UnitLoader_1.UnitLoader.GetUnitDefinition(types[Math.floor(Math.random() * 3)]),
-                        pos: {
-                            x: 7 + i,
-                            y: 7,
-                        }
-                    }, "ENEMY"));
+                    var enemy = GameBoard_1.CreateUnit(UnitLoader_1.UnitLoader.GetUnitDefinition(types[Math.floor(Math.random() * 3)]), "ENEMY");
+                    enemy.pos.x = 7 + i;
+                    enemy.pos.y = 7;
+                    units = units.push(enemy);
                 }
                 encounter.addUnits(units);
                 encounter.startGame();
@@ -55,8 +43,14 @@ var GameController = (function () {
             _this.m_player_party = new party_1.PlayerParty();
             tavern.setPlayer(_this.m_player_party);
             _this.m_config.pixi_app.stage.addChild(tavern.sprite);
+            m_config.pixi_app.renderer.on("resize", tavern.positionContainer);
+            tavern.positionContainer({
+                width: m_config.pixi_app.renderer.width,
+                height: m_config.pixi_app.renderer.height,
+            });
             tavern.on("LEAVE_TAVERN", function () {
                 _this.m_config.pixi_app.stage.removeChild(tavern.sprite);
+                m_config.pixi_app.renderer.off("resize", tavern.positionContainer);
                 _this.startNextEncounter();
             });
         });

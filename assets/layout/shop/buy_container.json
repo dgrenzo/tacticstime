@@ -1,0 +1,30 @@
+{
+  "id" : "shop_unit_container",
+  "children" : [
+    {
+      "id" : "unit_0",
+      "type" : "shop/unit.json",
+      "x" : 0
+    },
+    {
+      "id" : "unit_1",
+      "type" : "shop/unit.json",
+      "x" : 100
+    },
+    {
+      "id" : "unit_2",
+      "type" : "shop/unit.json",
+      "x" : 200
+    },
+    {
+      "id" : "unit_3",
+      "type" : "shop/unit.json",
+      "x" : 300
+    },
+    {
+      "id" : "unit_4",
+      "type" : "shop/unit.json",
+      "x" : 400
+    }
+  ]
+}

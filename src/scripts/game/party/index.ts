@@ -1,20 +1,23 @@
 import { List, Map } from 'immutable'
-import { RecruitableUnit } from '../tavern';
+import { IUnit } from '../board/Unit';
 
 export class PlayerParty {
-  private m_units : List<RecruitableUnit> = List();
+  
+  private m_units : List<IUnit> = List();
   private m_gold : number = 10;
+
   constructor() {
 
   }
 
-  public addUnit = (unit : RecruitableUnit) => {
+  public get units () : List<IUnit> {
+    return this.m_units;
+  }
+
+  public addUnit = (unit : IUnit) => {
     this.m_units = this.m_units.push(unit);
   }
 
-  public get units () : List<RecruitableUnit> {
-    return this.m_units;
-  }
 
   public chargeGold = (amount : number) : boolean => {
     if (this.m_gold >= amount) {

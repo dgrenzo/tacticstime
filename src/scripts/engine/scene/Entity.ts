@@ -10,12 +10,13 @@ export interface IEntityInfo {
 export interface IAssetInfo {
   type : "SPRITE" | "ANIMATED_SPRITE" | "EFFECT",
   name : string;
+  depth_offset : number,
+  data ?: any,
 }
 
 export interface IEntity {
   id : number,
   entity_type : string,
-  depth_offset : number,
   pos : {
     x : number,
     y : number,

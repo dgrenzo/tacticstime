@@ -7,6 +7,7 @@ import { IUnit, isUnit } from './Unit';
 import { ILoadedTeam, IMissionUnit } from './Loader';
 import { IRangeDef } from '../play/action/abilities';
 import { ActionStack } from '../play/action/ActionStack';
+import { IUnitDef } from '../assets/UnitLoader';
 
 export interface IBoardConfig {
   layout : {
@@ -24,8 +25,6 @@ export interface IBoardPos {
 export type UpdateFunction = (keyPath:Iterable<any>, updator:(value:any) => any) => void;
 
 export class GameBoard extends Scene {
-
-  private m_action_stack : ActionStack;
 
   constructor() {
     super();
@@ -99,24 +98,45 @@ export class GameBoard extends Scene {
 
 let _ID : number = 0;
 
-export function CreateUnit(def : IMissionUnit, faction : string = null) : IUnit {
+export function CreateEntity() : IEntity {
+  return {
+    id : _ID ++,
+    entity_type : "ENTITY",
+    pos : {
+      x : 0,
+      y : 0,
+    }
+  }
+}
+export function CreateEffect() : IEntity {
+  return {
+    id : _ID ++,
+    entity_type : "EFFECT",
+    pos : {
+      x : 0,
+      y : 0,
+    }
+  }
+}
+
+export function CreateUnit(def : IUnitDef, faction ?: string) : IUnit {
   return {
     id : _ID ++,
     entity_type : "UNIT",
     pos : {
-      x : def.pos.x,
-      y : def.pos.y,
+      x : -1,
+      y : -1,
     },
     data : {
-      unit_type : def.unit.display.sprite,
+      unit_type : def.display.sprite,
       faction,
     },
-    stats : _.cloneDeep(def.unit.stats),
+    stats : _.cloneDeep(def.stats),
     status : {
-      hp : def.unit.stats.hp,
+      mana : 0,
+      hp : def.stats.hp,
     },
-    abilities : _.cloneDeep(def.unit.abilities),
-    depth_offset : 2,
+    abilities : _.cloneDeep(def.abilities),
   }
 }
 
@@ -130,7 +150,6 @@ function CreateTile(x : number, y : number, type : TILE_DEF) : ITile {
     },
     data : {
       tile_type : type,
-    },
-    depth_offset : 0,
+    }
   }
 }

@@ -1,11 +1,10 @@
 import * as PIXI from 'pixi.js';
 import * as TWEEN from '@tweenjs/tween.js'
-import { IDamageActionData } from '../play/action/executors/action/Damage';
-import { SceneRenderer } from '../../engine/render/scene/SceneRenderer';
+import { IAbilityActionData } from '../play/action/executors/action/Ability';
 
 
 export class GameEffect {
-  
+  public m_container : PIXI.Container = new PIXI.Container();
   constructor() {
   }
 
@@ -13,9 +12,8 @@ export class GameEffect {
 
   }
 }
-
 export class DamageNumberEffect extends GameEffect { 
-  constructor (data : IDamageActionData, onComplete ?: ()=>void) {
+  constructor (data : IAbilityActionData, onComplete ?: ()=>void) {
     super();
 
     let effect = new PIXI.Container();
@@ -32,7 +30,7 @@ export class DamageNumberEffect extends GameEffect {
     text.scale.set (0.00);
     text.anchor.set(0.5);
 
-    //this.m_container.addChild(effect);
+    this.m_container.addChild(effect);
     effect.addChild(text);
     TWEEN.add(new TWEEN.Tween(text.scale)
       .to({x : 0.65, y : 0.55}, 150)

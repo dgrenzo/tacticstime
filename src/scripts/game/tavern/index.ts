@@ -5,6 +5,8 @@ import { UNIT_TYPE } from "../types/units";
 import { EventManager } from "../../engine/listener/event";
 import { PlayerParty } from '../party';
 import AssetManager from '../assets/AssetManager';
+import { CreateUnit } from '../board/GameBoard';
+import { UnitLoader } from '../assets/UnitLoader';
 
 
 let TIER_ONE : UNIT_TYPE[] = [
@@ -55,7 +57,7 @@ export class Tavern {
     label.position.set(12, 4)
 
     finished_btn.addChild(label)
-    finished_btn.position.set(46, 30);
+    finished_btn.position.set(46, 25);
     finished_btn.interactive = finished_btn.buttonMode = true;
 
     finished_btn.on('pointertap', () => {
@@ -64,7 +66,13 @@ export class Tavern {
 
     this.m_container.addChild(finished_btn);
 
+    
+
     this.refreshRecruits();
+  }
+
+  public positionContainer = (dimensions : {width : number, height : number}) => {
+    this.m_container.position.set(dimensions.width / 2 - this.m_container.width / 2, dimensions.height - 175);
   }
 
   public on = (event_name : TAVERN_EVENT, callback : ()=>void) => {
@@ -102,7 +110,9 @@ export class Tavern {
   private onButtonClicked = (btn : RecruitableButton) => {
     if (this.m_player.chargeGold(3)) {
       btn.onPurchase();
-      this.m_player.addUnit(new RecruitableUnit(btn.type));
+
+      let unit_def = UnitLoader.GetUnitDefinition(btn.type)
+      this.m_player.addUnit(CreateUnit(unit_def, "PLAYER"));
     }
   }
 

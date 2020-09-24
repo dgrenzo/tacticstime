@@ -23,12 +23,12 @@ export default class TileHighlighter {
   public update = () => {
     let targets = this.m_board.getElementsAt(this.m_last_pos)
       targets.forEach((entity:IEntity) => {
-        this.m_renderer.getRenderable(entity.id).offsetY = 0;
+        // this.m_renderer.getRenderable(entity.id).offsetY = 0;
       })
         
     targets = this.m_board.getElementsAt(this.m_current_pos)
       targets.forEach((entity:IEntity) => {
-        this.m_renderer.getRenderable(entity.id).offsetY = -2;
+        // this.m_renderer.getRenderable(entity.id).offsetY = -2;
       })
     this.m_last_pos = this.m_current_pos;
   }

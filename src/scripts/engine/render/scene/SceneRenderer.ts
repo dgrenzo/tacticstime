@@ -1,17 +1,21 @@
 import * as PIXI from 'pixi.js';
-import { RenderEntity } from "./RenderEntity";
+import { RenderEntity, RenderEntityID } from "./RenderEntity";
 import { Scene, IElementMap } from '../../scene/Scene';
 import { EventManager } from '../../listener/event';
 import { isTile, GetTileName } from '../../../game/board/Tile';
 import { isUnit } from '../../../game/board/Unit';
-import { IEntity } from '../../scene/Entity';
+import { IEntity, IAssetInfo } from '../../scene/Entity';
+import { RENDER_PLUGIN } from '../../../game/extras/plugins';
+import { LinkedList } from '../../list/linkedlist';
 
 
 type RendererEvent = "ENTITY_CLICKED" | "POINTER_UP" | "POINTER_DOWN" | "POINTER_MOVE";
 
 export abstract class SceneRenderer {
+  protected _dirty : boolean = true;
+
   protected m_container : PIXI.Container;
-  protected m_renderables : Map<number, RenderEntity>;
+  protected m_renderables : LinkedList<RenderEntity>;
 
   protected m_screen_effects_container : PIXI.Container;
   
@@ -41,17 +45,17 @@ export abstract class SceneRenderer {
   }
   
   public initializeScene = (scene : Scene) => {
-    this.m_renderables = new Map<number, RenderEntity>();
+    this.m_renderables = new LinkedList();// new Map<number, RenderEntity>();
     this.m_container.removeChildren();
     scene.elements.forEach(element => {
       
       let renderable = this.addEntity(element);
-      renderable.render(getAsset(element));
+      renderable.renderAsset(getAsset(element));
 
 
     })
     this.m_pixi.ticker.add(() => {
-      this.renderScene(scene);
+      this.renderScene();
     });
   }
 
@@ -62,56 +66,64 @@ export abstract class SceneRenderer {
     this.m_event_manager.remove(event_name, cb);
   }
 
-  private renderScene = (scene : Scene) => {
-    scene.elements.forEach(element => {
-      this.positionElement(this.m_renderables.get(element.id), element.pos.x, element.pos.y);
-    });
-    this.sortElements(scene.elements);
-
+  private renderScene = () => {
     this.m_container.render(this.m_pixi.renderer);
   }
   
-  public removeEntity = (id : number) : RenderEntity => {
-    let renderable = this.m_renderables.get(id);
+  public removeEntity = (id : RenderEntityID) : RenderEntity => {
+    let renderable = this.getRenderable(id);
 
     if (renderable) {
-      this.m_container.removeChild(renderable.sprite);
-      this.m_renderables.delete(id);
+      this.m_container.removeChild(renderable.root);
+      this.m_renderables.remove(renderable);
     }
-
+    this._dirty = true;
     return renderable;
   }
 
   public addEntity = (entity : IEntity) : RenderEntity => {
     let renderable = CreateRenderable(entity);
-    this.m_renderables.set(entity.id, renderable);
+    this.positionElement(renderable, entity.pos);
+    this._dirty = true;
     return renderable;
   };
 
-  public getRenderable = (id : number) : RenderEntity => {
-    return this.m_renderables.get(id);
+  public setPlugin = (id : number, plugin : RENDER_PLUGIN) => {
+    this.getRenderable(id).setPlugin(plugin)
   }
 
+  public getSprite = (id : number) => {
+    return this.getRenderable(id).sprite;
+  }
+  
+  protected getRenderable = (id : RenderEntityID) : RenderEntity => {
+    return this.m_renderables.getFirst((element) => {
+      return element.id === id
+    });
+  }
+  public abstract getProjection(pos : {x : number, y : number}) : {x: number, y : number};
   public abstract getScreenPosition(x : number, y : number) : {x : number, y : number};
-  public abstract positionElement(element : RenderEntity, x : number, y : number):void;
-  public abstract sortElements(elements : IElementMap):void;
+  public abstract positionElement(element : RenderEntity, pos : { x : number, y : number} ):void;
 }
 
-export function getAsset(entity : IEntity) : any {
+export function getAsset(entity : IEntity) : IAssetInfo {
   if (isTile(entity)) {
     return {
       type : "SPRITE",
+      depth_offset : -8,
       name : GetTileName(entity.data.tile_type),
     }
   } else if (isUnit(entity)) {
     return {
       type : "ANIMATED_SPRITE",
+      depth_offset : 2,
       name : entity.data.unit_type + '_idle',
     }
   }
+  return null;
 }
 
 function CreateRenderable(entity : IEntity) : RenderEntity {
-  return new RenderEntity(entity.id);
+  return new RenderEntity();
 }
   

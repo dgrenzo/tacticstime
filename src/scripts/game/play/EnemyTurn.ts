@@ -16,6 +16,8 @@ enum TURN_STATE {
   ACTING,
   AFTER_ACTING,
 }
+
+
 interface ISelection {
   tile : ITile,
   unit ?: IUnit,
@@ -55,6 +57,9 @@ export class EnemyTurn {
         let active_unit = move_ctrl.getUnit(this.m_unit_id);
         _.forEach(active_unit.abilities, (ability_name) => {
           let ability_def = GetAbilityDef(ability_name);
+          if (active_unit.status.mana < ability_def.cost) {
+            return;
+          }
           let ability_ui = new AbilityTargetUI(ability_def, active_unit, move_ctrl);
 
           _.forEach(ability_ui.options, ability_option => {
@@ -103,7 +108,7 @@ export class EnemyTurn {
         score -= unit.status.hp;
         score -= 5;
       } else {
-        score += 5;
+        score += 50;
         score += unit.status.hp;
       }
     });

@@ -27,13 +27,13 @@ export interface IEffectAction extends IGameAction {
 
 export function ExecuteAbility(action : IAbilityAction, elements : IElementMap, controller : BoardController):Promise<IElementMap> {
   
-  return controller.getActionCallback(action).then(() => {
+  return controller.animateGameAction(action).then(() => {
     _.forEach(action.data.ability.effects, effect => {
      let tiles = controller.getTilesInRange(action.data.target.pos, effect.range);
      tiles.forEach(tile => {
        let data = _.cloneDeep(effect.data);
 
-       data = _.defaults(data, {tile});
+       data = _.defaults(data, {tile, source : action.data.source});
 
        let unit = controller.getUnitAtPosition(tile.pos);
        if (unit) {
@@ -53,6 +53,13 @@ export function ExecuteAbility(action : IAbilityAction, elements : IElementMap, 
       }
      });
     });
-    return elements;
+
+    if (action.data.ability.cost > 0) {
+      let result = elements.setIn([action.data.source.id, 'status', 'mana' ], action.data.source.status.mana - action.data.ability.cost);
+      return result;
+    } else {
+      let result = elements.setIn([action.data.source.id, 'status', 'mana' ], action.data.source.status.mana + 2);
+      return result;
+    }
   });
 }

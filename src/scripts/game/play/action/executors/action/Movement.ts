@@ -17,7 +17,7 @@ export interface IMoveActionData extends IActionData {
 
 export function ExecuteMove(action : IMoveAction, elements : IElementMap, controller : BoardController):Promise<IElementMap> {
 
-  return controller.getActionCallback(action).then(( ) => { 
+  return controller.animateGameAction(action).then(( ) => { 
     let new_pos = {
       x : action.data.move.to.x,
       y : action.data.move.to.y

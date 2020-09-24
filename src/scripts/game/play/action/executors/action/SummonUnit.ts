@@ -17,6 +17,7 @@ export interface ISummonUnitAction extends IGameAction {
 
 export interface ISummonUnitActionData extends IActionData {
   unit_type : UNIT_TYPE,
+  source : IUnit,
   tile : ITile,
 }
 
@@ -27,10 +28,11 @@ export function ExecuteSummonUnit(action : ISummonUnitAction, elements : IElemen
 
     let unit_data = UnitLoader.GetUnitDefinition(action.data.unit_type);
 
-    let unit = CreateUnit({
-      pos : action.data.tile.pos,
-      unit : unit_data,
-    });
+    let unit = CreateUnit(unit_data, action.data.source.data.faction);
+    unit.pos = {
+      x :  action.data.tile.pos.x,
+      y :  action.data.tile.pos.y,
+    };
 
     controller.sendAction({
       type : "CREATE_UNIT",

@@ -5,39 +5,53 @@ import AssetManager from '../../../game/assets/AssetManager';
 
 export type RenderableType = "TILE" | "SPRITE" | "ANIMATED_SPRITE";
 
-export type EntityID = number;
+export type RenderEntityID = number;
+
+let _RenderEntityID : RenderEntityID = 0;
 
 export class RenderEntity {
-  private readonly m_id : EntityID;
-
-  public offsetY : number = 0;
-  protected m_container : PIXI.Container;
+  protected m_root : PIXI.Container; //The position of this is set by the renderer
+  protected m_container : PIXI.Container; //Used for local offset in animations
 
   protected m_image : PIXI.Sprite | PIXI.AnimatedSprite;
+  
+  private m_depth : number = 0;
+  private m_depth_offset : number = 0;
+  
+  private readonly m_id : RenderEntityID;
 
-  constructor (id : EntityID) {
-    this.m_container = new PIXI.Sprite();
-    this.m_container.interactive = this.m_container.buttonMode = true;
+  constructor () {
+    this.m_id = _RenderEntityID ++;
+    this.m_root = new PIXI.Container();
+    this.m_container = new PIXI.Container();
+    this.m_root.addChild(this.m_container);
 
-    this.m_id = id;
     
     this.m_image = new PIXI.Sprite();
     this.m_container.addChild(this.m_image);
   }
-  public get id() : EntityID{
+  public get id() : RenderEntityID{
     return this.m_id;
   }
 
-  public render = (asset_info : IAssetInfo) => {
+  public get depth_offset() : number {
+    return this.m_depth_offset;
+  }
+
+  public get depth() : number{
+    return this.m_depth;
+  }
+
+  public renderAsset = (asset_info : IAssetInfo) => {
     switch (asset_info.type) {
       case "SPRITE" : 
-        this.setSprite(asset_info.name);
+        this.setSprite(asset_info);
         break;
       case "ANIMATED_SPRITE" :
-        this.setAnimatedSprite(asset_info.name);
+        this.setAnimatedSprite(asset_info);
         break;
       case "EFFECT" :
-        this.setEffect(asset_info.name);
+        this.setEffect(asset_info);
     }
   }
   
@@ -48,15 +62,17 @@ export class RenderEntity {
     this.m_image.pluginName = 'batch';
   }
 
-  public setSprite = (asset_name : string) => {
+  public setSprite = (asset_info : IAssetInfo) => {
     this.m_container.removeChildren();
-    this.m_container.addChild(this.m_image = new PIXI.Sprite(AssetManager.getTile(asset_name)));
+    this.m_depth_offset = asset_info.depth_offset;
+    this.m_container.addChild(this.m_image = new PIXI.Sprite(AssetManager.getTile(asset_info.name)));
   }
 
-  public setAnimatedSprite = (animation_name : string) => {
+  public setAnimatedSprite = (asset_info : IAssetInfo) => {
     this.m_container.removeChildren();
+    this.m_depth_offset = asset_info.depth_offset;
 
-    let animation_data = AssetManager.getAnimatedSprite(animation_name);
+    let animation_data = AssetManager.getAnimatedSprite(asset_info.name);
     let animated_sprite = new PIXI.AnimatedSprite(animation_data, true);
     animated_sprite.position.set(3, -7);
     animated_sprite.play();
@@ -64,15 +80,22 @@ export class RenderEntity {
     this.m_container.addChild(animated_sprite);
   }
 
-  public setEffect = (effect_name : string) => {
+  public setEffect = (asset_info : IAssetInfo) => {
+    this.m_container.removeChildren();
+    this.m_depth_offset = asset_info.depth_offset;
+    this.m_container.addChild(AssetManager.getEffect(asset_info));
+  }
 
+  public get root() : PIXI.Container {
+    return this.m_root;
   }
 
   public get sprite() : PIXI.Container {
     return this.m_container;
   }
   
-  public setPosition(x : number, y : number) {
-    this.m_container.position.set(x,y + this.offsetY);
+  public setPosition(x : number, y : number, depth : number = 0) {
+    this.m_root.position.set(x,y);
+    this.m_depth = depth;
   }
 }

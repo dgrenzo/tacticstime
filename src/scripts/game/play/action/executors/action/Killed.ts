@@ -7,7 +7,7 @@ export interface IKilledAction extends IGameAction {
 }
 
 export function ExecuteKilled(action : IGameAction, elements : IElementMap, controller : BoardController):Promise<IElementMap> {
-  return controller.getActionCallback(action).then( () => {
+  return controller.animateGameAction(action).then( () => {
     controller.removeEntity(action.data.entity_id);
     return elements.remove(action.data.entity_id);
   });

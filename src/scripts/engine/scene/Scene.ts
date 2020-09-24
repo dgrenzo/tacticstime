@@ -4,7 +4,7 @@ import { Map } from 'immutable';
 export type IElementMap = Map<number, IEntity>;
 
 export class Scene {
-  protected m_elements : Map<number, IEntity> = Map();
+  protected m_elements : IElementMap = Map();
 
   public addElement<T extends IEntity>(element : T) : T {
     this.m_elements = this.m_elements.set(element.id, element);

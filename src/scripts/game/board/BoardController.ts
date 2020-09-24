@@ -1,21 +1,19 @@
 import { List } from 'immutable';
 import * as _ from 'lodash';
 
-import { GameBoard, IBoardPos, CreateUnit, IBoardConfig } from "./GameBoard";
+import { GameBoard, IBoardPos, IBoardConfig } from "./GameBoard";
 import { ActionStack, IGameAction, GameEvent, IActionData } from "../play/action/ActionStack";
 import { GetMoveOptions } from "../pathfinding";
 import { IRangeDef } from "../play/action/abilities";
-import { IAbilityAction } from "../play/action/executors/action/Ability";
+import { IAbilityActionData } from "../play/action/executors/action/Ability";
 import { EventManager } from "../../engine/listener/event";
 import { IEntity } from "../../engine/scene/Entity";
 import { ITile } from "./Tile";
 import { IUnit } from "./Unit";
 import { IElementMap } from '../../engine/scene/Scene';
-import { ILoadedMission, ILoadedTeam } from './Loader';
 import { SceneRenderer } from '../../engine/render/scene/SceneRenderer';
-import EffectsManager from '../effects';
-import { GameEffect } from '../effects/damage';
 import { ICreateUnitAction } from '../play/action/executors/action/CreateUnit';
+import { IMoveActionData } from '../play/action/executors/action/Movement';
 
 
 export class BoardController {
@@ -25,6 +23,8 @@ export class BoardController {
   private m_event_manager = new EventManager<GameEvent>();
 
   private m_renderer : SceneRenderer;
+
+  private m_effect_entities : IEntity[] = [];
 
   constructor() {
     this.m_action_stack = new ActionStack(this);
@@ -39,22 +39,6 @@ export class BoardController {
     this.m_board = new GameBoard();
     this.m_board.init(data);
   }  
-
-  private initUnits = (teams : ILoadedTeam[]) : IUnit[] => {
-    let units : IUnit[] = [];
-    _.forEach(teams, team => {
-      _.forEach(team.units, unit_def => {
-        let create_action : ICreateUnitAction = {
-          type : "CREATE_UNIT",
-          data : {
-            unit : CreateUnit(unit_def, team.name),
-          }
-        }
-        this.sendAction(create_action);
-      })
-    });
-    return units;
-  }
 
   public sendToRenderer = (renderer : SceneRenderer) => {
     this.m_renderer = renderer;
@@ -76,23 +60,72 @@ export class BoardController {
     })
   }
 
-  public getActionCallback(action : IGameAction) : Promise<void> {
+  //There should be a service that handles these animations (.sprite references shouldnt be here)
+  private animateAbility(data : IAbilityActionData) : Promise<void> {
+    return new Promise (resolve => {
+      if (!this.m_board.getUnitAtPosition(data.target.pos)) {
+        return resolve();
+      }
+
+      return resolve();
+      /*
+      let sprite = this.m_renderer.getSprite(data.source.id);
+
+      let dir = {
+        x : data.target.pos.x - data.source.pos.x,
+        y : data.target.pos.y - data.source.pos.y,
+      };
+
+      let anim_dir = this.m_renderer.getProjection(dir);
+      anim_dir.x = Math.min(Math.max(-1, anim_dir.x), 1);
+      anim_dir.y = Math.min(Math.max(-1, anim_dir.y), 1);
+
+      sprite.position.x = -anim_dir.x;
+      sprite.position.y = -anim_dir.y
+      setTimeout(() => {
+        sprite.position.x = anim_dir.x * 3;
+        sprite.position.y = anim_dir.y * 3;
+        setTimeout(() => {
+          sprite.position.set(0,0);
+        }, 150)
+        resolve()
+      }, 250);
+      */
+    })
+
+  }
+
+
+  private animateEffect(data : IActionData) : Promise<void> {
+    return new Promise(resolve => {
+
+      resolve();
+    });
+  }
+
+  public animateGameAction(action : IGameAction) : Promise<void> {
+
     if (!this.m_renderer) {
-      return new Promise(resolve => {
-        setTimeout(resolve, 100)
-      })
+      return Promise.resolve();
     }
     
-    return new Promise(resolve => {
-      let effect = this.createEffect(action, resolve);
+    if (action.type === 'ABILITY') {
+      return this.animateAbility(action.data as IAbilityActionData);
+    }
 
-      if (effect) {
-        let action_target = this.m_board.getElement(action.data.entity_id);
-        let screen_pos = this.m_renderer.getScreenPosition(action_target.pos.x, action_target.pos.y);
-        effect.m_container.position.set(screen_pos.x, screen_pos.y);
-      } else {
-        setTimeout(resolve, 100);
-      }
+    return new Promise(resolve => {
+      // let effect = this.createEffect(action, resolve);
+
+      // if (effect) {
+      //   let action_target = this.m_board.getElement(action.data.entity_id);
+      //   let screen_pos = this.m_renderer.getScreenPosition(action_target.pos.x, action_target.pos.y);
+      //   //effect.m_container.position.set(screen_pos.x, screen_pos.y);
+      // } else {
+      //   setTimeout(resolve, 100);
+      // }
+      
+      setTimeout(resolve, 100);
+    
     })
   }
 
@@ -106,9 +139,9 @@ export class BoardController {
     this.sendAction(create_action);
   }
   
-  public createEffect = (ability : IGameAction, cb : ()=>void) : GameEffect => {
-    return EffectsManager.RenderEffect(ability, cb);
-  }  
+  // public createEffect = (ability : IGameAction, cb : ()=>void) : GameEffect => {
+  //   //return EffectsManager.RenderEffect(ability, cb);
+  // }  
 
   public on = (event_name : GameEvent, cb : (data:any) => void) => {
     this.m_event_manager.add(event_name, cb);
@@ -128,9 +161,6 @@ export class BoardController {
 
   public removeEntity = (id : number) => {
     this.m_board.removeElement(id);
-    if (this.m_renderer) {
-      this.m_renderer.removeEntity(id);
-    }
   }
   
   public getTile = (pos : IBoardPos) : ITile => {
@@ -138,6 +168,9 @@ export class BoardController {
   }
 
   public getUnit = (id : number) : IUnit => {
+    if (id === undefined) {
+      return null;
+    }
     return this.m_board.getUnit(id);
   }
 
@@ -172,7 +205,7 @@ export class AIBoardController extends BoardController {
     this.m_board.elements = elements;
   }
 
-  public getActionCallback(action : any) : Promise<void> {
+  public animateGameAction(action : any) : Promise<void> {
     return Promise.resolve();
   }
 

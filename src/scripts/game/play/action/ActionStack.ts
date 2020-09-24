@@ -13,7 +13,7 @@ import { ExecuteSummonUnit, ISummonUnitAction } from './executors/action/SummonU
 export type GameEvent = "MOVE" | "ABILITY" | "STRIKE" | "DAMAGE" | "HEAL" | "DAMAGE_DEALT" | "SUMMON_UNIT" | "CREATE_UNIT" | "UNIT_CREATED" | "UNIT_KILLED";
 
 export interface IActionData {
-  //[index : string] : any,
+  [index : string] : any,
   entity_id ?: number,
 }
 
@@ -108,7 +108,7 @@ export class ActionStack {
 
 function ExecuteDefault(action : IGameAction, elements : IElementMap, controller : BoardController) : Promise<IElementMap> {
   return new Promise<IElementMap>(resolve => {
-    controller.getActionCallback(action).then(() => {
+    controller.animateGameAction(action).then(() => {
       resolve(elements)
     });
   });

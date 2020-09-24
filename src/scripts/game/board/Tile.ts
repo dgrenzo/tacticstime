@@ -1,4 +1,5 @@
-import { IAssetInfo, IEntity } from "../../engine/scene/Entity";
+import { IEntity } from "../../engine/scene/Entity";
+
 export enum TILE_DEF {
   GRASS_EMPTY = 10,
   GRASS_MTN,
@@ -33,13 +34,6 @@ export interface ITile extends IEntity {
 export function isTile(entity : IEntity) : entity is ITile {
   return entity.entity_type === "TILE";
 }
-
-  function asset() : IAssetInfo {
-    return {
-      type : "SPRITE",
-      name : this.m_tile_name,
-    }
-  }
 
 export const GetTileName = (def : TILE_DEF) => {
   let base = Math.floor(def / 10);

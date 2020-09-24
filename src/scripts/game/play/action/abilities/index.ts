@@ -29,13 +29,14 @@ export interface ITargetDef {
 
 export interface IAbilityDef {
   name : string,
+  cost : number,
   target : ITargetDef,
   effects :  IEffectDef[]
 }
 
 const s_ability_map : Map<string, IAbilityDef> = new Map();
 
-_.forEach( ["meteor", "strike", "shoot", "summon_mooseman"], ability_name => {
+_.forEach( ["meteor", "strike", "shoot", "summon"], ability_name => {
   LoadJSON<IAbilityDef>('assets/data/abilities/' + ability_name + '.json').then(def => {
     s_ability_map.set(ability_name, def);
   })

@@ -2,7 +2,7 @@
   "name" : "Shoot",
   "target" : {
     "range" : {
-      "min" : 3,
+      "min" : 1,
       "max" : 4 
     },
     "target_type" : "ENEMY"
@@ -11,7 +11,7 @@
     {
       "type" : "DAMAGE",
       "data" : {
-        "amount" : 4
+        "amount" : 2
       },
       "range" : {
         "min" : 0,

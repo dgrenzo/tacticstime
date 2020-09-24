@@ -26,7 +26,7 @@ export default class EffectsManager {
     }
 
     if (effect) {
-      EffectsManager.s_renderer.effects_container.addChild(effect.m_container);
+      //EffectsManager.s_renderer.effects_container.addChild(effect.m_container);
     }
     return effect;
   }

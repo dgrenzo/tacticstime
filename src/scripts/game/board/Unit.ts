@@ -1,4 +1,4 @@
-import { IAssetInfo, IEntity } from "../../engine/scene/Entity";
+import { IEntity } from "../../engine/scene/Entity";
 
 
 export interface IUnit extends IEntity {
@@ -15,6 +15,7 @@ export interface IUnit extends IEntity {
   },
   status : {
     hp : number,
+    mana : number,
   }
   abilities : string[],
 }
@@ -23,11 +24,3 @@ export interface IUnit extends IEntity {
 export function isUnit(entity : IEntity) : entity is IUnit {
   return entity.entity_type === "UNIT";
 }
-
-  
-  function asset() : IAssetInfo {
-    return {
-      type : "ANIMATED_SPRITE",
-      name : this.m_unit_type + '_idle',
-    }
-  }

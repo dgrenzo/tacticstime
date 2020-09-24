@@ -23,7 +23,7 @@ export class BoardEditor {
       if (tile.data.tile_type !== type) {
         //TODO FIX
         //tile.setTileType(type);
-        this.m_renderer.getRenderable(tile.id).setSprite(AssetManager.getTile(GetTileName(tile.data.tile_type)));
+        // this.m_renderer.getRenderable(tile.id).setSprite(AssetManager.getTile(GetTileName(tile.data.tile_type)));
 
         // let cfg = this.m_board.getConfig();
         // let url =  location.origin + location.pathname ;

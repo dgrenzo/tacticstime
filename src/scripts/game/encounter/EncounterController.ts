@@ -1,5 +1,6 @@
 import * as _ from 'lodash';
 import * as PIXI from 'pixi.js';
+import { List } from 'immutable';
 
 import { BoardController } from "../board/BoardController";
 import { SceneRenderer, getAsset } from "../../engine/render/scene/SceneRenderer";
@@ -17,6 +18,8 @@ import { RENDER_PLUGIN } from "../extras/plugins";
 import { EnemyTurn } from "../play/EnemyTurn";
 import { FSM } from '../../engine/FSM';
 import { IUnit } from '../board/Unit';
+import { IMoveActionData } from '../play/action/executors/action/Movement';
+import { RenderEntity } from '../../engine/render/scene/RenderEntity';
 
 export enum EncounterState {
   INIT = 0,
@@ -26,6 +29,7 @@ export enum EncounterState {
   CLEANUP
 }
 
+type EncounterEvent = "START" | "END";
 
 export class EncounterController {  
   private m_board_controller : BoardController;
@@ -34,19 +38,21 @@ export class EncounterController {
 
   private m_renderer : SceneRenderer;
   private m_unit_queue : UnitQueue;
-  private m_event_manager = new EventManager<GameSignal>();
+  private m_event_manager = new EventManager<EncounterEvent>();
 
   private m_interface_container : PIXI.Container = new PIXI.Container();
+
+  private m_render_elements : Map<number, RenderEntity> = new Map();
 
 
   constructor (private m_config : GameConfig) {
     this.m_board_controller = new BoardController();
     this.m_unit_queue = new UnitQueue();
     this.m_renderer = CreateRenderer(this.m_config);
-    //this.loadNextMisison();
   }
 
   public loadMap = (path : string) : Promise<any> => {
+
     return LoadBoard(path).then(board_data => {
       this.m_board_controller.initBoard(board_data);
 
@@ -60,8 +66,8 @@ export class EncounterController {
     });
   }
 
-  public addUnits = (units : IUnit[]) => {
-    _.forEach(units, this.m_board_controller.addUnit);
+  public addUnits = (units : List<IUnit>) => {
+    units.forEach(this.m_board_controller.addUnit);
   }
 
 
@@ -69,23 +75,36 @@ export class EncounterController {
     this.m_board_controller.on("CREATE_UNIT", (data : ICreateUnitActionData) => {
       this.m_unit_queue.addUnit(data.unit);
       let renderable = this.m_renderer.addEntity(data.unit);
-      renderable.render(getAsset(data.unit));
+      this.m_render_elements.set(data.unit.id, renderable);
+      renderable.renderAsset(getAsset(data.unit));
     });
 
     this.m_board_controller.on("UNIT_KILLED", (data : IActionData) => {
       this.m_unit_queue.removeUnit(data.entity_id);
+      
+      if (this.m_renderer) {
+        let renderable = this.m_render_elements.get(data.entity_id);
+        this.m_renderer.removeEntity(renderable.id);
+      }
     })
+
 
     this.m_board_controller.on("UNIT_CREATED", (data : ICreateUnitActionData) => {
       let health_bar = new HealthBar(data.unit.id, this.m_board_controller, this.m_renderer);
       this.m_renderer.effects_container.addChild(health_bar.sprite);
     });
+    
+    this.m_board_controller.on("MOVE", (data : IMoveActionData) => {
+      this.m_renderer.positionElement(this.getRenderElement(data.entity_id), data.move.to);
+    })
 
-    this.on("SET_PLUGIN", (data : { id : number, plugin : RENDER_PLUGIN}) => {
-      this.m_renderer.getRenderable(data.id).setPlugin(data.plugin);
-    });
+    // this.on("SET_PLUGIN", (data : { id : number, plugin : RENDER_PLUGIN}) => {
+    //   this.m_renderer.setPlugin(data.id, data.plugin);
+    // });
+  }
 
-
+  public getRenderElement = (entity_id : number) : RenderEntity => {
+    return this.m_render_elements.get(entity_id);
   }
 
   public loadNextMisison = () => {
@@ -115,6 +134,14 @@ export class EncounterController {
   }
 
   private startTurn = () => {
+
+    if (this.checkVictory()) {
+      this.emit("END");
+      
+      return;
+    }
+
+
     let id : number = this.m_unit_queue.getNextQueued();
     let unit = this.m_board_controller.getUnit(id);
 
@@ -122,9 +149,26 @@ export class EncounterController {
       console.log('no units');
       return;
     }
+    
+    
 
       new EnemyTurn(id, this.m_board_controller, this.onTurnComplete);   
+  }
 
+  private checkVictory = () : boolean => {
+    let units = this.m_board_controller.getUnits();
+    let remaining_teams = [];
+    units.forEach(unit => {
+      if (unit.data.faction && remaining_teams.indexOf(unit.data.faction) === -1)
+      {
+        remaining_teams.push(unit.data.faction);
+      }
+    });
+    if (remaining_teams.length < 2) {
+      return true;
+    }
+
+    return false;
   }
 
   public addInterfaceElement(element : PIXI.Container) {
@@ -132,15 +176,15 @@ export class EncounterController {
   }
 
   
-  public on = (event_name : GameSignal, cb : (data:any) => void) => {
+  public on = (event_name : EncounterEvent, cb : (encounter:EncounterController) => void) => {
     this.m_event_manager.add(event_name, cb);
   }
-  public off = (event_name : GameSignal, cb : (data:any) => void) => {
+  public off = (event_name : EncounterEvent, cb : (encounter:EncounterController) => void) => {
     this.m_event_manager.remove(event_name, cb);
   }
 
-  public emit = (event_name : GameSignal, data ?: any) => {
-    this.m_event_manager.emit(event_name, data);
+  public emit = (event_name : EncounterEvent) => {
+    this.m_event_manager.emit(event_name, this);
   }
 
   private onTurnComplete = () => {

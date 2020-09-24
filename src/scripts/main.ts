@@ -21,6 +21,8 @@ let pixi_app : PIXI.Application = new PIXI.Application({
 
 let WindowResize = () => {
   pixi_app.renderer.resize(window.innerWidth, window.innerHeight);
+  //TODO : make my own event system for resize instead of this one.
+  pixi_app.renderer.emit("resize", {width : window.innerWidth, height : window.innerHeight});
 }
 
 window.addEventListener('resize', WindowResize);

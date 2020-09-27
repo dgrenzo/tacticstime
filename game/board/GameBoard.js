@@ -84,6 +84,28 @@ var GameBoard = (function (_super) {
 }(Scene_1.Scene));
 exports.GameBoard = GameBoard;
 var _ID = 0;
+function CreateEntity() {
+    return {
+        id: _ID++,
+        entity_type: "ENTITY",
+        pos: {
+            x: 0,
+            y: 0,
+        }
+    };
+}
+exports.CreateEntity = CreateEntity;
+function CreateEffect() {
+    return {
+        id: _ID++,
+        entity_type: "EFFECT",
+        pos: {
+            x: 0,
+            y: 0,
+        }
+    };
+}
+exports.CreateEffect = CreateEffect;
 function CreateUnit(def, faction) {
     return {
         id: _ID++,
@@ -102,7 +124,6 @@ function CreateUnit(def, faction) {
             hp: def.stats.hp,
         },
         abilities: _.cloneDeep(def.abilities),
-        depth_offset: 2,
     };
 }
 exports.CreateUnit = CreateUnit;
@@ -116,7 +137,6 @@ function CreateTile(x, y, type) {
         },
         data: {
             tile_type: type,
-        },
-        depth_offset: -8,
+        }
     };
 }

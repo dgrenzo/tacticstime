@@ -37,7 +37,94 @@ var FSM = (function () {
 }());
 exports.FSM = FSM;
 
-},{"lodash":78}],2:[function(require,module,exports){
+},{"lodash":79}],2:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var LinkedList = (function () {
+    function LinkedList() {
+        var _this = this;
+        this.list_root = null;
+        this.forEach = function (fn) {
+            var node = _this.list_root;
+            while (node) {
+                fn(node.element);
+                node = node.next;
+            }
+        };
+        this.getFirst = function (comparison) {
+            var node = _this.list_root;
+            while (node) {
+                if (comparison(node.element)) {
+                    return node.element;
+                }
+                node = node.next;
+            }
+            return null;
+        };
+        this.getFirstIndex = function (comparison) {
+            var node = _this.list_root;
+            var index = 0;
+            while (node) {
+                if (comparison(node.element)) {
+                    return index;
+                }
+                node = node.next;
+                index++;
+            }
+            return index;
+        };
+        this.insertAt = function (element, index) {
+            var node = _this.list_root;
+            var prev = null;
+            if (index === 0) {
+                _this.add(element);
+                return;
+            }
+            var count = 0;
+            while (node && count < index) {
+                count++;
+                prev = node;
+                node = node.next;
+            }
+            prev.next = {
+                element: element,
+                next: node,
+            };
+        };
+    }
+    LinkedList.prototype.add = function (element) {
+        var current_root = this.list_root;
+        this.list_root = {
+            element: element,
+            next: current_root,
+        };
+    };
+    LinkedList.prototype.remove = function (element) {
+        if (!this.list_root) {
+            return;
+        }
+        if (element === this.list_root.element) {
+            this.list_root = this.list_root.next;
+            return;
+        }
+        var current = this.list_root;
+        var prev = null;
+        while (current) {
+            if (current.element === element) {
+                if (prev) {
+                    prev.next = current.next;
+                }
+                return;
+            }
+            prev = current;
+            current = current.next;
+        }
+    };
+    return LinkedList;
+}());
+exports.LinkedList = LinkedList;
+
+},{}],3:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Signal = (function () {
@@ -112,7 +199,7 @@ var EventManager = (function () {
 }());
 exports.EventManager = EventManager;
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var SceneRendererIsometric_1 = require("./scene/isometric/SceneRendererIsometric");
@@ -128,25 +215,27 @@ function CreateRenderer(config) {
 }
 exports.CreateRenderer = CreateRenderer;
 
-},{"./scene/isometric/SceneRendererIsometric":6}],4:[function(require,module,exports){
+},{"./scene/isometric/SceneRendererIsometric":7}],5:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
 var AssetManager_1 = require("../../../game/assets/AssetManager");
+var _RenderEntityID = 0;
 var RenderEntity = (function () {
-    function RenderEntity(m_id) {
+    function RenderEntity() {
         var _this = this;
-        this.m_id = m_id;
-        this.render = function (asset_info) {
+        this.m_depth = 0;
+        this.m_depth_offset = 0;
+        this.renderAsset = function (asset_info) {
             switch (asset_info.type) {
                 case "SPRITE":
-                    _this.setSprite(asset_info.name);
+                    _this.setSprite(asset_info);
                     break;
                 case "ANIMATED_SPRITE":
-                    _this.setAnimatedSprite(asset_info.name);
+                    _this.setAnimatedSprite(asset_info);
                     break;
                 case "EFFECT":
-                    _this.setEffect(asset_info.name);
+                    _this.setEffect(asset_info);
             }
         };
         this.setPlugin = function (plugin_name) {
@@ -155,21 +244,27 @@ var RenderEntity = (function () {
         this.resetPlugin = function () {
             _this.m_image.pluginName = 'batch';
         };
-        this.setSprite = function (asset_name) {
+        this.setSprite = function (asset_info) {
             _this.m_container.removeChildren();
-            _this.m_container.addChild(_this.m_image = new PIXI.Sprite(AssetManager_1.default.getTile(asset_name)));
+            _this.m_depth_offset = asset_info.depth_offset;
+            _this.m_container.addChild(_this.m_image = new PIXI.Sprite(AssetManager_1.default.getTile(asset_info.name)));
         };
-        this.setAnimatedSprite = function (animation_name) {
+        this.setAnimatedSprite = function (asset_info) {
             _this.m_container.removeChildren();
-            var animation_data = AssetManager_1.default.getAnimatedSprite(animation_name);
+            _this.m_depth_offset = asset_info.depth_offset;
+            var animation_data = AssetManager_1.default.getAnimatedSprite(asset_info.name);
             var animated_sprite = new PIXI.AnimatedSprite(animation_data, true);
             animated_sprite.position.set(3, -7);
-            animated_sprite.play();
+            animated_sprite.gotoAndPlay(Math.random() * 200);
             _this.m_image = animated_sprite;
             _this.m_container.addChild(animated_sprite);
         };
-        this.setEffect = function (effect_name) {
+        this.setEffect = function (asset_info) {
+            _this.m_container.removeChildren();
+            _this.m_depth_offset = asset_info.depth_offset;
+            _this.m_container.addChild(AssetManager_1.default.getEffect(asset_info));
         };
+        this.m_id = _RenderEntityID++;
         this.m_root = new PIXI.Container();
         this.m_container = new PIXI.Container();
         this.m_root.addChild(this.m_container);
@@ -179,6 +274,20 @@ var RenderEntity = (function () {
     Object.defineProperty(RenderEntity.prototype, "id", {
         get: function () {
             return this.m_id;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(RenderEntity.prototype, "depth_offset", {
+        get: function () {
+            return this.m_depth_offset;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(RenderEntity.prototype, "depth", {
+        get: function () {
+            return this.m_depth;
         },
         enumerable: true,
         configurable: true
@@ -197,14 +306,16 @@ var RenderEntity = (function () {
         enumerable: true,
         configurable: true
     });
-    RenderEntity.prototype.setPosition = function (x, y) {
+    RenderEntity.prototype.setPosition = function (x, y, depth) {
+        if (depth === void 0) { depth = 0; }
         this.m_root.position.set(x, y);
+        this.m_depth = depth;
     };
     return RenderEntity;
 }());
 exports.RenderEntity = RenderEntity;
 
-},{"../../../game/assets/AssetManager":9,"pixi.js":82}],5:[function(require,module,exports){
+},{"../../../game/assets/AssetManager":10,"pixi.js":83}],6:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
@@ -212,21 +323,21 @@ var RenderEntity_1 = require("./RenderEntity");
 var event_1 = require("../../listener/event");
 var Tile_1 = require("../../../game/board/Tile");
 var Unit_1 = require("../../../game/board/Unit");
+var linkedlist_1 = require("../../list/linkedlist");
 var SceneRenderer = (function () {
     function SceneRenderer(m_pixi) {
         var _this = this;
         this.m_pixi = m_pixi;
-        this._dirty = true;
         this.m_event_manager = new event_1.EventManager();
         this.initializeScene = function (scene) {
-            _this.m_renderables = new Map();
+            _this.m_renderables = new linkedlist_1.LinkedList();
             _this.m_container.removeChildren();
             scene.elements.forEach(function (element) {
                 var renderable = _this.addEntity(element);
-                renderable.render(getAsset(element));
+                renderable.renderAsset(getAsset(element));
             });
             _this.m_pixi.ticker.add(function () {
-                _this.renderScene(scene);
+                _this.renderScene();
             });
         };
         this.on = function (event_name, cb) {
@@ -235,26 +346,20 @@ var SceneRenderer = (function () {
         this.off = function (event_name, cb) {
             _this.m_event_manager.remove(event_name, cb);
         };
-        this.renderScene = function (scene) {
-            if (_this._dirty) {
-                _this.sortElements(scene.elements);
-                _this._dirty = false;
-            }
+        this.renderScene = function () {
             _this.m_container.render(_this.m_pixi.renderer);
         };
         this.removeEntity = function (id) {
-            var renderable = _this.m_renderables.get(id);
+            var renderable = _this.getRenderable(id);
             if (renderable) {
                 _this.m_container.removeChild(renderable.root);
-                _this.m_renderables.delete(id);
+                _this.m_renderables.remove(renderable);
             }
             return renderable;
         };
         this.addEntity = function (entity) {
             var renderable = CreateRenderable(entity);
-            _this.m_renderables.set(entity.id, renderable);
-            _this.positionElement(entity.id, entity.pos);
-            _this._dirty = true;
+            _this.positionElement(renderable, entity.pos);
             return renderable;
         };
         this.setPlugin = function (id, plugin) {
@@ -264,7 +369,9 @@ var SceneRenderer = (function () {
             return _this.getRenderable(id).sprite;
         };
         this.getRenderable = function (id) {
-            return _this.m_renderables.get(id);
+            return _this.m_renderables.getFirst(function (element) {
+                return element.id === id;
+            });
         };
         this.m_container = new PIXI.Container();
         this.m_screen_effects_container = new PIXI.Container();
@@ -297,22 +404,25 @@ function getAsset(entity) {
     if (Tile_1.isTile(entity)) {
         return {
             type: "SPRITE",
+            depth_offset: -8,
             name: Tile_1.GetTileName(entity.data.tile_type),
         };
     }
     else if (Unit_1.isUnit(entity)) {
         return {
             type: "ANIMATED_SPRITE",
+            depth_offset: 2,
             name: entity.data.unit_type + '_idle',
         };
     }
+    return null;
 }
 exports.getAsset = getAsset;
 function CreateRenderable(entity) {
-    return new RenderEntity_1.RenderEntity(entity.id);
+    return new RenderEntity_1.RenderEntity();
 }
 
-},{"../../../game/board/Tile":14,"../../../game/board/Unit":15,"../../listener/event":2,"./RenderEntity":4,"pixi.js":82}],6:[function(require,module,exports){
+},{"../../../game/board/Tile":15,"../../../game/board/Unit":16,"../../list/linkedlist":2,"../../listener/event":3,"./RenderEntity":5,"pixi.js":83}],7:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -354,10 +464,14 @@ var SceneRendererIsometric = (function (_super) {
             var point = new PIXI.Point((x - y) * _this.HALF_TILE_WIDTH, (x + y) * _this.HALF_TILE_HEIGHT);
             return point;
         };
-        _this.positionElement = function (id, pos) {
-            var element = _this.getRenderable(id);
-            element.setPosition((pos.x - pos.y) * _this.HALF_TILE_WIDTH, (pos.x + pos.y) * _this.HALF_TILE_HEIGHT);
-            _this._dirty = true;
+        _this.positionElement = function (element, pos) {
+            element.setPosition((pos.x - pos.y) * _this.HALF_TILE_WIDTH, (pos.x + pos.y) * _this.HALF_TILE_HEIGHT, _this.getElementDepth(pos) + element.depth_offset);
+            _this.m_renderables.remove(element);
+            var index = _this.m_renderables.getFirstIndex(function (e) {
+                return e.depth > element.depth;
+            });
+            _this.m_renderables.insertAt(element, index);
+            _this.m_container.addChildAt(element.root, index);
         };
         _this.getProjection = function (pos) {
             return {
@@ -365,17 +479,8 @@ var SceneRendererIsometric = (function (_super) {
                 y: (pos.x + pos.y),
             };
         };
-        _this.sortElements = function (elements) {
-            elements
-                .sort(function (a, b) {
-                return _this.getElementDepth(a) - _this.getElementDepth(b);
-            })
-                .forEach(function (e) {
-                _this.m_container.addChild(_this.m_renderables.get(e.id).root);
-            });
-        };
-        _this.getElementDepth = function (element) {
-            return (element.pos.x + element.pos.y) + element.depth_offset;
+        _this.getElementDepth = function (pos) {
+            return (pos.x + pos.y);
         };
         _this.m_container.position.set(500, 50);
         _this.m_container.scale.set(4);
@@ -399,7 +504,7 @@ var SceneRendererIsometric = (function (_super) {
 }(SceneRenderer_1.SceneRenderer));
 exports.SceneRendererIsometric = SceneRendererIsometric;
 
-},{"../SceneRenderer":5,"pixi.js":82}],7:[function(require,module,exports){
+},{"../SceneRenderer":6,"pixi.js":83}],8:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var immutable_1 = require("immutable");
@@ -434,7 +539,7 @@ var Scene = (function () {
 }());
 exports.Scene = Scene;
 
-},{"immutable":76}],8:[function(require,module,exports){
+},{"immutable":77}],9:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var GameBoard_1 = require("./board/GameBoard");
@@ -496,7 +601,7 @@ var GameController = (function () {
 }());
 exports.GameController = GameController;
 
-},{"../engine/FSM":1,"./assets/UnitLoader":10,"./board/GameBoard":12,"./encounter/EncounterController":18,"./party":21,"./tavern":36}],9:[function(require,module,exports){
+},{"../engine/FSM":1,"./assets/UnitLoader":11,"./board/GameBoard":13,"./encounter/EncounterController":19,"./party":22,"./tavern":37}],10:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
@@ -538,6 +643,20 @@ var AssetManager = (function () {
     AssetManager.getAnimatedSprite = function (name) {
         return AssetManager._instance.m_animationMap.get(name);
     };
+    AssetManager.getEffect = function (asset_info) {
+        var effect = new PIXI.Container();
+        var text = new PIXI.Text(asset_info.data.amount + '', {
+            fill: 0xFFFFCC,
+            size: 24,
+            stroke: 0x000000,
+            strokeThickness: 4,
+            fontWeight: 'bolder',
+        });
+        text.scale.set(1.00);
+        text.anchor.set(0.5);
+        effect.addChild(text);
+        return effect;
+    };
     AssetManager.init = function (onLoaded) {
         var manager = new AssetManager();
         manager.load(onLoaded);
@@ -546,7 +665,7 @@ var AssetManager = (function () {
 }());
 exports.default = AssetManager;
 
-},{"lodash":78,"pixi.js":82}],10:[function(require,module,exports){
+},{"lodash":79,"pixi.js":83}],11:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _ = require("lodash");
@@ -590,7 +709,7 @@ function GetDefURL(unit_type) {
     return "assets/data/units/" + unit_type + ".json";
 }
 
-},{"../board/Loader":13,"immutable":76,"lodash":78}],11:[function(require,module,exports){
+},{"../board/Loader":14,"immutable":77,"lodash":79}],12:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -615,6 +734,7 @@ var BoardController = (function () {
     function BoardController() {
         var _this = this;
         this.m_event_manager = new event_1.EventManager();
+        this.m_effect_entities = [];
         this.createClone = function () {
             var ctrl = new AIBoardController(_this.m_board.elements);
             return ctrl;
@@ -626,9 +746,6 @@ var BoardController = (function () {
         this.sendToRenderer = function (renderer) {
             _this.m_renderer = renderer;
             renderer.initializeScene(_this.m_board);
-            _this.on("MOVE", function (data) {
-                _this.m_renderer.positionElement(data.entity_id, data.move.to);
-            });
         };
         this.sendAction = function (action) {
             _this.m_action_stack.push(action);
@@ -670,9 +787,6 @@ var BoardController = (function () {
         };
         this.removeEntity = function (id) {
             _this.m_board.removeElement(id);
-            if (_this.m_renderer) {
-                _this.m_renderer.removeEntity(id);
-            }
         };
         this.getTile = function (pos) {
             return _this.m_board.getTileAtPos(pos);
@@ -703,47 +817,38 @@ var BoardController = (function () {
         };
         this.m_action_stack = new ActionStack_1.ActionStack(this);
     }
-    BoardController.prototype.getActionCallback = function (action) {
+    BoardController.prototype.animateAbility = function (data) {
+        var _this = this;
+        return new Promise(function (resolve) {
+            if (!_this.m_board.getUnitAtPosition(data.target.pos)) {
+                return resolve();
+            }
+            return resolve();
+        });
+    };
+    BoardController.prototype.animateEffect = function (data) {
+        return new Promise(function (resolve) {
+            resolve();
+        });
+    };
+    BoardController.prototype.animateGameAction = function (action) {
         var _this = this;
         if (!this.m_renderer) {
             return Promise.resolve();
         }
+        if (action.type === 'ABILITY') {
+            return this.animateAbility(action.data);
+        }
         return new Promise(function (resolve) {
-            if (action.type === "ABILITY" && action.data.target) {
-                var data = action.data;
-                if (!_this.m_board.getUnitAtPosition(data.target.pos)) {
-                    return resolve();
-                }
-                var sprite_1 = _this.m_renderer.getSprite(data.source.id);
-                var dir = {
-                    x: data.target.pos.x - data.source.pos.x,
-                    y: data.target.pos.y - data.source.pos.y,
-                };
-                var anim_dir_1 = _this.m_renderer.getProjection(dir);
-                anim_dir_1.x = Math.min(Math.max(-1, anim_dir_1.x), 1);
-                anim_dir_1.y = Math.min(Math.max(-1, anim_dir_1.y), 1);
-                sprite_1.position.x = -anim_dir_1.x;
-                sprite_1.position.y = -anim_dir_1.y;
-                setTimeout(function () {
-                    sprite_1.position.x = anim_dir_1.x * 3;
-                    sprite_1.position.y = anim_dir_1.y * 3;
-                    setTimeout(function () {
-                        sprite_1.position.set(0, 0);
-                    }, 150);
-                    resolve();
-                }, 250);
+            var effect = _this.createEffect(action, resolve);
+            if (effect) {
+                var action_target = _this.m_board.getElement(action.data.entity_id);
+                effect.setPosition(action_target.pos);
             }
             else {
-                var effect = _this.createEffect(action, resolve);
-                if (effect) {
-                    var action_target = _this.m_board.getElement(action.data.entity_id);
-                    var screen_pos = _this.m_renderer.getScreenPosition(action_target.pos.x, action_target.pos.y);
-                    effect.m_container.position.set(screen_pos.x, screen_pos.y);
-                }
-                else {
-                    setTimeout(resolve, 100);
-                }
+                setTimeout(resolve, 100);
             }
+            setTimeout(resolve, 100);
         });
     };
     return BoardController;
@@ -757,7 +862,7 @@ var AIBoardController = (function (_super) {
         _this.m_board.elements = elements;
         return _this;
     }
-    AIBoardController.prototype.getActionCallback = function (action) {
+    AIBoardController.prototype.animateGameAction = function (action) {
         return Promise.resolve();
     };
     Object.defineProperty(AIBoardController.prototype, "board", {
@@ -771,7 +876,7 @@ var AIBoardController = (function (_super) {
 }(BoardController));
 exports.AIBoardController = AIBoardController;
 
-},{"../../engine/listener/event":2,"../effects":17,"../pathfinding":22,"../play/action/ActionStack":26,"./GameBoard":12}],12:[function(require,module,exports){
+},{"../../engine/listener/event":3,"../effects":18,"../pathfinding":23,"../play/action/ActionStack":27,"./GameBoard":13}],13:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -858,6 +963,28 @@ var GameBoard = (function (_super) {
 }(Scene_1.Scene));
 exports.GameBoard = GameBoard;
 var _ID = 0;
+function CreateEntity() {
+    return {
+        id: _ID++,
+        entity_type: "ENTITY",
+        pos: {
+            x: 0,
+            y: 0,
+        }
+    };
+}
+exports.CreateEntity = CreateEntity;
+function CreateEffect() {
+    return {
+        id: _ID++,
+        entity_type: "EFFECT",
+        pos: {
+            x: 0,
+            y: 0,
+        }
+    };
+}
+exports.CreateEffect = CreateEffect;
 function CreateUnit(def, faction) {
     return {
         id: _ID++,
@@ -876,7 +1003,6 @@ function CreateUnit(def, faction) {
             hp: def.stats.hp,
         },
         abilities: _.cloneDeep(def.abilities),
-        depth_offset: 2,
     };
 }
 exports.CreateUnit = CreateUnit;
@@ -890,12 +1016,11 @@ function CreateTile(x, y, type) {
         },
         data: {
             tile_type: type,
-        },
-        depth_offset: -8,
+        }
     };
 }
 
-},{"../../engine/scene/Scene":7,"./Tile":14,"./Unit":15,"lodash":78}],13:[function(require,module,exports){
+},{"../../engine/scene/Scene":8,"./Tile":15,"./Unit":16,"lodash":79}],14:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
@@ -984,7 +1109,7 @@ function LoadFromURLParam() {
 }
 exports.LoadFromURLParam = LoadFromURLParam;
 
-},{"../assets/UnitLoader":10,"lodash":78,"pixi.js":82}],14:[function(require,module,exports){
+},{"../assets/UnitLoader":11,"lodash":79,"pixi.js":83}],15:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var TILE_DEF;
@@ -1015,12 +1140,6 @@ function isTile(entity) {
     return entity.entity_type === "TILE";
 }
 exports.isTile = isTile;
-function asset() {
-    return {
-        type: "SPRITE",
-        name: this.m_tile_name,
-    };
-}
 exports.GetTileName = function (def) {
     var base = Math.floor(def / 10);
     var type = def % 10;
@@ -1033,21 +1152,15 @@ var getType = function (type) {
     return ["empty", "mtn", "tree", "hut"][type];
 };
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function isUnit(entity) {
     return entity.entity_type === "UNIT";
 }
 exports.isUnit = isUnit;
-function asset() {
-    return {
-        type: "ANIMATED_SPRITE",
-        name: this.m_unit_type + '_idle',
-    };
-}
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1063,50 +1176,79 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-var PIXI = require("pixi.js");
 var TWEEN = require("@tweenjs/tween.js");
 var GameEffect = (function () {
-    function GameEffect() {
-        this.m_container = new PIXI.Container();
+    function GameEffect(m_renderer) {
+        var _this = this;
+        this.m_renderer = m_renderer;
+        this.m_pos = {
+            x: 0,
+            y: 0,
+        };
+        this.setPosition = function (pos) {
+            _this.m_pos.x = pos.x + 0.5;
+            _this.m_pos.y = pos.y - 0.5;
+            _this.m_renderer.positionElement(_this.m_renderable, _this.m_pos);
+        };
         this.update = function (deltaTime) {
         };
+        this.m_pos;
+        this.m_renderable = m_renderer.addEntity(this);
     }
+    Object.defineProperty(GameEffect.prototype, "pos", {
+        get: function () {
+            return {
+                x: this.m_pos.x,
+                y: this.m_pos.y,
+            };
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(GameEffect.prototype, "entity_type", {
+        get: function () {
+            return "EFFECT";
+        },
+        enumerable: true,
+        configurable: true
+    });
+    GameEffect.prototype.destroy = function () {
+    };
     return GameEffect;
 }());
 exports.GameEffect = GameEffect;
 var DamageNumberEffect = (function (_super) {
     __extends(DamageNumberEffect, _super);
-    function DamageNumberEffect(data, onComplete) {
-        var _this = _super.call(this) || this;
-        var effect = new PIXI.Container();
-        effect.position.set(9, 2);
-        var text = new PIXI.Text(data.amount + '', {
-            fill: 0xFFFFCC,
-            size: 24,
-            stroke: 0x000000,
-            strokeThickness: 4,
-            fontWeight: 'bolder',
+    function DamageNumberEffect(renderer, data, onComplete) {
+        var _this = _super.call(this, renderer) || this;
+        _this.m_renderable.renderAsset({
+            type: "EFFECT",
+            name: "DAMAGE_DEALT",
+            data: data,
+            depth_offset: 100,
         });
-        text.scale.set(0.00);
-        text.anchor.set(0.5);
-        _this.m_container.addChild(effect);
-        effect.addChild(text);
-        TWEEN.add(new TWEEN.Tween(text.scale)
+        TWEEN.add(new TWEEN.Tween(_this.m_renderable.sprite.scale)
             .to({ x: 0.65, y: 0.55 }, 150)
             .easing(TWEEN.Easing.Back.Out)
             .onComplete(function () {
-            text.scale.set(0.4);
+            _this.m_renderable.sprite.scale.set(0.4);
             onComplete();
         })
             .start());
-        TWEEN.add(new TWEEN.Tween(text).to({ alpha: 0, y: -6 }, 400).delay(100).start());
+        TWEEN.add(new TWEEN.Tween(_this.m_renderable.sprite)
+            .to({ alpha: 0, y: -6 }, 400)
+            .delay(100)
+            .onComplete(function () {
+            _this.m_renderer.removeEntity(_this.m_renderable.id);
+        })
+            .start());
         return _this;
     }
     return DamageNumberEffect;
 }(GameEffect));
 exports.DamageNumberEffect = DamageNumberEffect;
 
-},{"@tweenjs/tween.js":73,"pixi.js":82}],17:[function(require,module,exports){
+},{"@tweenjs/tween.js":74}],18:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var TWEEN = require("@tweenjs/tween.js");
@@ -1124,10 +1266,9 @@ var EffectsManager = (function () {
         var effect = null;
         switch (action.type) {
             case "DAMAGE_DEALT":
-                effect = new damage_1.DamageNumberEffect(action.data, onComplete);
+                effect = new damage_1.DamageNumberEffect(EffectsManager.s_renderer, action.data, onComplete);
         }
         if (effect) {
-            EffectsManager.s_renderer.effects_container.addChild(effect.m_container);
         }
         return effect;
     };
@@ -1135,7 +1276,7 @@ var EffectsManager = (function () {
 }());
 exports.default = EffectsManager;
 
-},{"./damage":16,"@tweenjs/tween.js":73}],18:[function(require,module,exports){
+},{"./damage":17,"@tweenjs/tween.js":74}],19:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
@@ -1163,6 +1304,7 @@ var EncounterController = (function () {
         this.m_config = m_config;
         this.m_event_manager = new event_1.EventManager();
         this.m_interface_container = new PIXI.Container();
+        this.m_render_elements = new Map();
         this.loadMap = function (path) {
             return Loader_1.LoadBoard(path).then(function (board_data) {
                 _this.m_board_controller.initBoard(board_data);
@@ -1179,15 +1321,26 @@ var EncounterController = (function () {
             _this.m_board_controller.on("CREATE_UNIT", function (data) {
                 _this.m_unit_queue.addUnit(data.unit);
                 var renderable = _this.m_renderer.addEntity(data.unit);
-                renderable.render(SceneRenderer_1.getAsset(data.unit));
+                _this.m_render_elements.set(data.unit.id, renderable);
+                renderable.renderAsset(SceneRenderer_1.getAsset(data.unit));
             });
             _this.m_board_controller.on("UNIT_KILLED", function (data) {
                 _this.m_unit_queue.removeUnit(data.entity_id);
+                if (_this.m_renderer) {
+                    var renderable = _this.m_render_elements.get(data.entity_id);
+                    _this.m_renderer.removeEntity(renderable.id);
+                }
             });
             _this.m_board_controller.on("UNIT_CREATED", function (data) {
                 var health_bar = new HealthBar_1.HealthBar(data.unit.id, _this.m_board_controller, _this.m_renderer);
                 _this.m_renderer.effects_container.addChild(health_bar.sprite);
             });
+            _this.m_board_controller.on("MOVE", function (data) {
+                _this.m_renderer.positionElement(_this.getRenderElement(data.entity_id), data.move.to);
+            });
+        };
+        this.getRenderElement = function (entity_id) {
+            return _this.m_render_elements.get(entity_id);
         };
         this.loadNextMisison = function () {
             Loader_1.LoadMission('assets/data/missions/001.json').then(function (mission_data) {
@@ -1255,7 +1408,7 @@ var EncounterController = (function () {
 }());
 exports.EncounterController = EncounterController;
 
-},{"../../engine/listener/event":2,"../../engine/render/render":3,"../../engine/render/scene/SceneRenderer":5,"../board/BoardController":11,"../board/Loader":13,"../effects":17,"../extras/TileHighlighter":19,"../play/EnemyTurn":23,"../play/UnitQueue":24,"../play/interface/HealthBar":35,"pixi.js":82}],19:[function(require,module,exports){
+},{"../../engine/listener/event":3,"../../engine/render/render":4,"../../engine/render/scene/SceneRenderer":6,"../board/BoardController":12,"../board/Loader":14,"../effects":18,"../extras/TileHighlighter":20,"../play/EnemyTurn":24,"../play/UnitQueue":25,"../play/interface/HealthBar":36,"pixi.js":83}],20:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var TileHighlighter = (function () {
@@ -1284,7 +1437,7 @@ var TileHighlighter = (function () {
 }());
 exports.default = TileHighlighter;
 
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
@@ -1298,7 +1451,7 @@ function InitRenderPlugins() {
 }
 exports.InitRenderPlugins = InitRenderPlugins;
 
-},{"pixi.js":82}],21:[function(require,module,exports){
+},{"pixi.js":83}],22:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var immutable_1 = require("immutable");
@@ -1331,7 +1484,7 @@ var PlayerParty = (function () {
 }());
 exports.PlayerParty = PlayerParty;
 
-},{"immutable":76}],22:[function(require,module,exports){
+},{"immutable":77}],23:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _ = require("lodash");
@@ -1464,7 +1617,7 @@ function GetTileCost(tile) {
     return 1;
 }
 
-},{"../board/Tile":14,"lodash":78}],23:[function(require,module,exports){
+},{"../board/Tile":15,"lodash":79}],24:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _ = require("lodash");
@@ -1590,7 +1743,7 @@ var EnemyTurn = (function () {
 }());
 exports.EnemyTurn = EnemyTurn;
 
-},{"../pathfinding":22,"./action/AbilityTargetUI":25,"./action/abilities":28,"lodash":78}],24:[function(require,module,exports){
+},{"../pathfinding":23,"./action/AbilityTargetUI":26,"./action/abilities":29,"lodash":79}],25:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var UnitQueue = (function () {
@@ -1640,7 +1793,7 @@ var UnitQueue = (function () {
 }());
 exports.UnitQueue = UnitQueue;
 
-},{}],25:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1717,7 +1870,7 @@ var AbilityTargetUI = (function (_super) {
 }(BoardActionUI_1.BoardActionUI));
 exports.AbilityTargetUI = AbilityTargetUI;
 
-},{"./BoardActionUI":27,"lodash":78}],26:[function(require,module,exports){
+},{"./BoardActionUI":28,"lodash":79}],27:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _ = require("lodash");
@@ -1800,13 +1953,13 @@ var ActionStack = (function () {
 exports.ActionStack = ActionStack;
 function ExecuteDefault(action, elements, controller) {
     return new Promise(function (resolve) {
-        controller.getActionCallback(action).then(function () {
+        controller.animateGameAction(action).then(function () {
             resolve(elements);
         });
     });
 }
 
-},{"./executors/action/Ability":29,"./executors/action/CreateUnit":30,"./executors/action/Damage":31,"./executors/action/Killed":32,"./executors/action/Movement":33,"./executors/action/SummonUnit":34,"lodash":78}],27:[function(require,module,exports){
+},{"./executors/action/Ability":30,"./executors/action/CreateUnit":31,"./executors/action/Damage":32,"./executors/action/Killed":33,"./executors/action/Movement":34,"./executors/action/SummonUnit":35,"lodash":79}],28:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var UNIT_COLLISION;
@@ -1832,7 +1985,7 @@ var BoardActionUI = (function () {
 }());
 exports.BoardActionUI = BoardActionUI;
 
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _ = require("lodash");
@@ -1856,12 +2009,12 @@ function GetAbilityDef(ability_name) {
 }
 exports.GetAbilityDef = GetAbilityDef;
 
-},{"../../../board/Loader":13,"lodash":78}],29:[function(require,module,exports){
+},{"../../../board/Loader":14,"lodash":79}],30:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _ = require("lodash");
 function ExecuteAbility(action, elements, controller) {
-    return controller.getActionCallback(action).then(function () {
+    return controller.animateGameAction(action).then(function () {
         _.forEach(action.data.ability.effects, function (effect) {
             var tiles = controller.getTilesInRange(action.data.target.pos, effect.range);
             tiles.forEach(function (tile) {
@@ -1894,7 +2047,7 @@ function ExecuteAbility(action, elements, controller) {
 }
 exports.ExecuteAbility = ExecuteAbility;
 
-},{"lodash":78}],30:[function(require,module,exports){
+},{"lodash":79}],31:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function ExecuteCreateUnit(action, elements, controller) {
@@ -1911,7 +2064,7 @@ function ExecuteCreateUnit(action, elements, controller) {
 }
 exports.ExecuteCreateUnit = ExecuteCreateUnit;
 
-},{}],31:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function ExecuteDamage(action, elements, controller) {
@@ -1948,22 +2101,22 @@ function ExecuteDamage(action, elements, controller) {
 }
 exports.ExecuteDamage = ExecuteDamage;
 
-},{}],32:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function ExecuteKilled(action, elements, controller) {
-    return controller.getActionCallback(action).then(function () {
+    return controller.animateGameAction(action).then(function () {
         controller.removeEntity(action.data.entity_id);
         return elements.remove(action.data.entity_id);
     });
 }
 exports.ExecuteKilled = ExecuteKilled;
 
-},{}],33:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function ExecuteMove(action, elements, controller) {
-    return controller.getActionCallback(action).then(function () {
+    return controller.animateGameAction(action).then(function () {
         var new_pos = {
             x: action.data.move.to.x,
             y: action.data.move.to.y
@@ -1973,7 +2126,7 @@ function ExecuteMove(action, elements, controller) {
 }
 exports.ExecuteMove = ExecuteMove;
 
-},{}],34:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var GameBoard_1 = require("../../../../board/GameBoard");
@@ -1997,7 +2150,7 @@ function ExecuteSummonUnit(action, elements, controller) {
 }
 exports.ExecuteSummonUnit = ExecuteSummonUnit;
 
-},{"../../../../assets/UnitLoader":10,"../../../../board/GameBoard":12}],35:[function(require,module,exports){
+},{"../../../../assets/UnitLoader":11,"../../../../board/GameBoard":13}],36:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
@@ -2051,7 +2204,7 @@ var HealthBar = (function () {
 }());
 exports.HealthBar = HealthBar;
 
-},{"pixi.js":82}],36:[function(require,module,exports){
+},{"pixi.js":83}],37:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
@@ -2260,7 +2413,7 @@ var RecruitableUnit = (function () {
 }());
 exports.RecruitableUnit = RecruitableUnit;
 
-},{"../../engine/listener/event":2,"../assets/AssetManager":9,"../assets/UnitLoader":10,"../board/GameBoard":12,"lodash":78,"pixi.js":82}],37:[function(require,module,exports){
+},{"../../engine/listener/event":3,"../assets/AssetManager":10,"../assets/UnitLoader":11,"../board/GameBoard":13,"lodash":79,"pixi.js":83}],38:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
@@ -2289,7 +2442,7 @@ AssetManager_1.default.init(function () {
     });
 });
 
-},{"./engine/render/render":3,"./game/GameController":8,"./game/assets/AssetManager":9,"./game/extras/plugins":20,"pixi.js":82}],38:[function(require,module,exports){
+},{"./engine/render/render":4,"./game/GameController":9,"./game/assets/AssetManager":10,"./game/extras/plugins":21,"pixi.js":83}],39:[function(require,module,exports){
 /*!
  * @pixi/accessibility - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -2940,7 +3093,7 @@ exports.AccessibilityManager = AccessibilityManager;
 exports.accessibleTarget = accessibleTarget;
 
 
-},{"@pixi/display":42,"@pixi/utils":71}],39:[function(require,module,exports){
+},{"@pixi/display":43,"@pixi/utils":72}],40:[function(require,module,exports){
 /*!
  * @pixi/app - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -3175,7 +3328,7 @@ Application.registerPlugin(ResizePlugin);
 exports.Application = Application;
 
 
-},{"@pixi/core":41,"@pixi/display":42}],40:[function(require,module,exports){
+},{"@pixi/core":42,"@pixi/display":43}],41:[function(require,module,exports){
 /*!
  * @pixi/constants - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -3525,7 +3678,7 @@ exports.TYPES = TYPES;
 exports.WRAP_MODES = WRAP_MODES;
 
 
-},{}],41:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 /*!
  * @pixi/core - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -16005,7 +16158,7 @@ exports.resources = index;
 exports.systems = systems;
 
 
-},{"@pixi/constants":40,"@pixi/display":42,"@pixi/math":53,"@pixi/runner":62,"@pixi/settings":63,"@pixi/ticker":70,"@pixi/utils":71}],42:[function(require,module,exports){
+},{"@pixi/constants":41,"@pixi/display":43,"@pixi/math":54,"@pixi/runner":63,"@pixi/settings":64,"@pixi/ticker":71,"@pixi/utils":72}],43:[function(require,module,exports){
 /*!
  * @pixi/display - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -17813,7 +17966,7 @@ exports.Container = Container;
 exports.DisplayObject = DisplayObject;
 
 
-},{"@pixi/math":53,"@pixi/settings":63,"@pixi/utils":71}],43:[function(require,module,exports){
+},{"@pixi/math":54,"@pixi/settings":64,"@pixi/utils":72}],44:[function(require,module,exports){
 /*!
  * @pixi/extract - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -18116,7 +18269,7 @@ Extract.arrayPostDivide = function arrayPostDivide (pixels, out)
 exports.Extract = Extract;
 
 
-},{"@pixi/core":41,"@pixi/math":53,"@pixi/utils":71}],44:[function(require,module,exports){
+},{"@pixi/core":42,"@pixi/math":54,"@pixi/utils":72}],45:[function(require,module,exports){
 /*!
  * @pixi/filter-alpha - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -18189,7 +18342,7 @@ var AlphaFilter = /*@__PURE__*/(function (Filter) {
 exports.AlphaFilter = AlphaFilter;
 
 
-},{"@pixi/core":41}],45:[function(require,module,exports){
+},{"@pixi/core":42}],46:[function(require,module,exports){
 /*!
  * @pixi/filter-blur - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -18625,7 +18778,7 @@ exports.BlurFilter = BlurFilter;
 exports.BlurFilterPass = BlurFilterPass;
 
 
-},{"@pixi/core":41,"@pixi/settings":63}],46:[function(require,module,exports){
+},{"@pixi/core":42,"@pixi/settings":64}],47:[function(require,module,exports){
 /*!
  * @pixi/filter-color-matrix - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -19232,7 +19385,7 @@ ColorMatrixFilter.prototype.grayscale = ColorMatrixFilter.prototype.greyscale;
 exports.ColorMatrixFilter = ColorMatrixFilter;
 
 
-},{"@pixi/core":41}],47:[function(require,module,exports){
+},{"@pixi/core":42}],48:[function(require,module,exports){
 /*!
  * @pixi/filter-displacement - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -19359,7 +19512,7 @@ var DisplacementFilter = /*@__PURE__*/(function (Filter) {
 exports.DisplacementFilter = DisplacementFilter;
 
 
-},{"@pixi/core":41,"@pixi/math":53}],48:[function(require,module,exports){
+},{"@pixi/core":42,"@pixi/math":54}],49:[function(require,module,exports){
 /*!
  * @pixi/filter-fxaa - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -19405,7 +19558,7 @@ var FXAAFilter = /*@__PURE__*/(function (Filter) {
 exports.FXAAFilter = FXAAFilter;
 
 
-},{"@pixi/core":41}],49:[function(require,module,exports){
+},{"@pixi/core":42}],50:[function(require,module,exports){
 /*!
  * @pixi/filter-noise - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -19493,7 +19646,7 @@ var NoiseFilter = /*@__PURE__*/(function (Filter) {
 exports.NoiseFilter = NoiseFilter;
 
 
-},{"@pixi/core":41}],50:[function(require,module,exports){
+},{"@pixi/core":42}],51:[function(require,module,exports){
 /*!
  * @pixi/graphics - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -23021,7 +23174,7 @@ exports.GraphicsGeometry = GraphicsGeometry;
 exports.LineStyle = LineStyle;
 
 
-},{"@pixi/constants":40,"@pixi/core":41,"@pixi/display":42,"@pixi/math":53,"@pixi/utils":71}],51:[function(require,module,exports){
+},{"@pixi/constants":41,"@pixi/core":42,"@pixi/display":43,"@pixi/math":54,"@pixi/utils":72}],52:[function(require,module,exports){
 /*!
  * @pixi/interaction - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -25499,7 +25652,7 @@ exports.InteractionTrackingData = InteractionTrackingData;
 exports.interactiveTarget = interactiveTarget;
 
 
-},{"@pixi/display":42,"@pixi/math":53,"@pixi/ticker":70,"@pixi/utils":71}],52:[function(require,module,exports){
+},{"@pixi/display":43,"@pixi/math":54,"@pixi/ticker":71,"@pixi/utils":72}],53:[function(require,module,exports){
 /*!
  * @pixi/loaders - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -25814,7 +25967,7 @@ exports.LoaderResource = LoaderResource;
 exports.TextureLoader = TextureLoader;
 
 
-},{"@pixi/core":41,"@pixi/utils":71,"resource-loader":88}],53:[function(require,module,exports){
+},{"@pixi/core":42,"@pixi/utils":72,"resource-loader":89}],54:[function(require,module,exports){
 /*!
  * @pixi/math - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -27936,7 +28089,7 @@ exports.SHAPES = SHAPES;
 exports.Transform = Transform;
 
 
-},{}],54:[function(require,module,exports){
+},{}],55:[function(require,module,exports){
 /*!
  * @pixi/mesh-extras - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -28706,7 +28859,7 @@ exports.SimplePlane = SimplePlane;
 exports.SimpleRope = SimpleRope;
 
 
-},{"@pixi/core":41,"@pixi/mesh":55}],55:[function(require,module,exports){
+},{"@pixi/core":42,"@pixi/mesh":56}],56:[function(require,module,exports){
 /*!
  * @pixi/mesh - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -29501,7 +29654,7 @@ exports.MeshGeometry = MeshGeometry;
 exports.MeshMaterial = MeshMaterial;
 
 
-},{"@pixi/constants":40,"@pixi/core":41,"@pixi/display":42,"@pixi/math":53,"@pixi/settings":63,"@pixi/utils":71}],56:[function(require,module,exports){
+},{"@pixi/constants":41,"@pixi/core":42,"@pixi/display":43,"@pixi/math":54,"@pixi/settings":64,"@pixi/utils":72}],57:[function(require,module,exports){
 /*!
  * @pixi/mixin-cache-as-bitmap - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -29936,7 +30089,7 @@ display.DisplayObject.prototype._cacheAsBitmapDestroy = function _cacheAsBitmapD
 };
 
 
-},{"@pixi/core":41,"@pixi/display":42,"@pixi/math":53,"@pixi/settings":63,"@pixi/sprite":66,"@pixi/utils":71}],57:[function(require,module,exports){
+},{"@pixi/core":42,"@pixi/display":43,"@pixi/math":54,"@pixi/settings":64,"@pixi/sprite":67,"@pixi/utils":72}],58:[function(require,module,exports){
 /*!
  * @pixi/mixin-get-child-by-name - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -29978,7 +30131,7 @@ display.Container.prototype.getChildByName = function getChildByName(name)
 };
 
 
-},{"@pixi/display":42}],58:[function(require,module,exports){
+},{"@pixi/display":43}],59:[function(require,module,exports){
 /*!
  * @pixi/mixin-get-global-position - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -30021,7 +30174,7 @@ display.DisplayObject.prototype.getGlobalPosition = function getGlobalPosition(p
 };
 
 
-},{"@pixi/display":42,"@pixi/math":53}],59:[function(require,module,exports){
+},{"@pixi/display":43,"@pixi/math":54}],60:[function(require,module,exports){
 /*!
  * @pixi/particles - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -31003,7 +31156,7 @@ exports.ParticleContainer = ParticleContainer;
 exports.ParticleRenderer = ParticleRenderer;
 
 
-},{"@pixi/constants":40,"@pixi/core":41,"@pixi/display":42,"@pixi/math":53,"@pixi/utils":71}],60:[function(require,module,exports){
+},{"@pixi/constants":41,"@pixi/core":42,"@pixi/display":43,"@pixi/math":54,"@pixi/utils":72}],61:[function(require,module,exports){
 (function (global){
 /*!
  * @pixi/polyfill - v5.1.6
@@ -31172,7 +31325,7 @@ if (!window.Int32Array)
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"es6-promise-polyfill":75,"object-assign":80}],61:[function(require,module,exports){
+},{"es6-promise-polyfill":76,"object-assign":81}],62:[function(require,module,exports){
 /*!
  * @pixi/prepare - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -31902,7 +32055,7 @@ exports.Prepare = Prepare;
 exports.TimeLimiter = TimeLimiter;
 
 
-},{"@pixi/core":41,"@pixi/display":42,"@pixi/graphics":50,"@pixi/settings":63,"@pixi/text":69,"@pixi/ticker":70}],62:[function(require,module,exports){
+},{"@pixi/core":42,"@pixi/display":43,"@pixi/graphics":51,"@pixi/settings":64,"@pixi/text":70,"@pixi/ticker":71}],63:[function(require,module,exports){
 /*!
  * @pixi/runner - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -32122,7 +32275,7 @@ Runner.prototype.run = Runner.prototype.emit;
 exports.Runner = Runner;
 
 
-},{}],63:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 /*!
  * @pixi/settings - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -32446,7 +32599,7 @@ exports.isMobile = isMobile;
 exports.settings = settings;
 
 
-},{"ismobilejs":77}],64:[function(require,module,exports){
+},{"ismobilejs":78}],65:[function(require,module,exports){
 /*!
  * @pixi/sprite-animated - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -32907,7 +33060,7 @@ var AnimatedSprite = /*@__PURE__*/(function (Sprite) {
 exports.AnimatedSprite = AnimatedSprite;
 
 
-},{"@pixi/core":41,"@pixi/sprite":66,"@pixi/ticker":70}],65:[function(require,module,exports){
+},{"@pixi/core":42,"@pixi/sprite":67,"@pixi/ticker":71}],66:[function(require,module,exports){
 /*!
  * @pixi/sprite-tiling - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -33417,7 +33570,7 @@ exports.TilingSprite = TilingSprite;
 exports.TilingSpriteRenderer = TilingSpriteRenderer;
 
 
-},{"@pixi/constants":40,"@pixi/core":41,"@pixi/math":53,"@pixi/sprite":66,"@pixi/utils":71}],66:[function(require,module,exports){
+},{"@pixi/constants":41,"@pixi/core":42,"@pixi/math":54,"@pixi/sprite":67,"@pixi/utils":72}],67:[function(require,module,exports){
 /*!
  * @pixi/sprite - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -34101,7 +34254,7 @@ var Sprite = /*@__PURE__*/(function (Container) {
 exports.Sprite = Sprite;
 
 
-},{"@pixi/constants":40,"@pixi/core":41,"@pixi/display":42,"@pixi/math":53,"@pixi/settings":63,"@pixi/utils":71}],67:[function(require,module,exports){
+},{"@pixi/constants":41,"@pixi/core":42,"@pixi/display":43,"@pixi/math":54,"@pixi/settings":64,"@pixi/utils":72}],68:[function(require,module,exports){
 /*!
  * @pixi/spritesheet - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -34522,7 +34675,7 @@ exports.Spritesheet = Spritesheet;
 exports.SpritesheetLoader = SpritesheetLoader;
 
 
-},{"@pixi/core":41,"@pixi/loaders":52,"@pixi/math":53,"@pixi/utils":71}],68:[function(require,module,exports){
+},{"@pixi/core":42,"@pixi/loaders":53,"@pixi/math":54,"@pixi/utils":72}],69:[function(require,module,exports){
 /*!
  * @pixi/text-bitmap - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -35363,7 +35516,7 @@ exports.BitmapFontLoader = BitmapFontLoader;
 exports.BitmapText = BitmapText;
 
 
-},{"@pixi/core":41,"@pixi/display":42,"@pixi/loaders":52,"@pixi/math":53,"@pixi/settings":63,"@pixi/sprite":66,"@pixi/utils":71}],69:[function(require,module,exports){
+},{"@pixi/core":42,"@pixi/display":43,"@pixi/loaders":53,"@pixi/math":54,"@pixi/settings":64,"@pixi/sprite":67,"@pixi/utils":72}],70:[function(require,module,exports){
 /*!
  * @pixi/text - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -37650,7 +37803,7 @@ exports.TextMetrics = TextMetrics;
 exports.TextStyle = TextStyle;
 
 
-},{"@pixi/core":41,"@pixi/math":53,"@pixi/settings":63,"@pixi/sprite":66,"@pixi/utils":71}],70:[function(require,module,exports){
+},{"@pixi/core":42,"@pixi/math":54,"@pixi/settings":64,"@pixi/sprite":67,"@pixi/utils":72}],71:[function(require,module,exports){
 /*!
  * @pixi/ticker - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -38613,7 +38766,7 @@ exports.TickerPlugin = TickerPlugin;
 exports.UPDATE_PRIORITY = UPDATE_PRIORITY;
 
 
-},{"@pixi/settings":63}],71:[function(require,module,exports){
+},{"@pixi/settings":64}],72:[function(require,module,exports){
 /*!
  * @pixi/utils - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -39640,7 +39793,7 @@ exports.trimCanvas = trimCanvas;
 exports.uid = uid;
 
 
-},{"@pixi/constants":40,"@pixi/settings":63,"earcut":74,"eventemitter3":72,"url":90}],72:[function(require,module,exports){
+},{"@pixi/constants":41,"@pixi/settings":64,"earcut":75,"eventemitter3":73,"url":91}],73:[function(require,module,exports){
 'use strict';
 
 var has = Object.prototype.hasOwnProperty
@@ -39978,7 +40131,7 @@ if ('undefined' !== typeof module) {
   module.exports = EventEmitter;
 }
 
-},{}],73:[function(require,module,exports){
+},{}],74:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -40948,7 +41101,7 @@ TWEEN.version = version;
 module.exports = TWEEN;
 
 }).call(this,require('_process'))
-},{"_process":83}],74:[function(require,module,exports){
+},{"_process":84}],75:[function(require,module,exports){
 'use strict';
 
 module.exports = earcut;
@@ -41629,7 +41782,7 @@ earcut.flatten = function (data) {
     return result;
 };
 
-},{}],75:[function(require,module,exports){
+},{}],76:[function(require,module,exports){
 (function (global,setImmediate){
 (function(global){
 
@@ -41979,7 +42132,7 @@ Promise.reject = function(reason){
 })(typeof window != 'undefined' ? window : typeof global != 'undefined' ? global : typeof self != 'undefined' ? self : this);
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("timers").setImmediate)
-},{"timers":89}],76:[function(require,module,exports){
+},{"timers":90}],77:[function(require,module,exports){
 /**
  * Copyright (c) 2014-present, Facebook, Inc.
  *
@@ -47845,9 +47998,9 @@ Promise.reject = function(reason){
 
 })));
 
-},{}],77:[function(require,module,exports){
-!function(e){var n=/iPhone/i,t=/iPod/i,r=/iPad/i,a=/\bAndroid(?:.+)Mobile\b/i,p=/Android/i,b=/\bAndroid(?:.+)SD4930UR\b/i,l=/\bAndroid(?:.+)(?:KF[A-Z]{2,4})\b/i,f=/Windows Phone/i,s=/\bWindows(?:.+)ARM\b/i,u=/BlackBerry/i,c=/BB10/i,h=/Opera Mini/i,v=/\b(CriOS|Chrome)(?:.+)Mobile/i,w=/Mobile(?:.+)Firefox\b/i;function m(e,i){return e.test(i)}function i(e){var i=e||("undefined"!=typeof navigator?navigator.userAgent:""),o=i.split("[FBAN");void 0!==o[1]&&(i=o[0]),void 0!==(o=i.split("Twitter"))[1]&&(i=o[0]);var d={apple:{phone:m(n,i)&&!m(f,i),ipod:m(t,i),tablet:!m(n,i)&&m(r,i)&&!m(f,i),device:(m(n,i)||m(t,i)||m(r,i))&&!m(f,i)},amazon:{phone:m(b,i),tablet:!m(b,i)&&m(l,i),device:m(b,i)||m(l,i)},android:{phone:!m(f,i)&&m(b,i)||!m(f,i)&&m(a,i),tablet:!m(f,i)&&!m(b,i)&&!m(a,i)&&(m(l,i)||m(p,i)),device:!m(f,i)&&(m(b,i)||m(l,i)||m(a,i)||m(p,i))||m(/\bokhttp\b/i,i)},windows:{phone:m(f,i),tablet:m(s,i),device:m(f,i)||m(s,i)},other:{blackberry:m(u,i),blackberry10:m(c,i),opera:m(h,i),firefox:m(w,i),chrome:m(v,i),device:m(u,i)||m(c,i)||m(h,i)||m(w,i)||m(v,i)}};return d.any=d.apple.device||d.android.device||d.windows.device||d.other.device,d.phone=d.apple.phone||d.android.phone||d.windows.phone,d.tablet=d.apple.tablet||d.android.tablet||d.windows.tablet,d}"undefined"!=typeof module&&module.exports&&"undefined"==typeof window?module.exports=i:"undefined"!=typeof module&&module.exports&&"undefined"!=typeof window?(module.exports=i(),module.exports.isMobile=i):"function"==typeof define&&define.amd?define([],e.isMobile=i()):e.isMobile=i()}(this);
 },{}],78:[function(require,module,exports){
+!function(e){var n=/iPhone/i,t=/iPod/i,r=/iPad/i,a=/\bAndroid(?:.+)Mobile\b/i,p=/Android/i,b=/\bAndroid(?:.+)SD4930UR\b/i,l=/\bAndroid(?:.+)(?:KF[A-Z]{2,4})\b/i,f=/Windows Phone/i,s=/\bWindows(?:.+)ARM\b/i,u=/BlackBerry/i,c=/BB10/i,h=/Opera Mini/i,v=/\b(CriOS|Chrome)(?:.+)Mobile/i,w=/Mobile(?:.+)Firefox\b/i;function m(e,i){return e.test(i)}function i(e){var i=e||("undefined"!=typeof navigator?navigator.userAgent:""),o=i.split("[FBAN");void 0!==o[1]&&(i=o[0]),void 0!==(o=i.split("Twitter"))[1]&&(i=o[0]);var d={apple:{phone:m(n,i)&&!m(f,i),ipod:m(t,i),tablet:!m(n,i)&&m(r,i)&&!m(f,i),device:(m(n,i)||m(t,i)||m(r,i))&&!m(f,i)},amazon:{phone:m(b,i),tablet:!m(b,i)&&m(l,i),device:m(b,i)||m(l,i)},android:{phone:!m(f,i)&&m(b,i)||!m(f,i)&&m(a,i),tablet:!m(f,i)&&!m(b,i)&&!m(a,i)&&(m(l,i)||m(p,i)),device:!m(f,i)&&(m(b,i)||m(l,i)||m(a,i)||m(p,i))||m(/\bokhttp\b/i,i)},windows:{phone:m(f,i),tablet:m(s,i),device:m(f,i)||m(s,i)},other:{blackberry:m(u,i),blackberry10:m(c,i),opera:m(h,i),firefox:m(w,i),chrome:m(v,i),device:m(u,i)||m(c,i)||m(h,i)||m(w,i)||m(v,i)}};return d.any=d.apple.device||d.android.device||d.windows.device||d.other.device,d.phone=d.apple.phone||d.android.phone||d.windows.phone,d.tablet=d.apple.tablet||d.android.tablet||d.windows.tablet,d}"undefined"!=typeof module&&module.exports&&"undefined"==typeof window?module.exports=i:"undefined"!=typeof module&&module.exports&&"undefined"!=typeof window?(module.exports=i(),module.exports.isMobile=i):"function"==typeof define&&define.amd?define([],e.isMobile=i()):e.isMobile=i()}(this);
+},{}],79:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -64963,7 +65116,7 @@ Promise.reject = function(reason){
 }.call(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],79:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -65130,7 +65283,7 @@ MiniSignal.MiniSignalBinding = MiniSignalBinding;
 exports['default'] = MiniSignal;
 module.exports = exports['default'];
 
-},{}],80:[function(require,module,exports){
+},{}],81:[function(require,module,exports){
 /*
 object-assign
 (c) Sindre Sorhus
@@ -65222,7 +65375,7 @@ module.exports = shouldUseNative() ? Object.assign : function (target, source) {
 	return to;
 };
 
-},{}],81:[function(require,module,exports){
+},{}],82:[function(require,module,exports){
 'use strict'
 
 module.exports = function parseURI (str, opts) {
@@ -65254,7 +65407,7 @@ module.exports = function parseURI (str, opts) {
   return uri
 }
 
-},{}],82:[function(require,module,exports){
+},{}],83:[function(require,module,exports){
 /*!
  * pixi.js - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -66688,7 +66841,7 @@ exports.filters = filters;
 exports.useDeprecated = useDeprecated;
 
 
-},{"@pixi/accessibility":38,"@pixi/app":39,"@pixi/constants":40,"@pixi/core":41,"@pixi/display":42,"@pixi/extract":43,"@pixi/filter-alpha":44,"@pixi/filter-blur":45,"@pixi/filter-color-matrix":46,"@pixi/filter-displacement":47,"@pixi/filter-fxaa":48,"@pixi/filter-noise":49,"@pixi/graphics":50,"@pixi/interaction":51,"@pixi/loaders":52,"@pixi/math":53,"@pixi/mesh":55,"@pixi/mesh-extras":54,"@pixi/mixin-cache-as-bitmap":56,"@pixi/mixin-get-child-by-name":57,"@pixi/mixin-get-global-position":58,"@pixi/particles":59,"@pixi/polyfill":60,"@pixi/prepare":61,"@pixi/runner":62,"@pixi/settings":63,"@pixi/sprite":66,"@pixi/sprite-animated":64,"@pixi/sprite-tiling":65,"@pixi/spritesheet":67,"@pixi/text":69,"@pixi/text-bitmap":68,"@pixi/ticker":70,"@pixi/utils":71}],83:[function(require,module,exports){
+},{"@pixi/accessibility":39,"@pixi/app":40,"@pixi/constants":41,"@pixi/core":42,"@pixi/display":43,"@pixi/extract":44,"@pixi/filter-alpha":45,"@pixi/filter-blur":46,"@pixi/filter-color-matrix":47,"@pixi/filter-displacement":48,"@pixi/filter-fxaa":49,"@pixi/filter-noise":50,"@pixi/graphics":51,"@pixi/interaction":52,"@pixi/loaders":53,"@pixi/math":54,"@pixi/mesh":56,"@pixi/mesh-extras":55,"@pixi/mixin-cache-as-bitmap":57,"@pixi/mixin-get-child-by-name":58,"@pixi/mixin-get-global-position":59,"@pixi/particles":60,"@pixi/polyfill":61,"@pixi/prepare":62,"@pixi/runner":63,"@pixi/settings":64,"@pixi/sprite":67,"@pixi/sprite-animated":65,"@pixi/sprite-tiling":66,"@pixi/spritesheet":68,"@pixi/text":70,"@pixi/text-bitmap":69,"@pixi/ticker":71,"@pixi/utils":72}],84:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -66874,7 +67027,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],84:[function(require,module,exports){
+},{}],85:[function(require,module,exports){
 (function (global){
 /*! https://mths.be/punycode v1.4.1 by @mathias */
 ;(function(root) {
@@ -67411,7 +67564,7 @@ process.umask = function() { return 0; };
 }(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],85:[function(require,module,exports){
+},{}],86:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -67497,7 +67650,7 @@ var isArray = Array.isArray || function (xs) {
   return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{}],86:[function(require,module,exports){
+},{}],87:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -67584,13 +67737,13 @@ var objectKeys = Object.keys || function (obj) {
   return res;
 };
 
-},{}],87:[function(require,module,exports){
+},{}],88:[function(require,module,exports){
 'use strict';
 
 exports.decode = exports.parse = require('./decode');
 exports.encode = exports.stringify = require('./encode');
 
-},{"./decode":85,"./encode":86}],88:[function(require,module,exports){
+},{"./decode":86,"./encode":87}],89:[function(require,module,exports){
 /*!
  * resource-loader - v3.0.1
  * https://github.com/pixijs/pixi-sound
@@ -69941,7 +70094,7 @@ exports.encodeBinary = encodeBinary;
 exports.middleware = index;
 
 
-},{"mini-signals":79,"parse-uri":81}],89:[function(require,module,exports){
+},{"mini-signals":80,"parse-uri":82}],90:[function(require,module,exports){
 (function (setImmediate,clearImmediate){
 var nextTick = require('process/browser.js').nextTick;
 var apply = Function.prototype.apply;
@@ -70020,7 +70173,7 @@ exports.clearImmediate = typeof clearImmediate === "function" ? clearImmediate :
   delete immediateIds[id];
 };
 }).call(this,require("timers").setImmediate,require("timers").clearImmediate)
-},{"process/browser.js":83,"timers":89}],90:[function(require,module,exports){
+},{"process/browser.js":84,"timers":90}],91:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -70754,7 +70907,7 @@ Url.prototype.parseHost = function() {
   if (host) this.hostname = host;
 };
 
-},{"./util":91,"punycode":84,"querystring":87}],91:[function(require,module,exports){
+},{"./util":92,"punycode":85,"querystring":88}],92:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -70772,4 +70925,4 @@ module.exports = {
   }
 };
 
-},{}]},{},[37]);
+},{}]},{},[38]);

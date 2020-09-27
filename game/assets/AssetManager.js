@@ -39,6 +39,20 @@ var AssetManager = (function () {
     AssetManager.getAnimatedSprite = function (name) {
         return AssetManager._instance.m_animationMap.get(name);
     };
+    AssetManager.getEffect = function (asset_info) {
+        var effect = new PIXI.Container();
+        var text = new PIXI.Text(asset_info.data.amount + '', {
+            fill: 0xFFFFCC,
+            size: 24,
+            stroke: 0x000000,
+            strokeThickness: 4,
+            fontWeight: 'bolder',
+        });
+        text.scale.set(1.00);
+        text.anchor.set(0.5);
+        effect.addChild(text);
+        return effect;
+    };
     AssetManager.init = function (onLoaded) {
         var manager = new AssetManager();
         manager.load(onLoaded);

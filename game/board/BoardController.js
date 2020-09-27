@@ -22,6 +22,7 @@ var BoardController = (function () {
     function BoardController() {
         var _this = this;
         this.m_event_manager = new event_1.EventManager();
+        this.m_effect_entities = [];
         this.createClone = function () {
             var ctrl = new AIBoardController(_this.m_board.elements);
             return ctrl;
@@ -33,9 +34,6 @@ var BoardController = (function () {
         this.sendToRenderer = function (renderer) {
             _this.m_renderer = renderer;
             renderer.initializeScene(_this.m_board);
-            _this.on("MOVE", function (data) {
-                _this.m_renderer.positionElement(data.entity_id, data.move.to);
-            });
         };
         this.sendAction = function (action) {
             _this.m_action_stack.push(action);
@@ -77,9 +75,6 @@ var BoardController = (function () {
         };
         this.removeEntity = function (id) {
             _this.m_board.removeElement(id);
-            if (_this.m_renderer) {
-                _this.m_renderer.removeEntity(id);
-            }
         };
         this.getTile = function (pos) {
             return _this.m_board.getTileAtPos(pos);
@@ -110,47 +105,38 @@ var BoardController = (function () {
         };
         this.m_action_stack = new ActionStack_1.ActionStack(this);
     }
-    BoardController.prototype.getActionCallback = function (action) {
+    BoardController.prototype.animateAbility = function (data) {
+        var _this = this;
+        return new Promise(function (resolve) {
+            if (!_this.m_board.getUnitAtPosition(data.target.pos)) {
+                return resolve();
+            }
+            return resolve();
+        });
+    };
+    BoardController.prototype.animateEffect = function (data) {
+        return new Promise(function (resolve) {
+            resolve();
+        });
+    };
+    BoardController.prototype.animateGameAction = function (action) {
         var _this = this;
         if (!this.m_renderer) {
             return Promise.resolve();
         }
+        if (action.type === 'ABILITY') {
+            return this.animateAbility(action.data);
+        }
         return new Promise(function (resolve) {
-            if (action.type === "ABILITY" && action.data.target) {
-                var data = action.data;
-                if (!_this.m_board.getUnitAtPosition(data.target.pos)) {
-                    return resolve();
-                }
-                var sprite_1 = _this.m_renderer.getSprite(data.source.id);
-                var dir = {
-                    x: data.target.pos.x - data.source.pos.x,
-                    y: data.target.pos.y - data.source.pos.y,
-                };
-                var anim_dir_1 = _this.m_renderer.getProjection(dir);
-                anim_dir_1.x = Math.min(Math.max(-1, anim_dir_1.x), 1);
-                anim_dir_1.y = Math.min(Math.max(-1, anim_dir_1.y), 1);
-                sprite_1.position.x = -anim_dir_1.x;
-                sprite_1.position.y = -anim_dir_1.y;
-                setTimeout(function () {
-                    sprite_1.position.x = anim_dir_1.x * 3;
-                    sprite_1.position.y = anim_dir_1.y * 3;
-                    setTimeout(function () {
-                        sprite_1.position.set(0, 0);
-                    }, 150);
-                    resolve();
-                }, 250);
+            var effect = _this.createEffect(action, resolve);
+            if (effect) {
+                var action_target = _this.m_board.getElement(action.data.entity_id);
+                effect.setPosition(action_target.pos);
             }
             else {
-                var effect = _this.createEffect(action, resolve);
-                if (effect) {
-                    var action_target = _this.m_board.getElement(action.data.entity_id);
-                    var screen_pos = _this.m_renderer.getScreenPosition(action_target.pos.x, action_target.pos.y);
-                    effect.m_container.position.set(screen_pos.x, screen_pos.y);
-                }
-                else {
-                    setTimeout(resolve, 100);
-                }
+                setTimeout(resolve, 100);
             }
+            setTimeout(resolve, 100);
         });
     };
     return BoardController;
@@ -164,7 +150,7 @@ var AIBoardController = (function (_super) {
         _this.m_board.elements = elements;
         return _this;
     }
-    AIBoardController.prototype.getActionCallback = function (action) {
+    AIBoardController.prototype.animateGameAction = function (action) {
         return Promise.resolve();
     };
     Object.defineProperty(AIBoardController.prototype, "board", {

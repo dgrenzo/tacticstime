@@ -39,10 +39,14 @@ var SceneRendererIsometric = (function (_super) {
             var point = new PIXI.Point((x - y) * _this.HALF_TILE_WIDTH, (x + y) * _this.HALF_TILE_HEIGHT);
             return point;
         };
-        _this.positionElement = function (id, pos) {
-            var element = _this.getRenderable(id);
-            element.setPosition((pos.x - pos.y) * _this.HALF_TILE_WIDTH, (pos.x + pos.y) * _this.HALF_TILE_HEIGHT);
-            _this._dirty = true;
+        _this.positionElement = function (element, pos) {
+            element.setPosition((pos.x - pos.y) * _this.HALF_TILE_WIDTH, (pos.x + pos.y) * _this.HALF_TILE_HEIGHT, _this.getElementDepth(pos) + element.depth_offset);
+            _this.m_renderables.remove(element);
+            var index = _this.m_renderables.getFirstIndex(function (e) {
+                return e.depth > element.depth;
+            });
+            _this.m_renderables.insertAt(element, index);
+            _this.m_container.addChildAt(element.root, index);
         };
         _this.getProjection = function (pos) {
             return {
@@ -50,17 +54,8 @@ var SceneRendererIsometric = (function (_super) {
                 y: (pos.x + pos.y),
             };
         };
-        _this.sortElements = function (elements) {
-            elements
-                .sort(function (a, b) {
-                return _this.getElementDepth(a) - _this.getElementDepth(b);
-            })
-                .forEach(function (e) {
-                _this.m_container.addChild(_this.m_renderables.get(e.id).root);
-            });
-        };
-        _this.getElementDepth = function (element) {
-            return (element.pos.x + element.pos.y) + element.depth_offset;
+        _this.getElementDepth = function (pos) {
+            return (pos.x + pos.y);
         };
         _this.m_container.position.set(500, 50);
         _this.m_container.scale.set(4);

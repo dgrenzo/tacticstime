@@ -15,10 +15,9 @@ var EffectsManager = (function () {
         var effect = null;
         switch (action.type) {
             case "DAMAGE_DEALT":
-                effect = new damage_1.DamageNumberEffect(action.data, onComplete);
+                effect = new damage_1.DamageNumberEffect(EffectsManager.s_renderer, action.data, onComplete);
         }
         if (effect) {
-            EffectsManager.s_renderer.effects_container.addChild(effect.m_container);
         }
         return effect;
     };

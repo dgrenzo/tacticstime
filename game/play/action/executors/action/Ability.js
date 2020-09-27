@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var _ = require("lodash");
 function ExecuteAbility(action, elements, controller) {
-    return controller.getActionCallback(action).then(function () {
+    return controller.animateGameAction(action).then(function () {
         _.forEach(action.data.ability.effects, function (effect) {
             var tiles = controller.getTilesInRange(action.data.target.pos, effect.range);
             tiles.forEach(function (tile) {

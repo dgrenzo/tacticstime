@@ -80,7 +80,7 @@ var ActionStack = (function () {
 exports.ActionStack = ActionStack;
 function ExecuteDefault(action, elements, controller) {
     return new Promise(function (resolve) {
-        controller.getActionCallback(action).then(function () {
+        controller.animateGameAction(action).then(function () {
             resolve(elements);
         });
     });

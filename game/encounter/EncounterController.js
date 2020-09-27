@@ -25,6 +25,7 @@ var EncounterController = (function () {
         this.m_config = m_config;
         this.m_event_manager = new event_1.EventManager();
         this.m_interface_container = new PIXI.Container();
+        this.m_render_elements = new Map();
         this.loadMap = function (path) {
             return Loader_1.LoadBoard(path).then(function (board_data) {
                 _this.m_board_controller.initBoard(board_data);
@@ -41,15 +42,26 @@ var EncounterController = (function () {
             _this.m_board_controller.on("CREATE_UNIT", function (data) {
                 _this.m_unit_queue.addUnit(data.unit);
                 var renderable = _this.m_renderer.addEntity(data.unit);
-                renderable.render(SceneRenderer_1.getAsset(data.unit));
+                _this.m_render_elements.set(data.unit.id, renderable);
+                renderable.renderAsset(SceneRenderer_1.getAsset(data.unit));
             });
             _this.m_board_controller.on("UNIT_KILLED", function (data) {
                 _this.m_unit_queue.removeUnit(data.entity_id);
+                if (_this.m_renderer) {
+                    var renderable = _this.m_render_elements.get(data.entity_id);
+                    _this.m_renderer.removeEntity(renderable.id);
+                }
             });
             _this.m_board_controller.on("UNIT_CREATED", function (data) {
                 var health_bar = new HealthBar_1.HealthBar(data.unit.id, _this.m_board_controller, _this.m_renderer);
                 _this.m_renderer.effects_container.addChild(health_bar.sprite);
             });
+            _this.m_board_controller.on("MOVE", function (data) {
+                _this.m_renderer.positionElement(_this.getRenderElement(data.entity_id), data.move.to);
+            });
+        };
+        this.getRenderElement = function (entity_id) {
+            return _this.m_render_elements.get(entity_id);
         };
         this.loadNextMisison = function () {
             Loader_1.LoadMission('assets/data/missions/001.json').then(function (mission_data) {

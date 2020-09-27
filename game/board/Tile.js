@@ -28,12 +28,6 @@ function isTile(entity) {
     return entity.entity_type === "TILE";
 }
 exports.isTile = isTile;
-function asset() {
-    return {
-        type: "SPRITE",
-        name: this.m_tile_name,
-    };
-}
 exports.GetTileName = function (def) {
     var base = Math.floor(def / 10);
     var type = def % 10;

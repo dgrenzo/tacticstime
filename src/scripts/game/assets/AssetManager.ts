@@ -33,10 +33,8 @@ export default class AssetManager {
 
   public static getEffect(asset_info : IAssetInfo) {
     let effect = new PIXI.Container();
-    effect.position.set(9, 2);
 
-    //let text = new PIXI.Text(asset_info.data.amount + '', 
-    let text = new PIXI.Text("99", 
+    let text = new PIXI.Text(asset_info.data.amount + '',
     { 
       fill : 0xFFFFCC, 
       size : 24,
@@ -44,7 +42,7 @@ export default class AssetManager {
       strokeThickness : 4,
       fontWeight : 'bolder',
     });
-    text.scale.set (0.00);
+    text.scale.set (1.00);
     text.anchor.set(0.5);
 
     effect.addChild(text);

@@ -12,8 +12,7 @@ import { LinkedList } from '../../list/linkedlist';
 type RendererEvent = "ENTITY_CLICKED" | "POINTER_UP" | "POINTER_DOWN" | "POINTER_MOVE";
 
 export abstract class SceneRenderer {
-  protected _dirty : boolean = true;
-
+  
   protected m_container : PIXI.Container;
   protected m_renderables : LinkedList<RenderEntity>;
 
@@ -72,19 +71,16 @@ export abstract class SceneRenderer {
   
   public removeEntity = (id : RenderEntityID) : RenderEntity => {
     let renderable = this.getRenderable(id);
-
     if (renderable) {
       this.m_container.removeChild(renderable.root);
       this.m_renderables.remove(renderable);
     }
-    this._dirty = true;
     return renderable;
   }
 
   public addEntity = (entity : IEntity) : RenderEntity => {
     let renderable = CreateRenderable(entity);
     this.positionElement(renderable, entity.pos);
-    this._dirty = true;
     return renderable;
   };
 

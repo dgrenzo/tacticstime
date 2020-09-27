@@ -14,6 +14,8 @@ import { IElementMap } from '../../engine/scene/Scene';
 import { SceneRenderer } from '../../engine/render/scene/SceneRenderer';
 import { ICreateUnitAction } from '../play/action/executors/action/CreateUnit';
 import { IMoveActionData } from '../play/action/executors/action/Movement';
+import { GameEffect } from '../effects/damage';
+import EffectsManager from '../effects';
 
 
 export class BoardController {
@@ -114,15 +116,15 @@ export class BoardController {
     }
 
     return new Promise(resolve => {
-      // let effect = this.createEffect(action, resolve);
+      let effect = this.createEffect(action, resolve);
 
-      // if (effect) {
-      //   let action_target = this.m_board.getElement(action.data.entity_id);
-      //   let screen_pos = this.m_renderer.getScreenPosition(action_target.pos.x, action_target.pos.y);
-      //   //effect.m_container.position.set(screen_pos.x, screen_pos.y);
-      // } else {
-      //   setTimeout(resolve, 100);
-      // }
+      if (effect) {
+        let action_target = this.m_board.getElement(action.data.entity_id);
+        effect.setPosition(action_target.pos);
+        //effect.m_container.position.set(screen_pos.x, screen_pos.y);
+      } else {
+        setTimeout(resolve, 100);
+      }
       
       setTimeout(resolve, 100);
     
@@ -139,9 +141,9 @@ export class BoardController {
     this.sendAction(create_action);
   }
   
-  // public createEffect = (ability : IGameAction, cb : ()=>void) : GameEffect => {
-  //   //return EffectsManager.RenderEffect(ability, cb);
-  // }  
+  public createEffect = (ability : IGameAction, cb : ()=>void) : GameEffect => {
+    return EffectsManager.RenderEffect(ability, cb);
+  }  
 
   public on = (event_name : GameEvent, cb : (data:any) => void) => {
     this.m_event_manager.add(event_name, cb);

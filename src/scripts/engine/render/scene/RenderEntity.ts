@@ -76,6 +76,7 @@ export class RenderEntity {
     let animated_sprite = new PIXI.AnimatedSprite(animation_data, true);
     animated_sprite.position.set(3, -7);
     animated_sprite.play();
+
     this.m_image = animated_sprite;
     this.m_container.addChild(animated_sprite);
   }

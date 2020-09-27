@@ -22,7 +22,7 @@ export default class EffectsManager {
     let effect : GameEffect = null;
     switch (action.type) {
       case "DAMAGE_DEALT" :
-        effect = new DamageNumberEffect(action.data as IDamageActionData, onComplete);
+        effect = new DamageNumberEffect(EffectsManager.s_renderer, action.data as IDamageActionData, onComplete);
     }
 
     if (effect) {

@@ -15,7 +15,7 @@ export interface IAssetInfo {
 }
 
 export interface IEntity {
-  id : number,
+  id ?: number,
   entity_type : string,
   pos : {
     x : number,

@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
 var BoardController_1 = require("../board/BoardController");
-var SceneRenderer_1 = require("../../engine/render/scene/SceneRenderer");
 var UnitQueue_1 = require("../play/UnitQueue");
 var event_1 = require("../../engine/listener/event");
 var Loader_1 = require("../board/Loader");
@@ -11,6 +10,7 @@ var HealthBar_1 = require("../play/interface/HealthBar");
 var TileHighlighter_1 = require("../extras/TileHighlighter");
 var effects_1 = require("../effects");
 var EnemyTurn_1 = require("../play/EnemyTurn");
+var BoardAnimator_1 = require("../animation/BoardAnimator");
 var EncounterState;
 (function (EncounterState) {
     EncounterState[EncounterState["INIT"] = 0] = "INIT";
@@ -25,12 +25,12 @@ var EncounterController = (function () {
         this.m_config = m_config;
         this.m_event_manager = new event_1.EventManager();
         this.m_interface_container = new PIXI.Container();
-        this.m_render_elements = new Map();
         this.loadMap = function (path) {
             return Loader_1.LoadBoard(path).then(function (board_data) {
                 _this.m_board_controller.initBoard(board_data);
                 _this.setupListeners();
                 _this.m_board_controller.sendToRenderer(_this.m_renderer);
+                _this.m_board_controller.setAnimator(_this.m_animator);
                 _this.onSetupComplete();
                 return;
             });
@@ -41,32 +41,13 @@ var EncounterController = (function () {
         this.setupListeners = function () {
             _this.m_board_controller.on("CREATE_UNIT", function (data) {
                 _this.m_unit_queue.addUnit(data.unit);
-                var renderable = _this.m_renderer.addEntity(data.unit);
-                _this.m_render_elements.set(data.unit.id, renderable);
-                renderable.renderAsset(SceneRenderer_1.getAsset(data.unit));
             });
             _this.m_board_controller.on("UNIT_KILLED", function (data) {
                 _this.m_unit_queue.removeUnit(data.entity_id);
-                if (_this.m_renderer) {
-                    var renderable = _this.m_render_elements.get(data.entity_id);
-                    _this.m_renderer.removeEntity(renderable.id);
-                }
             });
             _this.m_board_controller.on("UNIT_CREATED", function (data) {
                 var health_bar = new HealthBar_1.HealthBar(data.unit.id, _this.m_board_controller, _this.m_renderer);
                 _this.m_renderer.effects_container.addChild(health_bar.sprite);
-            });
-            _this.m_board_controller.on("MOVE", function (data) {
-                _this.m_renderer.positionElement(_this.getRenderElement(data.entity_id), data.move.to);
-            });
-        };
-        this.getRenderElement = function (entity_id) {
-            return _this.m_render_elements.get(entity_id);
-        };
-        this.loadNextMisison = function () {
-            Loader_1.LoadMission('assets/data/missions/001.json').then(function (mission_data) {
-                _this.m_board_controller.sendToRenderer(_this.m_renderer);
-                _this.onSetupComplete();
             });
         };
         this.onSetupComplete = function () {
@@ -121,6 +102,7 @@ var EncounterController = (function () {
         this.m_board_controller = new BoardController_1.BoardController();
         this.m_unit_queue = new UnitQueue_1.UnitQueue();
         this.m_renderer = render_1.CreateRenderer(this.m_config);
+        this.m_animator = new BoardAnimator_1.BoardAnimator(this.m_renderer, this.m_board_controller);
     }
     EncounterController.prototype.addInterfaceElement = function (element) {
         this.m_interface_container.addChild(element);

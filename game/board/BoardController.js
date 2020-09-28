@@ -17,12 +17,10 @@ var GameBoard_1 = require("./GameBoard");
 var ActionStack_1 = require("../play/action/ActionStack");
 var pathfinding_1 = require("../pathfinding");
 var event_1 = require("../../engine/listener/event");
-var effects_1 = require("../effects");
 var BoardController = (function () {
     function BoardController() {
         var _this = this;
         this.m_event_manager = new event_1.EventManager();
-        this.m_effect_entities = [];
         this.createClone = function () {
             var ctrl = new AIBoardController(_this.m_board.elements);
             return ctrl;
@@ -32,8 +30,10 @@ var BoardController = (function () {
             _this.m_board.init(data);
         };
         this.sendToRenderer = function (renderer) {
-            _this.m_renderer = renderer;
             renderer.initializeScene(_this.m_board);
+        };
+        this.setAnimator = function (animator) {
+            _this.m_animator = animator;
         };
         this.sendAction = function (action) {
             _this.m_action_stack.push(action);
@@ -57,9 +57,6 @@ var BoardController = (function () {
                 }
             };
             _this.sendAction(create_action);
-        };
-        this.createEffect = function (ability, cb) {
-            return effects_1.default.RenderEffect(ability, cb);
         };
         this.on = function (event_name, cb) {
             _this.m_event_manager.add(event_name, cb);
@@ -105,39 +102,8 @@ var BoardController = (function () {
         };
         this.m_action_stack = new ActionStack_1.ActionStack(this);
     }
-    BoardController.prototype.animateAbility = function (data) {
-        var _this = this;
-        return new Promise(function (resolve) {
-            if (!_this.m_board.getUnitAtPosition(data.target.pos)) {
-                return resolve();
-            }
-            return resolve();
-        });
-    };
-    BoardController.prototype.animateEffect = function (data) {
-        return new Promise(function (resolve) {
-            resolve();
-        });
-    };
     BoardController.prototype.animateGameAction = function (action) {
-        var _this = this;
-        if (!this.m_renderer) {
-            return Promise.resolve();
-        }
-        if (action.type === 'ABILITY') {
-            return this.animateAbility(action.data);
-        }
-        return new Promise(function (resolve) {
-            var effect = _this.createEffect(action, resolve);
-            if (effect) {
-                var action_target = _this.m_board.getElement(action.data.entity_id);
-                effect.setPosition(action_target.pos);
-            }
-            else {
-                setTimeout(resolve, 100);
-            }
-            setTimeout(resolve, 100);
-        });
+        return this.m_animator.animateGameAction(action, this.m_board);
     };
     return BoardController;
 }());

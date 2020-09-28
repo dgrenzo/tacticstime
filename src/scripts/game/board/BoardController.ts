@@ -5,7 +5,6 @@ import { GameBoard, IBoardPos, IBoardConfig } from "./GameBoard";
 import { ActionStack, IGameAction, GameEvent, IActionData } from "../play/action/ActionStack";
 import { GetMoveOptions } from "../pathfinding";
 import { IRangeDef } from "../play/action/abilities";
-import { IAbilityActionData } from "../play/action/executors/action/Ability";
 import { EventManager } from "../../engine/listener/event";
 import { IEntity } from "../../engine/scene/Entity";
 import { ITile } from "./Tile";
@@ -13,9 +12,7 @@ import { IUnit } from "./Unit";
 import { IElementMap } from '../../engine/scene/Scene';
 import { SceneRenderer } from '../../engine/render/scene/SceneRenderer';
 import { ICreateUnitAction } from '../play/action/executors/action/CreateUnit';
-import { IMoveActionData } from '../play/action/executors/action/Movement';
-import { GameEffect } from '../effects/damage';
-import EffectsManager from '../effects';
+import { BoardAnimator } from '../animation/BoardAnimator';
 
 
 export class BoardController {
@@ -23,11 +20,7 @@ export class BoardController {
   protected m_board : GameBoard;
   private m_action_stack : ActionStack;
   private m_event_manager = new EventManager<GameEvent>();
-
-  private m_renderer : SceneRenderer;
-
-  private m_effect_entities : IEntity[] = [];
-
+  private m_animator : BoardAnimator;
   constructor() {
     this.m_action_stack = new ActionStack(this);
   }
@@ -43,13 +36,21 @@ export class BoardController {
   }  
 
   public sendToRenderer = (renderer : SceneRenderer) => {
-    this.m_renderer = renderer;
     renderer.initializeScene(this.m_board);
+  }
+
+  public setAnimator = (animator : BoardAnimator) => {
+    this.m_animator = animator;
+  }
+
+  public animateGameAction(action : any) : Promise<void> {
+    return this.m_animator.animateGameAction(action, this.m_board);
   }
   
   public sendAction = (action : IGameAction | IGameAction[]) => {
     this.m_action_stack.push(action);
   }
+  
 
   public executeActionStack = () : Promise<void> => {
     return this.m_action_stack.execute(this.m_board.elements).then(updated_board => {
@@ -62,75 +63,6 @@ export class BoardController {
     })
   }
 
-  //There should be a service that handles these animations (.sprite references shouldnt be here)
-  private animateAbility(data : IAbilityActionData) : Promise<void> {
-    return new Promise (resolve => {
-      if (!this.m_board.getUnitAtPosition(data.target.pos)) {
-        return resolve();
-      }
-
-      return resolve();
-      /*
-      let sprite = this.m_renderer.getSprite(data.source.id);
-
-      let dir = {
-        x : data.target.pos.x - data.source.pos.x,
-        y : data.target.pos.y - data.source.pos.y,
-      };
-
-      let anim_dir = this.m_renderer.getProjection(dir);
-      anim_dir.x = Math.min(Math.max(-1, anim_dir.x), 1);
-      anim_dir.y = Math.min(Math.max(-1, anim_dir.y), 1);
-
-      sprite.position.x = -anim_dir.x;
-      sprite.position.y = -anim_dir.y
-      setTimeout(() => {
-        sprite.position.x = anim_dir.x * 3;
-        sprite.position.y = anim_dir.y * 3;
-        setTimeout(() => {
-          sprite.position.set(0,0);
-        }, 150)
-        resolve()
-      }, 250);
-      */
-    })
-
-  }
-
-
-  private animateEffect(data : IActionData) : Promise<void> {
-    return new Promise(resolve => {
-
-      resolve();
-    });
-  }
-
-  public animateGameAction(action : IGameAction) : Promise<void> {
-
-    if (!this.m_renderer) {
-      return Promise.resolve();
-    }
-    
-    if (action.type === 'ABILITY') {
-      return this.animateAbility(action.data as IAbilityActionData);
-    }
-
-    return new Promise(resolve => {
-      let effect = this.createEffect(action, resolve);
-
-      if (effect) {
-        let action_target = this.m_board.getElement(action.data.entity_id);
-        effect.setPosition(action_target.pos);
-        //effect.m_container.position.set(screen_pos.x, screen_pos.y);
-      } else {
-        setTimeout(resolve, 100);
-      }
-      
-      setTimeout(resolve, 100);
-    
-    })
-  }
-
   public addUnit = (unit : IUnit) => {
     let create_action : ICreateUnitAction = {
       type : "CREATE_UNIT",
@@ -140,10 +72,6 @@ export class BoardController {
     }
     this.sendAction(create_action);
   }
-  
-  public createEffect = (ability : IGameAction, cb : ()=>void) : GameEffect => {
-    return EffectsManager.RenderEffect(ability, cb);
-  }  
 
   public on = (event_name : GameEvent, cb : (data:any) => void) => {
     this.m_event_manager.add(event_name, cb);

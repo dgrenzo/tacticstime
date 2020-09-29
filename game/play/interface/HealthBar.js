@@ -6,7 +6,7 @@ var HealthBar = (function () {
         var _this = this;
         this.m_container = new PIXI.Container();
         this.m_container.addChild(new PIXI.Graphics().beginFill(0x333333).drawRect(4, 4, 12, 4).endFill());
-        this.m_container.addChild(new PIXI.Graphics().beginFill(0x000000).drawRect(5, 5, 10, 2).endFill());
+        this.m_container.addChild(new PIXI.Graphics().beginFill(0x291f2e).drawRect(5, 5, 10, 2).endFill());
         var hp = new PIXI.Graphics().beginFill(0x00CC00).drawRect(5, 5, 10, 2).endFill();
         this.m_container.addChild(hp);
         var unit = controller.getUnit(unit_id);

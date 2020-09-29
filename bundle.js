@@ -729,8 +729,8 @@ var AssetManager = (function () {
         var text = new PIXI.Text(asset_info.data.amount + '', {
             fill: 0xFFFFCC,
             size: 24,
-            stroke: 0x000000,
-            strokeThickness: 4,
+            stroke: 0x291f2e,
+            strokeThickness: 5,
             fontWeight: 'bolder',
         });
         text.scale.set(1.00);
@@ -2188,7 +2188,7 @@ var HealthBar = (function () {
         var _this = this;
         this.m_container = new PIXI.Container();
         this.m_container.addChild(new PIXI.Graphics().beginFill(0x333333).drawRect(4, 4, 12, 4).endFill());
-        this.m_container.addChild(new PIXI.Graphics().beginFill(0x000000).drawRect(5, 5, 10, 2).endFill());
+        this.m_container.addChild(new PIXI.Graphics().beginFill(0x291f2e).drawRect(5, 5, 10, 2).endFill());
         var hp = new PIXI.Graphics().beginFill(0x00CC00).drawRect(5, 5, 10, 2).endFill();
         this.m_container.addChild(hp);
         var unit = controller.getUnit(unit_id);
@@ -2455,7 +2455,7 @@ plugins_1.InitRenderPlugins();
 PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
 var pixi_app = new PIXI.Application({
     forceCanvas: true,
-    backgroundColor: 0x000011,
+    backgroundColor: 0x291f2e,
     view: document.getElementById('game_canvas')
 });
 var WindowResize = function () {

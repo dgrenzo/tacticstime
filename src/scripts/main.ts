@@ -14,7 +14,7 @@ InitRenderPlugins();
 PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
 let pixi_app : PIXI.Application = new PIXI.Application({
   forceCanvas : true,
-  backgroundColor : 0x000011,
+  backgroundColor : 0x291f2e,
   view : <HTMLCanvasElement>document.getElementById('game_canvas')
 });
 

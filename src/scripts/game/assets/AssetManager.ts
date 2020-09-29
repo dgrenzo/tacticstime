@@ -38,8 +38,8 @@ export default class AssetManager {
     { 
       fill : 0xFFFFCC, 
       size : 24,
-      stroke : 0x000000,
-      strokeThickness : 4,
+      stroke : 0x291f2e,
+      strokeThickness : 5,
       fontWeight : 'bolder',
     });
     text.scale.set (1.00);

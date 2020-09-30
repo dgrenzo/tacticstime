@@ -2,6 +2,7 @@ import * as PIXI from 'pixi.js'
 import { IAssetInfo } from '../../scene/Entity'
 import { RENDER_PLUGIN } from '../../../game/extras/plugins';
 import AssetManager from '../../../game/assets/AssetManager';
+import { Vector2 } from '../../types';
 
 export type RenderableType = "TILE" | "SPRITE" | "ANIMATED_SPRITE";
 
@@ -94,8 +95,8 @@ export class RenderEntity {
     return this.m_container;
   }
   
-  public setPosition(x : number, y : number, depth : number = 0) {
-    this.m_root.position.set(x,y);
+  public setPosition(pos : Vector2, depth : number = 0) {
+    this.m_root.position.set(pos.x, pos.y);
     this.m_depth = depth;
   }
 }

@@ -2,18 +2,19 @@ import { SceneRenderer } from "../../engine/render/scene/SceneRenderer";
 import { GameBoard } from "../board/GameBoard";
 import { IEntity } from "../../engine/scene/Entity";
 import { BoardController } from "../board/BoardController";
+import { Vector2 } from "../../engine/types";
 
 
 export default class TileHighlighter {
 
-  private m_last_pos : {x : number, y : number};
-  private m_current_pos : {x : number, y : number};
+  private m_last_pos : Vector2;
+  private m_current_pos : Vector2;
 
   constructor (private m_renderer : SceneRenderer, private m_board : BoardController) {
     this.m_renderer.on('POINTER_MOVE', this.onPointerMove);
   }
 
-  public onPointerMove = (data : { x : number, y : number} ) => {
+  public onPointerMove = (data : Vector2) => {
     this.m_current_pos = {
       x : data.x,
       y : data.y,

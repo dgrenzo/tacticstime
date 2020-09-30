@@ -1,4 +1,5 @@
 import { EventManager } from "../listener/event";
+import { Vector2 } from "../types";
 
 
 export interface IEntityInfo {
@@ -17,8 +18,5 @@ export interface IAssetInfo {
 export interface IEntity {
   id ?: number,
   entity_type : string,
-  pos : {
-    x : number,
-    y : number,
-  }
+  pos : Vector2
 }

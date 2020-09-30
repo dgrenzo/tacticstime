@@ -20,12 +20,12 @@ export class HealthBar {
 
 
     let unit = controller.getUnit(unit_id);
-    let screen_pos = renderer.getScreenPosition(unit.pos.x, unit.pos.y);
+    let screen_pos = renderer.getScreenPosition(unit.pos);
     this.m_container.position.set(screen_pos.x - 1, screen_pos.y - 10);
     this.m_container.visible = false;
     controller.on("MOVE", (data : IMoveActionData) => {
       if (data.entity_id === unit_id) {
-        let screen_pos = renderer.getScreenPosition(data.move.to.x, data.move.to.y);
+        let screen_pos = renderer.getScreenPosition(data.move.to);
         this.m_container.position.set(screen_pos.x - 1, screen_pos.y - 10);
       }
     });

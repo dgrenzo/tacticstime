@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 import * as _ from 'lodash';
-import { IBoardConfig } from './GameBoard';
+import { IBoardConfig, IBoardPos } from './GameBoard';
 import { UnitLoader, IUnitDef } from '../assets/UnitLoader';
 import { UNIT_TYPE } from '../types/units';
 
@@ -11,10 +11,7 @@ interface IBoardFile {
 
 interface IUnitData {
   type : UNIT_TYPE,
-  pos : {
-    x : number,
-    y : number,
-  }
+  pos : IBoardPos,
 }
 
 interface ITeamData {
@@ -29,10 +26,7 @@ interface IMissionData {
 
 export interface IMissionUnit {
   unit : IUnitDef,
-  pos : {
-    x : number,
-    y : number,
-  }
+  pos : IBoardPos,
 }
 
 export interface ILoadedTeam {

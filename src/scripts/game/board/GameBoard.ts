@@ -32,14 +32,16 @@ export class GameBoard extends Scene {
 
   public init (board_config : IBoardConfig) {
     _.forEach(board_config.layout.tiles, (tile, index) => {
-      let x : number = index % board_config.layout.width;
-      let y : number = Math.floor(index / board_config.layout.width);
-      this.addTile(x, y, tile);
+      let pos : IBoardPos = {
+        x : index % board_config.layout.width,
+        y : Math.floor(index / board_config.layout.width)
+      }
+      this.addTile(pos, tile);
     });
   }
 
-  private addTile = (x : number, y : number, def : TILE_DEF) => {
-    this.addElement(CreateTile(x, y, def));
+  private addTile = (pos : IBoardPos, def : TILE_DEF) => {
+    this.addElement(CreateTile(pos, def));
   }
 
   public getElementsAt(pos : IBoardPos) : List<IEntity> {
@@ -140,14 +142,11 @@ export function CreateUnit(def : IUnitDef, faction ?: string) : IUnit {
   }
 }
 
-function CreateTile(x : number, y : number, type : TILE_DEF) : ITile {
+function CreateTile(pos : IBoardPos, type : TILE_DEF) : ITile {
   return {
     id : _ID ++,
     entity_type : "TILE",
-    pos : {
-      x : x,
-      y : y,
-    },
+    pos : pos,
     data : {
       tile_type : type,
     }

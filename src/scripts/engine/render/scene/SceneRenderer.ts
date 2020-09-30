@@ -7,6 +7,7 @@ import { isUnit } from '../../../game/board/Unit';
 import { IEntity, IAssetInfo } from '../../scene/Entity';
 import { RENDER_PLUGIN } from '../../../game/extras/plugins';
 import { LinkedList } from '../../list/linkedlist';
+import { Vector2 } from '../../types';
 
 
 type RendererEvent = "ENTITY_CLICKED" | "POINTER_UP" | "POINTER_DOWN" | "POINTER_MOVE";
@@ -97,9 +98,9 @@ export abstract class SceneRenderer {
       return element.id === id
     });
   }
-  public abstract getProjection(pos : {x : number, y : number}) : {x: number, y : number};
-  public abstract getScreenPosition(x : number, y : number) : {x : number, y : number};
-  public abstract positionElement(element : RenderEntity, pos : { x : number, y : number} ):void;
+  public abstract getProjection(pos : Vector2) : Vector2;
+  public abstract getScreenPosition(pos : Vector2) : Vector2;
+  public abstract positionElement(element : RenderEntity, pos : Vector2):void;
 }
 
 export function getAsset(entity : IEntity) : IAssetInfo {

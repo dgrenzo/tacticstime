@@ -4,6 +4,7 @@ import { RenderEntity, RenderEntityID } from '../RenderEntity';
 import { SceneRenderer } from '../SceneRenderer';
 import { IEntity } from '../../../scene/Entity';
 import { IElementMap } from '../../../scene/Scene';
+import { Vector2 } from '../../../types';
 
 const TILE_WIDTH : number = 16;
 const TILE_HEIGHT : number = 8;
@@ -37,7 +38,7 @@ export class SceneRendererIsometric extends SceneRenderer {
     })
   }
 
-  public screenToTilePos = (global : PIXI.Point) : {x : number, y : number} => {
+  public screenToTilePos = (global : PIXI.Point) : Vector2 => {
     let point = this.m_container.toLocal(global);
     point.y -= 2;
     let game_x = Math.round(point.y / this.TILE_HEIGHT + point.x / this.TILE_WIDTH) - 1;
@@ -47,16 +48,18 @@ export class SceneRendererIsometric extends SceneRenderer {
       y : game_y
     }
   }
-  public getScreenPosition = (x : number, y : number) => {
-    let point = new PIXI.Point((x - y) * this.HALF_TILE_WIDTH, (x + y) * this.HALF_TILE_HEIGHT);
+  public getScreenPosition = (pos : Vector2) => {
+    let point = new PIXI.Point((pos.x - pos.y) * this.HALF_TILE_WIDTH, (pos.x + pos.y) * this.HALF_TILE_HEIGHT);
     return point;
   }
 
-  public positionElement = (element : RenderEntity, pos : { x : number, y : number }) => {
+  public positionElement = (element : RenderEntity, pos : Vector2) => {
     
     element.setPosition(
-      (pos.x - pos.y) * this.HALF_TILE_WIDTH,
-      (pos.x + pos.y) * this.HALF_TILE_HEIGHT,
+      { 
+        x : (pos.x - pos.y) * this.HALF_TILE_WIDTH,
+        y : (pos.x + pos.y) * this.HALF_TILE_HEIGHT,
+      },
       this.getElementDepth(pos) + element.depth_offset,
     );
     
@@ -69,14 +72,14 @@ export class SceneRendererIsometric extends SceneRenderer {
     this.m_container.addChildAt(element.root, index);
   }
 
-  public getProjection = (pos : {x : number, y : number}) : {x: number, y : number} => {
+  public getProjection = (pos : Vector2) : Vector2 => {
     return {
-    x : (pos.x - pos.y),// * this.HALF_TILE_WIDTH,
-    y : (pos.x + pos.y),// * this.HALF_TILE_HEIGHT
+    x : (pos.x - pos.y),
+    y : (pos.x + pos.y)
     }
   }
 
-  public getElementDepth = (pos : {x : number, y : number}) : number => {
+  public getElementDepth = (pos : Vector2) : number => {
     return (pos.x + pos.y);
   }
 }

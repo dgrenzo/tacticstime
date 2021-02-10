@@ -12,34 +12,38 @@ interface IFSMState extends IState {
 }
 
 export class FSM {
-  private _state : number;
-  private stateObjects = new Map<number, IFSMState>();
+  private m_state : number;
+  private m_state_objects = new Map<number, IFSMState>();
 
-  public registerState = (key : number, stateObject : IState) => {
-    this.stateObjects.set(key, _.defaults({
+  public registerState = (key : number, state_object : IState) => {
+    this.m_state_objects.set(key, _.defaults({
       fsm : this,
-    }, stateObject));
+    }, state_object));
   }
 
   public update = (deltaTime: number) => {
-    if (this.stateObjects.get(this._state) && this.stateObjects.get(this._state).update)
+    if (this.m_state_objects.get(this.m_state) && this.m_state_objects.get(this.m_state).update)
     {
-      this.stateObjects.get(this._state).update(deltaTime);
+      this.m_state_objects.get(this.m_state).update(deltaTime);
     }
   }
 
   public setState = (val : number) => {
-    if (this.stateObjects.get(this._state) && this.stateObjects.get(this._state).exit) {
-      this.stateObjects.get(this._state).exit();
+    if (this.active_state && this.active_state.exit) {
+      this.active_state.exit();
     }
-    this._state = val;
-    if (this.stateObjects.get(this._state).enter)
+    this.m_state = val;
+    if (this.active_state.enter)
     {
-      this.stateObjects.get(this._state).enter();
+      this.active_state.enter();
     }
   }
 
+  private get active_state(): IFSMState {
+    return this.m_state_objects.get(this.m_state);
+  }
+
   get state(): number {
-    return this._state;
+    return this.m_state;
   }
 }

@@ -22,9 +22,9 @@ export class FSM {
   }
 
   public update = (deltaTime: number) => {
-    if (this.m_state_objects.get(this.m_state) && this.m_state_objects.get(this.m_state).update)
+    if (this.active_state && this.active_state.update)
     {
-      this.m_state_objects.get(this.m_state).update(deltaTime);
+      this.active_state.update(deltaTime);
     }
   }
 

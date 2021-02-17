@@ -49,7 +49,7 @@ export class EncounterController {
     this.m_animator = new BoardAnimator(this.m_renderer, this.m_board_controller);
   }
 
-  public loadMap = (path : string) : Promise<any> => {
+  public loadMap = (path : string) : Promise<void> => {
 
     return LoadBoard(path).then(board_data => {
       this.m_board_controller.initBoard(board_data);
@@ -80,21 +80,20 @@ export class EncounterController {
       this.m_unit_queue.removeUnit(data.entity_id);
     })
 
-    this.m_board_controller.on("UNIT_CREATED", (data : ICreateUnitActionData) => {
-      let health_bar = new HealthBar(data.unit.id, this.m_board_controller, this.m_renderer);
-      this.m_renderer.effects_container.addChild(health_bar.sprite);
-    });
+    // this.m_board_controller.on("UNIT_CREATED", (data : ICreateUnitActionData) => {
+    //   let health_bar = new HealthBar(data.unit.id, this.m_board_controller, this.m_renderer);
+    //   this.m_renderer.effects_container.addChild(health_bar.sprite);
+    // });
   }
 
 
   private onSetupComplete = () => {
     this.m_config.pixi_app.stage.addChild(this.m_renderer.stage);
     this.m_config.pixi_app.stage.addChild(this.m_renderer.effects_container);
-
     this.m_config.pixi_app.stage.addChild(this.m_interface_container);
 
-    let highlighter = new TileHighlighter(this.m_renderer, this.m_board_controller);
-    this.m_config.pixi_app.ticker.add(highlighter.update);
+    // let highlighter = new TileHighlighter(this.m_renderer, this.m_board_controller);
+    // this.m_config.pixi_app.ticker.add(highlighter.update);
 
     EffectsManager.init(this.m_renderer);
   }
@@ -151,6 +150,13 @@ export class EncounterController {
 
   public emit = (event_name : EncounterEvent) => {
     this.m_event_manager.emit(event_name, this);
+  }
+
+  public destroy = () => {
+    this.m_config.pixi_app.stage.removeChild(this.m_renderer.stage);
+    this.m_config.pixi_app.stage.removeChild(this.m_renderer.effects_container);
+    this.m_config.pixi_app.stage.removeChild(this.m_interface_container);
+    this.m_renderer.reset();
   }
 
   private onTurnComplete = () => {

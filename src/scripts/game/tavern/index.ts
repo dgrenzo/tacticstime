@@ -29,54 +29,29 @@ export class Tavern {
   private m_container = new PIXI.Container();
 
   private m_player : PlayerParty;
-
-  private m_event_manager : EventManager<TAVERN_EVENT> = new EventManager();
-
   private m_available_slots = 5;
   private m_available_recruits : RecruitableButton[] = [];
 
-  constructor () {
+  constructor (m_parent_container : PIXI.Container, private m_events : PIXI.utils.EventEmitter) {
+    m_parent_container.addChild(this.m_container);
     this.m_container.scale.set(4);
     this.m_container.position.set(16, 16);
 
-    let finished_btn : PIXI.Container = new PIXI.Container();
-    finished_btn.addChild(
-      new PIXI.Graphics()
-      .beginFill(0x666666)
-      .lineStyle(1, 0x333333)
-      .drawRect(0,0, 24, 8)
-    );
-    let label = new PIXI.Text("DONE",
-      {
-        fill : 0xFFFFFF,
-        fontWeight : 'bold'
-      }
-    );
-    label.anchor.set(0.5,0.5);
-    label.scale.set(0.25);
-    label.position.set(12, 4)
+    this.render();
 
-    finished_btn.addChild(label)
-    finished_btn.position.set(46, 25);
-    finished_btn.interactive = finished_btn.buttonMode = true;
+    this.m_events.on('RESIZE', this.positionContainer);
 
-    finished_btn.on('pointertap', () => {
-      this.m_event_manager.emit("LEAVE_TAVERN");
+    this.m_events.once('LEAVE_TAVERN', () => {
+      this.m_events.off('RESIZE', this.positionContainer);
+      this.clearRecruits();
+      m_parent_container.removeChild(this.m_container);
     })
-
-    this.m_container.addChild(finished_btn);
-
-    
 
     this.refreshRecruits();
   }
 
   public positionContainer = (dimensions : {width : number, height : number}) => {
     this.m_container.position.set(dimensions.width / 2 - this.m_container.width / 2, dimensions.height - 175);
-  }
-
-  public on = (event_name : TAVERN_EVENT, callback : ()=>void) => {
-    this.m_event_manager.add(event_name, callback);
   }
 
   public setPlayer = (player : PlayerParty) => {
@@ -102,7 +77,6 @@ export class Tavern {
       btn.sprite.position.set(i * 24, 0);
       btn.on(this.onButtonClicked);
 
-
       this.m_available_recruits.push(btn);
     }
   }
@@ -116,11 +90,38 @@ export class Tavern {
     }
   }
 
+  private render = () => {
+    let finished_btn : PIXI.Container = new PIXI.Container();
+    finished_btn.addChild(
+      new PIXI.Graphics()
+      .beginFill(0x666666)
+      .lineStyle(1, 0x333333)
+      .drawRect(0,0, 24, 8)
+    );
+    let label = new PIXI.Text("DONE",
+      {
+        fill : 0xFFFFFF,
+        fontWeight : 'bold'
+      }
+    );
+    label.anchor.set(0.5,0.5);
+    label.scale.set(0.25);
+    label.position.set(12, 4)
+
+    finished_btn.addChild(label)
+    finished_btn.position.set(46, 25);
+    finished_btn.interactive = finished_btn.buttonMode = true;
+
+    finished_btn.on('pointertap', () => {
+      this.m_events.emit("LEAVE_TAVERN");
+    });
+    this.m_container.addChild(finished_btn);
+  }
+
   private clearRecruits = () => {
     _.forEach(this.m_available_recruits, btn => {
       btn.destroy();
     });
-
     this.m_available_recruits = [];
   }
 
@@ -173,6 +174,7 @@ export class RecruitableButton {
   }
 
   public destroy = () => {
+    this.m_animated_sprite.destroy();
     this.m_container.removeChildren();
     this.m_container.removeAllListeners();
   }

@@ -10,6 +10,8 @@ import { EncounterController } from './encounter/EncounterController';
 import { Tavern } from './tavern';
 import { PlayerParty } from './party';
 import { UNIT_TYPE } from './types/units';
+import { GoldDisplay } from './play/interface/GoldDisplay';
+import { ReplayMenu } from './interface/menus/ReplayMenu';
 
 export type GameConfig = {
   pixi_app : PIXI.Application,
@@ -38,43 +40,58 @@ export type GameSignal = GameEvent | PlaySignal | RenderSignal | "TILE_CLICKED";
 
 export class GameController {
 
-  private m_fsm : FSM;
-  
+  private m_events = new PIXI.utils.EventEmitter();
   private m_player_party : PlayerParty;
 
   constructor(private m_config : GameConfig) {
-    this.m_fsm = new FSM();
-    m_config.pixi_app.ticker.add(this.m_fsm.update);
-    
+
+    m_config.pixi_app.ticker.add(this.update);
+
+    this.m_config.pixi_app.renderer.on('resize', this.onResize);
+
+    new GoldDisplay(this.m_config.pixi_app.stage, this.m_events);
 
     UnitLoader.LoadUnitDefinitions().then(() => {
+      this.m_player_party = new PlayerParty(this.m_events);
 
-      let tavern = new Tavern();
-      this.m_player_party = new PlayerParty();
+      this.startNextTavern();
+    });
 
-      tavern.setPlayer(this.m_player_party);
+    
+    this.m_events.on("LEAVE_TAVERN", () => {
+      this.startNextEncounter();
+    });
 
-      this.m_config.pixi_app.stage.addChild(tavern.sprite);
+  }
 
-      m_config.pixi_app.renderer.on("resize", tavern.positionContainer);
-      tavern.positionContainer({
-        width : m_config.pixi_app.renderer.width,
-        height : m_config.pixi_app.renderer.height,
-      });
+  private update = (deltaTime : number) => {
+    this.m_events.emit("UPDATE", { deltaTime });
+  }
 
-      tavern.on("LEAVE_TAVERN", () => {
-        this.m_config.pixi_app.stage.removeChild(tavern.sprite);
+  private onResize = () => {
+    this.m_events.emit("RESIZE", {
+      width : this.m_config.pixi_app.renderer.width,
+      height : this.m_config.pixi_app.renderer.height,
+    });
+  }
 
-        m_config.pixi_app.renderer.off("resize", tavern.positionContainer);
-        this.startNextEncounter();
-      })
-    })
+  private startNextTavern = () => {
+
+    let tavern = new Tavern(this.m_config.pixi_app.stage, this.m_events);
+
+    tavern.setPlayer(this.m_player_party);
+
+    tavern.positionContainer({
+      width : this.m_config.pixi_app.renderer.width,
+      height : this.m_config.pixi_app.renderer.height,
+    });
+
   }
 
   private startNextEncounter = () => {
     let encounter = new EncounterController(this.m_config);
 
-    encounter.loadMap('assets/data/boards/coast.json').then ( () => {
+    encounter.loadMap('assets/data/boards/coast.json').then (() => {
       let units = this.m_player_party.units;
 
       units.forEach((unit, index) => {
@@ -97,5 +114,20 @@ export class GameController {
       encounter.addUnits(units);
       encounter.startGame();
     });
+
+    encounter.on('END', (encounter) => {
+       this.m_player_party.addGold(6);
+
+      let replay : ReplayMenu;
+      const onEnd = () => {
+        this.m_config.pixi_app.stage.removeChild(replay.container);
+        encounter.destroy();
+        this.startNextTavern();
+      }
+      replay = new ReplayMenu(onEnd);
+      this.m_config.pixi_app.stage.addChild(replay.container);
+
+
+    })
   }
 }

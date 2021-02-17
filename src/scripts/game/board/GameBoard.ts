@@ -4,9 +4,7 @@ import { ITile, TILE_DEF, isTile } from './Tile';
 import { Scene } from '../../engine/scene/Scene';
 import { IEntity } from '../../engine/scene/Entity';
 import { IUnit, isUnit } from './Unit';
-import { ILoadedTeam, IMissionUnit } from './Loader';
 import { IRangeDef } from '../play/action/abilities';
-import { ActionStack } from '../play/action/ActionStack';
 import { IUnitDef } from '../assets/UnitLoader';
 
 export interface IBoardConfig {

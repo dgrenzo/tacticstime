@@ -23,19 +23,19 @@ export class SceneRendererIsometric extends SceneRenderer {
     this.m_screen_effects_container.position.set(500,50);
     this.m_screen_effects_container.scale.set(4);
 
-    pixi.renderer.plugins.interaction.on('pointermove', (evt : PIXI.interaction.InteractionEvent) => {
-      this.m_event_manager.emit("POINTER_MOVE", this.screenToTilePos(evt.data.global));
-    })
+    // pixi.renderer.plugins.interaction.on('pointermove', (evt : PIXI.interaction.InteractionEvent) => {
+    //   this.m_event_manager.emit("POINTER_MOVE", this.screenToTilePos(evt.data.global));
+    // })
 
-    pixi.renderer.plugins.interaction.on('pointerdown', (evt : PIXI.interaction.InteractionEvent) => {
-      if (evt.stopped) {
-        return;
-      }
-      this.m_event_manager.emit("POINTER_DOWN", this.screenToTilePos(evt.data.global));
-    })
-    pixi.renderer.plugins.interaction.on('pointerup', (evt : PIXI.interaction.InteractionEvent) => {
-      this.m_event_manager.emit("POINTER_UP", this.screenToTilePos(evt.data.global));
-    })
+    // pixi.renderer.plugins.interaction.on('pointerdown', (evt : PIXI.interaction.InteractionEvent) => {
+    //   if (evt.stopped) {
+    //     return;
+    //   }
+    //   this.m_event_manager.emit("POINTER_DOWN", this.screenToTilePos(evt.data.global));
+    // })
+    // pixi.renderer.plugins.interaction.on('pointerup', (evt : PIXI.interaction.InteractionEvent) => {
+    //   this.m_event_manager.emit("POINTER_UP", this.screenToTilePos(evt.data.global));
+    // })
   }
 
   public screenToTilePos = (global : PIXI.Point) : Vector2 => {

@@ -1,6 +1,7 @@
 import { IActionData, IGameAction } from "../../ActionStack";
 import { BoardController } from "../../../../board/BoardController";
 import { IElementMap } from "../../../../../engine/scene/Scene";
+import { UpdateElements } from "../../../UpdateElements";
 
 export interface IDamageAction extends IGameAction {
   type : "DAMAGE",
@@ -19,7 +20,7 @@ export interface IDamageDealtAction extends IGameAction {
 
 export function ExecuteDamage(action : IDamageAction, elements : IElementMap, controller : BoardController):Promise<IElementMap> {
   return new Promise((resolve) => {
-    let unit = controller.getUnit(action.data.entity_id);
+    const unit = controller.getUnit(action.data.entity_id);
     if (!unit) {
       return resolve(elements);
     }
@@ -30,12 +31,13 @@ export function ExecuteDamage(action : IDamageAction, elements : IElementMap, co
       return resolve(elements);
     }
 
-    let new_hp = Math.max(starting_hp - action.data.amount, 0);
-    if (new_hp != starting_hp) {
+    const new_hp = Math.max(starting_hp - action.data.amount, 0);
+    const difference = starting_hp - new_hp;
+    if (difference != 0) {
       controller.sendAction({
         type : "DAMAGE_DEALT",
         data : {
-          amount : starting_hp - new_hp,
+          amount : difference,
           entity_id : unit.id,
         }
       } as IDamageDealtAction);
@@ -50,7 +52,8 @@ export function ExecuteDamage(action : IDamageAction, elements : IElementMap, co
       })
     }
 
-    let result = elements.setIn([action.data.entity_id, 'status', 'hp' ], new_hp);
+    const result = UpdateElements.SetHP(elements, unit.id, new_hp)
+
     resolve(result);
   });
 }

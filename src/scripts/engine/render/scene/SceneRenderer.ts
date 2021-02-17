@@ -45,18 +45,12 @@ export abstract class SceneRenderer {
   }
   
   public initializeScene = (scene : Scene) => {
-    this.m_renderables = new LinkedList();// new Map<number, RenderEntity>();
-    this.m_container.removeChildren();
+    this.reset();
     scene.elements.forEach(element => {
-      
       let renderable = this.addEntity(element);
       renderable.renderAsset(getAsset(element));
-
-
     })
-    this.m_pixi.ticker.add(() => {
-      this.renderScene();
-    });
+    this.m_pixi.ticker.add(this.renderScene)
   }
 
   public on = (event_name : RendererEvent, cb : (data:any) => void) => {
@@ -97,6 +91,13 @@ export abstract class SceneRenderer {
     return this.m_renderables.getFirst((element) => {
       return element.id === id
     });
+  }
+
+  public reset = () => {
+    this.m_renderables = new LinkedList();
+    this.m_container.removeChildren();
+    this.m_screen_effects_container.removeChildren();
+    this.m_pixi.ticker.remove(this.renderScene)
   }
   public abstract getProjection(pos : Vector2) : Vector2;
   public abstract getScreenPosition(pos : Vector2) : Vector2;

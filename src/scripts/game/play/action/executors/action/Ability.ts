@@ -6,6 +6,7 @@ import { BoardController } from '../../../../board/BoardController';
 import { IElementMap } from '../../../../../engine/scene/Scene';
 import { IUnit } from '../../../../board/Unit';
 import { ITile } from '../../../../board/Tile';
+import { UpdateElements } from '../../../UpdateElements';
 
 export interface IAbilityAction extends IGameAction {
   type : "ABILITY",
@@ -54,12 +55,15 @@ export function ExecuteAbility(action : IAbilityAction, elements : IElementMap, 
      });
     });
 
+    const unit_id = action.data.source.id;
+    let mana = action.data.source.status.mana;
+
     if (action.data.ability.cost > 0) {
-      let result = elements.setIn([action.data.source.id, 'status', 'mana' ], action.data.source.status.mana - action.data.ability.cost);
-      return result;
+      mana -= action.data.ability.cost;
+      return UpdateElements.SetMP(elements, unit_id, mana);
     } else {
-      let result = elements.setIn([action.data.source.id, 'status', 'mana' ], action.data.source.status.mana + 2);
-      return result;
+      mana += 2;
+      return UpdateElements.SetMP(elements, unit_id, mana);
     }
   });
 }

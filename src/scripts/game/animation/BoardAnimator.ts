@@ -12,7 +12,7 @@ import { IMoveActionData } from "../play/action/executors/action/Movement";
 export class BoardAnimator {
 
   private m_render_elements : Map<number, RenderEntity> = new Map();
-
+  
   constructor(protected m_renderer : SceneRenderer, protected m_board_controller : BoardController) {
     this.m_board_controller.on("CREATE_UNIT", (data : ICreateUnitActionData) => {
       let renderable = this.m_renderer.addEntity(data.unit);
@@ -60,13 +60,20 @@ export class BoardAnimator {
     
   //There should be a service that handles these animations (.sprite references shouldnt be here)
   private animateAbility(data : IAbilityActionData, board : GameBoard) : Promise<void> {
-    return new Promise (resolve => {
+    
       if (!board.getUnitAtPosition(data.target.pos)) {
-        return resolve();
+        return Promise.resolve();
+      }
+      if (data.ability.name === "SHOOT") {
+        return this.unitBumpAnimation(data).then();
       }
 
-      let renderable = this.getRenderElement(data.source.id);
+      return this.unitBumpAnimation(data);
+    }
 
+  private unitBumpAnimation(data : IAbilityActionData) : Promise<void> {
+    return new Promise(resolve => {
+      let renderable = this.getRenderElement(data.source.id);
       let sprite = renderable.sprite;
 
       let dir = {
@@ -88,8 +95,7 @@ export class BoardAnimator {
         }, 150)
         resolve()
       }, 250);
-    })
-
+    });
   }
   
   public createEffect = (ability : IGameAction, cb : ()=>void) : GameEffect => {

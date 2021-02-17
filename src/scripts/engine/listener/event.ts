@@ -79,4 +79,7 @@ export class EventManager<T> {
       this.m_signalMap.get(signal_name).remove(cb);
     }
   }
+  public clear(){
+    this.m_signalMap.clear();
+  }
 }

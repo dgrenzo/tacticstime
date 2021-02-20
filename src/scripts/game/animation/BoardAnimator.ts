@@ -2,8 +2,8 @@ import { RenderEntity } from "../../engine/render/scene/RenderEntity";
 import { getAsset, SceneRenderer } from "../../engine/render/scene/SceneRenderer";
 import { BoardController } from "../board/BoardController";
 import { GameBoard } from "../board/GameBoard";
-import EffectsManager from "../effects";
-import { GameEffect } from "../effects/damage";
+import EffectsManager from "../effects/EffectsManager";
+import { GameEffect } from "../effects/GameEffect";
 import { IActionData, IGameAction } from "../play/action/ActionStack";
 import { IAbilityActionData } from "../play/action/executors/action/Ability";
 import { ICreateUnitActionData } from "../play/action/executors/action/CreateUnit";
@@ -41,7 +41,7 @@ export class BoardAnimator {
   public animateGameAction(action : IGameAction, board : GameBoard) : Promise<void> {
 
     if (action.type === 'ABILITY') {
-      return this.animateAbility(action.data as IAbilityActionData, board);
+      return this.animateAbility(action, board);
     }
 
     return new Promise(resolve => {
@@ -59,16 +59,21 @@ export class BoardAnimator {
 
     
   //There should be a service that handles these animations (.sprite references shouldnt be here)
-  private animateAbility(data : IAbilityActionData, board : GameBoard) : Promise<void> {
+  private animateAbility(action : IGameAction, board : GameBoard) : Promise<void> {
     
-      if (!board.getUnitAtPosition(data.target.pos)) {
+      if (!board.getUnitAtPosition(action.data.target.pos)) {
         return Promise.resolve();
       }
-      if (data.ability.name === "SHOOT") {
-        return this.unitBumpAnimation(data).then();
+      if (action.data.ability.name === "Shoot") {
+        return this.unitBumpAnimation(action.data as IAbilityActionData)
+        .then(() => {
+          return new Promise(resolve => {
+            this.createEffect(action, resolve);
+          });
+        });
       }
 
-      return this.unitBumpAnimation(data);
+      return this.unitBumpAnimation(action.data as IAbilityActionData);
     }
 
   private unitBumpAnimation(data : IAbilityActionData) : Promise<void> {

@@ -2,51 +2,8 @@ import * as PIXI from 'pixi.js';
 import * as TWEEN from '@tweenjs/tween.js'
 import { IDamageActionData } from '../play/action/executors/action/Damage';
 import { SceneRenderer } from '../../engine/render/scene/SceneRenderer';
-import { RenderEntity } from '../../engine/render/scene/RenderEntity';
-import { IEntity } from '../../engine/scene/Entity';
-import { Vector2 } from '../../engine/types';
+import { GameEffect } from './GameEffect';
 
-
-export class GameEffect implements IEntity {
-  protected m_renderable : RenderEntity;
-  protected m_pos : Vector2 = {
-    x : 0,
-    y : 0,
-  };
-
-
-
-  constructor(protected m_renderer : SceneRenderer) {
-    this.m_pos  
-
-    this.m_renderable = m_renderer.addEntity(this);
-  }
-  
-  public setPosition = (pos : Vector2) => {
-    this.m_pos.x = pos.x + 0.55;
-    this.m_pos.y = pos.y - 0.55;
-    this.m_renderer.positionElement(this.m_renderable, this.m_pos);
-  }
-
-  public get pos() : Vector2 {
-    return {
-      x : this.m_pos.x,
-      y : this.m_pos.y,
-    }
-  }
-
-  public get entity_type() : string {
-    return "EFFECT";
-  }
-
-  public update = (deltaTime:number) => {
-
-  }
-
-  public destroy() {
-
-  }
-}
 
 export class DamageNumberEffect extends GameEffect { 
   constructor (renderer : SceneRenderer, data : IDamageActionData, onComplete ?: ()=>void) {
@@ -58,10 +15,7 @@ export class DamageNumberEffect extends GameEffect {
       data : data,
       depth_offset : 100,
     });
-
     
-
-
     TWEEN.add(new TWEEN.Tween(this.m_renderable.sprite.scale)
       .to({x : 0.65, y : 0.55}, 150)
       .easing(TWEEN.Easing.Back.Out)

@@ -34,6 +34,18 @@ export default class AssetManager {
   public static getEffect(asset_info : IAssetInfo) {
     let effect = new PIXI.Container();
 
+
+    if (asset_info.name === "PROJECTILE_ARROW") {
+      let arrow = new PIXI.Graphics()
+      .beginFill(0x333333)
+      .drawRect(-5, 0, 6, 2);
+      effect.addChild(arrow);
+
+      return effect;
+    }
+
+    //damage number
+
     let text = new PIXI.Text(asset_info.data.amount + '',
     { 
       fill : 0xFFFFCC, 

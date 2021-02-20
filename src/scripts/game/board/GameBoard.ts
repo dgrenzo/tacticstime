@@ -136,7 +136,7 @@ export function CreateUnit(def : IUnitDef, faction ?: string) : IUnit {
       mana : 0,
       hp : def.stats.hp,
     },
-    abilities : _.cloneDeep(def.abilities),
+    abilities : _.concat(_.cloneDeep(def.abilities), "wait"),
   }
 }
 

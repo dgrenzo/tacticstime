@@ -38,6 +38,31 @@ export class AbilityTargetUI extends BoardActionUI {
         }
         let tile = this.m_controller.getTile({x : start.x + offset_x, y : start.y + offset_y});
         if (tile) {
+          let unit = this.m_controller.getUnitAtPosition(tile.pos);
+          switch (this.m_ability_def.target.target_type) {
+            case "EMPTY" : 
+              if (unit) {
+                continue;
+              }
+              break;
+
+            case "ALLY" : 
+              if (!unit || this.m_active_unit.data.faction !== unit.data.faction){
+                continue;
+              }
+              break;
+            
+            case "ENEMY" :
+              if (!unit || this.m_active_unit.data.faction === unit.data.faction) {
+                continue;
+              }
+              break;
+
+            case "ANY" :
+              
+              break;
+          }
+
           options.push({tile});
         }
       }

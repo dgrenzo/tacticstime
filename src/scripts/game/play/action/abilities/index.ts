@@ -36,7 +36,7 @@ export interface IAbilityDef {
 
 const s_ability_map : Map<string, IAbilityDef> = new Map();
 
-_.forEach( ["meteor", "strike", "shoot", "summon"], ability_name => {
+_.forEach( ["meteor", "strike", "shoot", "summon", "wait"], ability_name => {
   LoadJSON<IAbilityDef>('assets/data/abilities/' + ability_name + '.json').then(def => {
     s_ability_map.set(ability_name, def);
   })

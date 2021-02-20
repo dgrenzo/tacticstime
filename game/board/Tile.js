@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.GetTileName = exports.isTile = exports.TILE_DEF = void 0;
 var TILE_DEF;
 (function (TILE_DEF) {
     TILE_DEF[TILE_DEF["GRASS_EMPTY"] = 10] = "GRASS_EMPTY";

@@ -13,47 +13,9 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.DamageNumberEffect = void 0;
 var TWEEN = require("@tweenjs/tween.js");
-var GameEffect = (function () {
-    function GameEffect(m_renderer) {
-        var _this = this;
-        this.m_renderer = m_renderer;
-        this.m_pos = {
-            x: 0,
-            y: 0,
-        };
-        this.setPosition = function (pos) {
-            _this.m_pos.x = pos.x + 0.5;
-            _this.m_pos.y = pos.y - 0.5;
-            _this.m_renderer.positionElement(_this.m_renderable, _this.m_pos);
-        };
-        this.update = function (deltaTime) {
-        };
-        this.m_pos;
-        this.m_renderable = m_renderer.addEntity(this);
-    }
-    Object.defineProperty(GameEffect.prototype, "pos", {
-        get: function () {
-            return {
-                x: this.m_pos.x,
-                y: this.m_pos.y,
-            };
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(GameEffect.prototype, "entity_type", {
-        get: function () {
-            return "EFFECT";
-        },
-        enumerable: true,
-        configurable: true
-    });
-    GameEffect.prototype.destroy = function () {
-    };
-    return GameEffect;
-}());
-exports.GameEffect = GameEffect;
+var GameEffect_1 = require("./GameEffect");
 var DamageNumberEffect = (function (_super) {
     __extends(DamageNumberEffect, _super);
     function DamageNumberEffect(renderer, data, onComplete) {
@@ -82,5 +44,5 @@ var DamageNumberEffect = (function (_super) {
         return _this;
     }
     return DamageNumberEffect;
-}(GameEffect));
+}(GameEffect_1.GameEffect));
 exports.DamageNumberEffect = DamageNumberEffect;

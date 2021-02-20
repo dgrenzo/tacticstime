@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Scene = void 0;
 var immutable_1 = require("immutable");
 var Scene = (function () {
     function Scene() {
@@ -25,7 +26,7 @@ var Scene = (function () {
         set: function (val) {
             this.m_elements = val;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return Scene;

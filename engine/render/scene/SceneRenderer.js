@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getAsset = exports.SceneRenderer = void 0;
 var PIXI = require("pixi.js");
 var RenderEntity_1 = require("./RenderEntity");
 var event_1 = require("../../listener/event");
@@ -12,15 +13,12 @@ var SceneRenderer = (function () {
         this.m_pixi = m_pixi;
         this.m_event_manager = new event_1.EventManager();
         this.initializeScene = function (scene) {
-            _this.m_renderables = new linkedlist_1.LinkedList();
-            _this.m_container.removeChildren();
+            _this.reset();
             scene.elements.forEach(function (element) {
                 var renderable = _this.addEntity(element);
                 renderable.renderAsset(getAsset(element));
             });
-            _this.m_pixi.ticker.add(function () {
-                _this.renderScene();
-            });
+            _this.m_pixi.ticker.add(_this.renderScene);
         };
         this.on = function (event_name, cb) {
             _this.m_event_manager.add(event_name, cb);
@@ -55,6 +53,12 @@ var SceneRenderer = (function () {
                 return element.id === id;
             });
         };
+        this.reset = function () {
+            _this.m_renderables = new linkedlist_1.LinkedList();
+            _this.m_container.removeChildren();
+            _this.m_screen_effects_container.removeChildren();
+            _this.m_pixi.ticker.remove(_this.renderScene);
+        };
         this.m_container = new PIXI.Container();
         this.m_screen_effects_container = new PIXI.Container();
     }
@@ -62,21 +66,21 @@ var SceneRenderer = (function () {
         get: function () {
             return this.m_pixi;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(SceneRenderer.prototype, "stage", {
         get: function () {
             return this.m_container;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(SceneRenderer.prototype, "effects_container", {
         get: function () {
             return this.m_screen_effects_container;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return SceneRenderer;

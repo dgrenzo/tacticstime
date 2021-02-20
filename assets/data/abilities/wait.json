@@ -1,0 +1,13 @@
+{
+  "name" : "Wait",
+  "cost" : 0,
+  "target" : {
+    "range" : {
+      "min" : 0,
+      "max" : 0
+    },
+    "target_type" : "ANY"
+  },
+  "effects" : [
+  ]
+}

@@ -1,7 +1,0 @@
-*.map
-*.log
-yarn.lock
-.vscode/
-debug/
-dist/
-node_modules/

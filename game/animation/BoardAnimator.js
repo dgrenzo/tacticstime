@@ -1,7 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.BoardAnimator = void 0;
 var SceneRenderer_1 = require("../../engine/render/scene/SceneRenderer");
-var effects_1 = require("../effects");
+var EffectsManager_1 = require("../effects/EffectsManager");
 var BoardAnimator = (function () {
     function BoardAnimator(m_renderer, m_board_controller) {
         var _this = this;
@@ -15,7 +16,7 @@ var BoardAnimator = (function () {
             return _this.m_render_elements.get(entity_id);
         };
         this.createEffect = function (ability, cb) {
-            return effects_1.default.RenderEffect(ability, cb);
+            return EffectsManager_1.default.RenderEffect(ability, cb);
         };
         this.m_board_controller.on("CREATE_UNIT", function (data) {
             var renderable = _this.m_renderer.addEntity(data.unit);
@@ -33,7 +34,7 @@ var BoardAnimator = (function () {
     BoardAnimator.prototype.animateGameAction = function (action, board) {
         var _this = this;
         if (action.type === 'ABILITY') {
-            return this.animateAbility(action.data, board);
+            return this.animateAbility(action, board);
         }
         return new Promise(function (resolve) {
             var effect = _this.createEffect(action, resolve);
@@ -47,12 +48,24 @@ var BoardAnimator = (function () {
             setTimeout(resolve, 100);
         });
     };
-    BoardAnimator.prototype.animateAbility = function (data, board) {
+    BoardAnimator.prototype.animateAbility = function (action, board) {
+        var _this = this;
+        if (!board.getUnitAtPosition(action.data.target.pos)) {
+            return Promise.resolve();
+        }
+        if (action.data.ability.name === "Shoot") {
+            return this.unitBumpAnimation(action.data)
+                .then(function () {
+                return new Promise(function (resolve) {
+                    _this.createEffect(action, resolve);
+                });
+            });
+        }
+        return this.unitBumpAnimation(action.data);
+    };
+    BoardAnimator.prototype.unitBumpAnimation = function (data) {
         var _this = this;
         return new Promise(function (resolve) {
-            if (!board.getUnitAtPosition(data.target.pos)) {
-                return resolve();
-            }
             var renderable = _this.getRenderElement(data.source.id);
             var sprite = renderable.sprite;
             var dir = {

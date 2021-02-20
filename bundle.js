@@ -1,45 +1,7 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var _ = require("lodash");
-var FSM = (function () {
-    function FSM() {
-        var _this = this;
-        this.stateObjects = new Map();
-        this.registerState = function (key, stateObject) {
-            _this.stateObjects.set(key, _.defaults({
-                fsm: _this,
-            }, stateObject));
-        };
-        this.update = function (deltaTime) {
-            if (_this.stateObjects.get(_this._state) && _this.stateObjects.get(_this._state).update) {
-                _this.stateObjects.get(_this._state).update(deltaTime);
-            }
-        };
-        this.setState = function (val) {
-            if (_this.stateObjects.get(_this._state) && _this.stateObjects.get(_this._state).exit) {
-                _this.stateObjects.get(_this._state).exit();
-            }
-            _this._state = val;
-            if (_this.stateObjects.get(_this._state).enter) {
-                _this.stateObjects.get(_this._state).enter();
-            }
-        };
-    }
-    Object.defineProperty(FSM.prototype, "state", {
-        get: function () {
-            return this._state;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    return FSM;
-}());
-exports.FSM = FSM;
-
-},{"lodash":80}],2:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
+exports.LinkedList = void 0;
 var LinkedList = (function () {
     function LinkedList() {
         var _this = this;
@@ -124,9 +86,10 @@ var LinkedList = (function () {
 }());
 exports.LinkedList = LinkedList;
 
-},{}],3:[function(require,module,exports){
+},{}],2:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.EventManager = exports.Signal = void 0;
 var Signal = (function () {
     function Signal() {
         this.listener_root = null;
@@ -195,13 +158,17 @@ var EventManager = (function () {
             this.m_signalMap.get(signal_name).remove(cb);
         }
     };
+    EventManager.prototype.clear = function () {
+        this.m_signalMap.clear();
+    };
     return EventManager;
 }());
 exports.EventManager = EventManager;
 
-},{}],4:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.CreateRenderer = exports.RenderMode = void 0;
 var SceneRendererIsometric_1 = require("./scene/isometric/SceneRendererIsometric");
 var RenderMode;
 (function (RenderMode) {
@@ -215,9 +182,10 @@ function CreateRenderer(config) {
 }
 exports.CreateRenderer = CreateRenderer;
 
-},{"./scene/isometric/SceneRendererIsometric":7}],5:[function(require,module,exports){
+},{"./scene/isometric/SceneRendererIsometric":6}],4:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.RenderEntity = void 0;
 var PIXI = require("pixi.js");
 var AssetManager_1 = require("../../../game/assets/AssetManager");
 var _RenderEntityID = 0;
@@ -275,49 +243,50 @@ var RenderEntity = (function () {
         get: function () {
             return this.m_id;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(RenderEntity.prototype, "depth_offset", {
         get: function () {
             return this.m_depth_offset;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(RenderEntity.prototype, "depth", {
         get: function () {
             return this.m_depth;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(RenderEntity.prototype, "root", {
         get: function () {
             return this.m_root;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(RenderEntity.prototype, "sprite", {
         get: function () {
             return this.m_container;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
-    RenderEntity.prototype.setPosition = function (x, y, depth) {
+    RenderEntity.prototype.setPosition = function (pos, depth) {
         if (depth === void 0) { depth = 0; }
-        this.m_root.position.set(x, y);
+        this.m_root.position.set(pos.x, pos.y);
         this.m_depth = depth;
     };
     return RenderEntity;
 }());
 exports.RenderEntity = RenderEntity;
 
-},{"../../../game/assets/AssetManager":11,"pixi.js":84}],6:[function(require,module,exports){
+},{"../../../game/assets/AssetManager":10,"pixi.js":88}],5:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getAsset = exports.SceneRenderer = void 0;
 var PIXI = require("pixi.js");
 var RenderEntity_1 = require("./RenderEntity");
 var event_1 = require("../../listener/event");
@@ -330,15 +299,12 @@ var SceneRenderer = (function () {
         this.m_pixi = m_pixi;
         this.m_event_manager = new event_1.EventManager();
         this.initializeScene = function (scene) {
-            _this.m_renderables = new linkedlist_1.LinkedList();
-            _this.m_container.removeChildren();
+            _this.reset();
             scene.elements.forEach(function (element) {
                 var renderable = _this.addEntity(element);
                 renderable.renderAsset(getAsset(element));
             });
-            _this.m_pixi.ticker.add(function () {
-                _this.renderScene();
-            });
+            _this.m_pixi.ticker.add(_this.renderScene);
         };
         this.on = function (event_name, cb) {
             _this.m_event_manager.add(event_name, cb);
@@ -373,6 +339,12 @@ var SceneRenderer = (function () {
                 return element.id === id;
             });
         };
+        this.reset = function () {
+            _this.m_renderables = new linkedlist_1.LinkedList();
+            _this.m_container.removeChildren();
+            _this.m_screen_effects_container.removeChildren();
+            _this.m_pixi.ticker.remove(_this.renderScene);
+        };
         this.m_container = new PIXI.Container();
         this.m_screen_effects_container = new PIXI.Container();
     }
@@ -380,21 +352,21 @@ var SceneRenderer = (function () {
         get: function () {
             return this.m_pixi;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(SceneRenderer.prototype, "stage", {
         get: function () {
             return this.m_container;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(SceneRenderer.prototype, "effects_container", {
         get: function () {
             return this.m_screen_effects_container;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return SceneRenderer;
@@ -422,7 +394,7 @@ function CreateRenderable(entity) {
     return new RenderEntity_1.RenderEntity();
 }
 
-},{"../../../game/board/Tile":16,"../../../game/board/Unit":17,"../../list/linkedlist":2,"../../listener/event":3,"./RenderEntity":5,"pixi.js":84}],7:[function(require,module,exports){
+},{"../../../game/board/Tile":15,"../../../game/board/Unit":16,"../../list/linkedlist":1,"../../listener/event":2,"./RenderEntity":4,"pixi.js":88}],6:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -438,6 +410,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.SceneRendererIsometric = void 0;
 var PIXI = require("pixi.js");
 var SceneRenderer_1 = require("../SceneRenderer");
 var TILE_WIDTH = 16;
@@ -460,12 +433,15 @@ var SceneRendererIsometric = (function (_super) {
                 y: game_y
             };
         };
-        _this.getScreenPosition = function (x, y) {
-            var point = new PIXI.Point((x - y) * _this.HALF_TILE_WIDTH, (x + y) * _this.HALF_TILE_HEIGHT);
+        _this.getScreenPosition = function (pos) {
+            var point = new PIXI.Point((pos.x - pos.y) * _this.HALF_TILE_WIDTH, (pos.x + pos.y) * _this.HALF_TILE_HEIGHT);
             return point;
         };
         _this.positionElement = function (element, pos) {
-            element.setPosition((pos.x - pos.y) * _this.HALF_TILE_WIDTH, (pos.x + pos.y) * _this.HALF_TILE_HEIGHT, _this.getElementDepth(pos) + element.depth_offset);
+            element.setPosition({
+                x: (pos.x - pos.y) * _this.HALF_TILE_WIDTH,
+                y: (pos.x + pos.y) * _this.HALF_TILE_HEIGHT,
+            }, _this.getElementDepth(pos) + element.depth_offset);
             _this.m_renderables.remove(element);
             var index = _this.m_renderables.getFirstIndex(function (e) {
                 return e.depth > element.depth;
@@ -476,7 +452,7 @@ var SceneRendererIsometric = (function (_super) {
         _this.getProjection = function (pos) {
             return {
                 x: (pos.x - pos.y),
-                y: (pos.x + pos.y),
+                y: (pos.x + pos.y)
             };
         };
         _this.getElementDepth = function (pos) {
@@ -486,27 +462,16 @@ var SceneRendererIsometric = (function (_super) {
         _this.m_container.scale.set(4);
         _this.m_screen_effects_container.position.set(500, 50);
         _this.m_screen_effects_container.scale.set(4);
-        pixi.renderer.plugins.interaction.on('pointermove', function (evt) {
-            _this.m_event_manager.emit("POINTER_MOVE", _this.screenToTilePos(evt.data.global));
-        });
-        pixi.renderer.plugins.interaction.on('pointerdown', function (evt) {
-            if (evt.stopped) {
-                return;
-            }
-            _this.m_event_manager.emit("POINTER_DOWN", _this.screenToTilePos(evt.data.global));
-        });
-        pixi.renderer.plugins.interaction.on('pointerup', function (evt) {
-            _this.m_event_manager.emit("POINTER_UP", _this.screenToTilePos(evt.data.global));
-        });
         return _this;
     }
     return SceneRendererIsometric;
 }(SceneRenderer_1.SceneRenderer));
 exports.SceneRendererIsometric = SceneRendererIsometric;
 
-},{"../SceneRenderer":6,"pixi.js":84}],8:[function(require,module,exports){
+},{"../SceneRenderer":5,"pixi.js":88}],7:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Scene = void 0;
 var immutable_1 = require("immutable");
 var Scene = (function () {
     function Scene() {
@@ -532,22 +497,25 @@ var Scene = (function () {
         set: function (val) {
             this.m_elements = val;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return Scene;
 }());
 exports.Scene = Scene;
 
-},{"immutable":78}],9:[function(require,module,exports){
+},{"immutable":82}],8:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.GameController = exports.GameState = void 0;
+var PIXI = require("pixi.js");
 var GameBoard_1 = require("./board/GameBoard");
-var FSM_1 = require("../engine/FSM");
 var UnitLoader_1 = require("./assets/UnitLoader");
 var EncounterController_1 = require("./encounter/EncounterController");
 var tavern_1 = require("./tavern");
 var party_1 = require("./party");
+var GoldDisplay_1 = require("./play/interface/GoldDisplay");
+var ReplayMenu_1 = require("./interface/menus/ReplayMenu");
 var GameState;
 (function (GameState) {
     GameState[GameState["SETUP"] = 0] = "SETUP";
@@ -558,6 +526,24 @@ var GameController = (function () {
     function GameController(m_config) {
         var _this = this;
         this.m_config = m_config;
+        this.m_events = new PIXI.utils.EventEmitter();
+        this.update = function (deltaTime) {
+            _this.m_events.emit("UPDATE", { deltaTime: deltaTime });
+        };
+        this.onResize = function () {
+            _this.m_events.emit("RESIZE", {
+                width: _this.m_config.pixi_app.renderer.width,
+                height: _this.m_config.pixi_app.renderer.height,
+            });
+        };
+        this.startNextTavern = function () {
+            var tavern = new tavern_1.Tavern(_this.m_config.pixi_app.stage, _this.m_events);
+            tavern.setPlayer(_this.m_player_party);
+            tavern.positionContainer({
+                width: _this.m_config.pixi_app.renderer.width,
+                height: _this.m_config.pixi_app.renderer.height,
+            });
+        };
         this.startNextEncounter = function () {
             var encounter = new EncounterController_1.EncounterController(_this.m_config);
             encounter.loadMap('assets/data/boards/coast.json').then(function () {
@@ -577,35 +563,39 @@ var GameController = (function () {
                 encounter.addUnits(units);
                 encounter.startGame();
             });
+            encounter.on('END', function (encounter) {
+                _this.m_player_party.addGold(6);
+                var replay;
+                var onEnd = function () {
+                    _this.m_config.pixi_app.stage.removeChild(replay.container);
+                    encounter.destroy();
+                    _this.startNextTavern();
+                };
+                replay = new ReplayMenu_1.ReplayMenu(onEnd);
+                _this.m_config.pixi_app.stage.addChild(replay.container);
+            });
         };
-        this.m_fsm = new FSM_1.FSM();
-        m_config.pixi_app.ticker.add(this.m_fsm.update);
+        m_config.pixi_app.ticker.add(this.update);
+        this.m_config.pixi_app.renderer.on('resize', this.onResize);
+        new GoldDisplay_1.GoldDisplay(this.m_config.pixi_app.stage, this.m_events);
         UnitLoader_1.UnitLoader.LoadUnitDefinitions().then(function () {
-            var tavern = new tavern_1.Tavern();
-            _this.m_player_party = new party_1.PlayerParty();
-            tavern.setPlayer(_this.m_player_party);
-            _this.m_config.pixi_app.stage.addChild(tavern.sprite);
-            m_config.pixi_app.renderer.on("resize", tavern.positionContainer);
-            tavern.positionContainer({
-                width: m_config.pixi_app.renderer.width,
-                height: m_config.pixi_app.renderer.height,
-            });
-            tavern.on("LEAVE_TAVERN", function () {
-                _this.m_config.pixi_app.stage.removeChild(tavern.sprite);
-                m_config.pixi_app.renderer.off("resize", tavern.positionContainer);
-                _this.startNextEncounter();
-            });
+            _this.m_player_party = new party_1.PlayerParty(_this.m_events);
+            _this.startNextTavern();
+        });
+        this.m_events.on("LEAVE_TAVERN", function () {
+            _this.startNextEncounter();
         });
     }
     return GameController;
 }());
 exports.GameController = GameController;
 
-},{"../engine/FSM":1,"./assets/UnitLoader":12,"./board/GameBoard":14,"./encounter/EncounterController":20,"./party":23,"./tavern":38}],10:[function(require,module,exports){
+},{"./assets/UnitLoader":11,"./board/GameBoard":13,"./encounter/EncounterController":21,"./interface/menus/ReplayMenu":25,"./party":26,"./play/interface/GoldDisplay":41,"./tavern":42,"pixi.js":88}],9:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.BoardAnimator = void 0;
 var SceneRenderer_1 = require("../../engine/render/scene/SceneRenderer");
-var effects_1 = require("../effects");
+var EffectsManager_1 = require("../effects/EffectsManager");
 var BoardAnimator = (function () {
     function BoardAnimator(m_renderer, m_board_controller) {
         var _this = this;
@@ -619,7 +609,7 @@ var BoardAnimator = (function () {
             return _this.m_render_elements.get(entity_id);
         };
         this.createEffect = function (ability, cb) {
-            return effects_1.default.RenderEffect(ability, cb);
+            return EffectsManager_1.default.RenderEffect(ability, cb);
         };
         this.m_board_controller.on("CREATE_UNIT", function (data) {
             var renderable = _this.m_renderer.addEntity(data.unit);
@@ -637,7 +627,7 @@ var BoardAnimator = (function () {
     BoardAnimator.prototype.animateGameAction = function (action, board) {
         var _this = this;
         if (action.type === 'ABILITY') {
-            return this.animateAbility(action.data, board);
+            return this.animateAbility(action, board);
         }
         return new Promise(function (resolve) {
             var effect = _this.createEffect(action, resolve);
@@ -651,12 +641,24 @@ var BoardAnimator = (function () {
             setTimeout(resolve, 100);
         });
     };
-    BoardAnimator.prototype.animateAbility = function (data, board) {
+    BoardAnimator.prototype.animateAbility = function (action, board) {
+        var _this = this;
+        if (!board.getUnitAtPosition(action.data.target.pos)) {
+            return Promise.resolve();
+        }
+        if (action.data.ability.name === "Shoot") {
+            return this.unitBumpAnimation(action.data)
+                .then(function () {
+                return new Promise(function (resolve) {
+                    _this.createEffect(action, resolve);
+                });
+            });
+        }
+        return this.unitBumpAnimation(action.data);
+    };
+    BoardAnimator.prototype.unitBumpAnimation = function (data) {
         var _this = this;
         return new Promise(function (resolve) {
-            if (!board.getUnitAtPosition(data.target.pos)) {
-                return resolve();
-            }
             var renderable = _this.getRenderElement(data.source.id);
             var sprite = renderable.sprite;
             var dir = {
@@ -682,7 +684,7 @@ var BoardAnimator = (function () {
 }());
 exports.BoardAnimator = BoardAnimator;
 
-},{"../../engine/render/scene/SceneRenderer":6,"../effects":19}],11:[function(require,module,exports){
+},{"../../engine/render/scene/SceneRenderer":5,"../effects/EffectsManager":18}],10:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
@@ -726,6 +728,13 @@ var AssetManager = (function () {
     };
     AssetManager.getEffect = function (asset_info) {
         var effect = new PIXI.Container();
+        if (asset_info.name === "PROJECTILE_ARROW") {
+            var arrow = new PIXI.Graphics()
+                .beginFill(0x333333)
+                .drawRect(-5, 0, 6, 2);
+            effect.addChild(arrow);
+            return effect;
+        }
         var text = new PIXI.Text(asset_info.data.amount + '', {
             fill: 0xFFFFCC,
             size: 24,
@@ -746,9 +755,10 @@ var AssetManager = (function () {
 }());
 exports.default = AssetManager;
 
-},{"lodash":80,"pixi.js":84}],12:[function(require,module,exports){
+},{"lodash":84,"pixi.js":88}],11:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.UnitLoader = void 0;
 var _ = require("lodash");
 var immutable_1 = require("immutable");
 var Loader_1 = require("../board/Loader");
@@ -790,7 +800,7 @@ function GetDefURL(unit_type) {
     return "assets/data/units/" + unit_type + ".json";
 }
 
-},{"../board/Loader":15,"immutable":78,"lodash":80}],13:[function(require,module,exports){
+},{"../board/Loader":14,"immutable":82,"lodash":84}],12:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -806,6 +816,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.AIBoardController = exports.BoardController = void 0;
 var GameBoard_1 = require("./GameBoard");
 var ActionStack_1 = require("../play/action/ActionStack");
 var pathfinding_1 = require("../pathfinding");
@@ -916,14 +927,14 @@ var AIBoardController = (function (_super) {
         get: function () {
             return this.m_board;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return AIBoardController;
 }(BoardController));
 exports.AIBoardController = AIBoardController;
 
-},{"../../engine/listener/event":3,"../pathfinding":24,"../play/action/ActionStack":28,"./GameBoard":14}],14:[function(require,module,exports){
+},{"../../engine/listener/event":2,"../pathfinding":27,"../play/action/ActionStack":32,"./GameBoard":13}],13:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -939,6 +950,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.CreateUnit = exports.CreateEffect = exports.CreateEntity = exports.GameBoard = void 0;
 var _ = require("lodash");
 var Tile_1 = require("./Tile");
 var Scene_1 = require("../../engine/scene/Scene");
@@ -947,8 +959,8 @@ var GameBoard = (function (_super) {
     __extends(GameBoard, _super);
     function GameBoard() {
         var _this = _super.call(this) || this;
-        _this.addTile = function (x, y, def) {
-            _this.addElement(CreateTile(x, y, def));
+        _this.addTile = function (pos, def) {
+            _this.addElement(CreateTile(pos, def));
         };
         _this.getUnitAtPosition = function (pos) {
             var unit = null;
@@ -996,9 +1008,11 @@ var GameBoard = (function (_super) {
     GameBoard.prototype.init = function (board_config) {
         var _this = this;
         _.forEach(board_config.layout.tiles, function (tile, index) {
-            var x = index % board_config.layout.width;
-            var y = Math.floor(index / board_config.layout.width);
-            _this.addTile(x, y, tile);
+            var pos = {
+                x: index % board_config.layout.width,
+                y: Math.floor(index / board_config.layout.width)
+            };
+            _this.addTile(pos, tile);
         });
     };
     GameBoard.prototype.getElementsAt = function (pos) {
@@ -1049,27 +1063,25 @@ function CreateUnit(def, faction) {
             mana: 0,
             hp: def.stats.hp,
         },
-        abilities: _.cloneDeep(def.abilities),
+        abilities: _.concat(_.cloneDeep(def.abilities), "wait"),
     };
 }
 exports.CreateUnit = CreateUnit;
-function CreateTile(x, y, type) {
+function CreateTile(pos, type) {
     return {
         id: _ID++,
         entity_type: "TILE",
-        pos: {
-            x: x,
-            y: y,
-        },
+        pos: pos,
         data: {
             tile_type: type,
         }
     };
 }
 
-},{"../../engine/scene/Scene":8,"./Tile":16,"./Unit":17,"lodash":80}],15:[function(require,module,exports){
+},{"../../engine/scene/Scene":7,"./Tile":15,"./Unit":16,"lodash":84}],14:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.LoadFromURLParam = exports.LoadJSON = exports.LoadBoard = exports.LoadMission = void 0;
 var PIXI = require("pixi.js");
 var _ = require("lodash");
 var UnitLoader_1 = require("../assets/UnitLoader");
@@ -1156,9 +1168,10 @@ function LoadFromURLParam() {
 }
 exports.LoadFromURLParam = LoadFromURLParam;
 
-},{"../assets/UnitLoader":12,"lodash":80,"pixi.js":84}],16:[function(require,module,exports){
+},{"../assets/UnitLoader":11,"lodash":84,"pixi.js":88}],15:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.GetTileName = exports.isTile = exports.TILE_DEF = void 0;
 var TILE_DEF;
 (function (TILE_DEF) {
     TILE_DEF[TILE_DEF["GRASS_EMPTY"] = 10] = "GRASS_EMPTY";
@@ -1199,15 +1212,16 @@ var getType = function (type) {
     return ["empty", "mtn", "tree", "hut"][type];
 };
 
-},{}],17:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.isUnit = void 0;
 function isUnit(entity) {
     return entity.entity_type === "UNIT";
 }
 exports.isUnit = isUnit;
 
-},{}],18:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1223,47 +1237,9 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.DamageNumberEffect = void 0;
 var TWEEN = require("@tweenjs/tween.js");
-var GameEffect = (function () {
-    function GameEffect(m_renderer) {
-        var _this = this;
-        this.m_renderer = m_renderer;
-        this.m_pos = {
-            x: 0,
-            y: 0,
-        };
-        this.setPosition = function (pos) {
-            _this.m_pos.x = pos.x + 0.5;
-            _this.m_pos.y = pos.y - 0.5;
-            _this.m_renderer.positionElement(_this.m_renderable, _this.m_pos);
-        };
-        this.update = function (deltaTime) {
-        };
-        this.m_pos;
-        this.m_renderable = m_renderer.addEntity(this);
-    }
-    Object.defineProperty(GameEffect.prototype, "pos", {
-        get: function () {
-            return {
-                x: this.m_pos.x,
-                y: this.m_pos.y,
-            };
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(GameEffect.prototype, "entity_type", {
-        get: function () {
-            return "EFFECT";
-        },
-        enumerable: true,
-        configurable: true
-    });
-    GameEffect.prototype.destroy = function () {
-    };
-    return GameEffect;
-}());
-exports.GameEffect = GameEffect;
+var GameEffect_1 = require("./GameEffect");
 var DamageNumberEffect = (function (_super) {
     __extends(DamageNumberEffect, _super);
     function DamageNumberEffect(renderer, data, onComplete) {
@@ -1292,14 +1268,15 @@ var DamageNumberEffect = (function (_super) {
         return _this;
     }
     return DamageNumberEffect;
-}(GameEffect));
+}(GameEffect_1.GameEffect));
 exports.DamageNumberEffect = DamageNumberEffect;
 
-},{"@tweenjs/tween.js":75}],19:[function(require,module,exports){
+},{"./GameEffect":19,"@tweenjs/tween.js":79}],18:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var TWEEN = require("@tweenjs/tween.js");
-var damage_1 = require("./damage");
+var DamageNumberEffect_1 = require("./DamageNumberEffect");
+var ProjectileEffect_1 = require("./ProjectileEffect");
 var EffectsManager = (function () {
     function EffectsManager() {
     }
@@ -1312,8 +1289,11 @@ var EffectsManager = (function () {
     EffectsManager.RenderEffect = function (action, onComplete) {
         var effect = null;
         switch (action.type) {
+            case "ABILITY":
+                effect = new ProjectileEffect_1.ProjectileEffect(EffectsManager.s_renderer, action.data, onComplete);
+                break;
             case "DAMAGE_DEALT":
-                effect = new damage_1.DamageNumberEffect(EffectsManager.s_renderer, action.data, onComplete);
+                effect = new DamageNumberEffect_1.DamageNumberEffect(EffectsManager.s_renderer, action.data, onComplete);
         }
         if (effect) {
         }
@@ -1323,18 +1303,125 @@ var EffectsManager = (function () {
 }());
 exports.default = EffectsManager;
 
-},{"./damage":18,"@tweenjs/tween.js":75}],20:[function(require,module,exports){
+},{"./DamageNumberEffect":17,"./ProjectileEffect":20,"@tweenjs/tween.js":79}],19:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.GameEffect = void 0;
+var GameEffect = (function () {
+    function GameEffect(m_renderer) {
+        var _this = this;
+        this.m_renderer = m_renderer;
+        this.m_pos = {
+            x: 0,
+            y: 0,
+        };
+        this.setPosition = function (pos) {
+            _this.m_pos.x = pos.x + 0.55;
+            _this.m_pos.y = pos.y - 0.55;
+            _this.m_renderer.positionElement(_this.m_renderable, _this.m_pos);
+        };
+        this.update = function (deltaTime) {
+        };
+        this.m_renderable = m_renderer.addEntity(this);
+    }
+    Object.defineProperty(GameEffect.prototype, "pos", {
+        get: function () {
+            return {
+                x: this.m_pos.x,
+                y: this.m_pos.y,
+            };
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(GameEffect.prototype, "entity_type", {
+        get: function () {
+            return "EFFECT";
+        },
+        enumerable: false,
+        configurable: true
+    });
+    GameEffect.prototype.destroy = function () {
+    };
+    return GameEffect;
+}());
+exports.GameEffect = GameEffect;
+
+},{}],20:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ProjectileEffect = void 0;
+var GameEffect_1 = require("./GameEffect");
+var TWEEN = require("@tweenjs/tween.js");
+var ProjectileEffect = (function (_super) {
+    __extends(ProjectileEffect, _super);
+    function ProjectileEffect(renderer, m_data, onComplete) {
+        var _this = _super.call(this, renderer) || this;
+        _this.m_data = m_data;
+        _this.m_renderable.renderAsset({
+            type: "EFFECT",
+            name: "PROJECTILE_ARROW",
+            data: m_data,
+            depth_offset: 0,
+        });
+        var _from = {
+            x: m_data.source.pos.x,
+            y: m_data.source.pos.y,
+        };
+        var _to = {
+            x: m_data.target.pos.x,
+            y: m_data.target.pos.y,
+        };
+        var _screen_from = _this.m_renderer.getScreenPosition(_from);
+        var _screen_to = _this.m_renderer.getScreenPosition(_to);
+        _this.m_renderable.sprite.rotation = Math.atan2(_screen_to.y - _screen_from.y, _screen_to.x - _screen_from.x);
+        var distance = Math.sqrt(Math.pow(_to.x - _from.x, 2) + Math.pow(_to.y - _from.y, 2));
+        var time = distance * 50;
+        var _tween_obj = {
+            x: _from.x,
+            y: _from.y,
+        };
+        renderer.positionElement(_this.m_renderable, _from);
+        TWEEN.add(new TWEEN.Tween(_tween_obj)
+            .to(_to, time)
+            .onUpdate(function () {
+            _this.setPosition(_tween_obj);
+        })
+            .onComplete(function () {
+            _this.m_renderer.removeEntity(_this.m_renderable.id);
+            onComplete();
+        })
+            .start());
+        return _this;
+    }
+    return ProjectileEffect;
+}(GameEffect_1.GameEffect));
+exports.ProjectileEffect = ProjectileEffect;
+
+},{"./GameEffect":19,"@tweenjs/tween.js":79}],21:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.EncounterController = exports.EncounterState = void 0;
 var PIXI = require("pixi.js");
 var BoardController_1 = require("../board/BoardController");
 var UnitQueue_1 = require("../play/UnitQueue");
 var event_1 = require("../../engine/listener/event");
 var Loader_1 = require("../board/Loader");
 var render_1 = require("../../engine/render/render");
-var HealthBar_1 = require("../play/interface/HealthBar");
-var TileHighlighter_1 = require("../extras/TileHighlighter");
-var effects_1 = require("../effects");
+var EffectsManager_1 = require("../effects/EffectsManager");
 var EnemyTurn_1 = require("../play/EnemyTurn");
 var BoardAnimator_1 = require("../animation/BoardAnimator");
 var EncounterState;
@@ -1371,18 +1458,12 @@ var EncounterController = (function () {
             _this.m_board_controller.on("UNIT_KILLED", function (data) {
                 _this.m_unit_queue.removeUnit(data.entity_id);
             });
-            _this.m_board_controller.on("UNIT_CREATED", function (data) {
-                var health_bar = new HealthBar_1.HealthBar(data.unit.id, _this.m_board_controller, _this.m_renderer);
-                _this.m_renderer.effects_container.addChild(health_bar.sprite);
-            });
         };
         this.onSetupComplete = function () {
             _this.m_config.pixi_app.stage.addChild(_this.m_renderer.stage);
             _this.m_config.pixi_app.stage.addChild(_this.m_renderer.effects_container);
             _this.m_config.pixi_app.stage.addChild(_this.m_interface_container);
-            var highlighter = new TileHighlighter_1.default(_this.m_renderer, _this.m_board_controller);
-            _this.m_config.pixi_app.ticker.add(highlighter.update);
-            effects_1.default.init(_this.m_renderer);
+            EffectsManager_1.default.init(_this.m_renderer);
         };
         this.startGame = function () {
             _this.m_board_controller.executeActionStack().then(_this.startTurn);
@@ -1422,6 +1503,12 @@ var EncounterController = (function () {
         this.emit = function (event_name) {
             _this.m_event_manager.emit(event_name, _this);
         };
+        this.destroy = function () {
+            _this.m_config.pixi_app.stage.removeChild(_this.m_renderer.stage);
+            _this.m_config.pixi_app.stage.removeChild(_this.m_renderer.effects_container);
+            _this.m_config.pixi_app.stage.removeChild(_this.m_interface_container);
+            _this.m_renderer.reset();
+        };
         this.onTurnComplete = function () {
             _this.startTurn();
         };
@@ -1437,38 +1524,10 @@ var EncounterController = (function () {
 }());
 exports.EncounterController = EncounterController;
 
-},{"../../engine/listener/event":3,"../../engine/render/render":4,"../animation/BoardAnimator":10,"../board/BoardController":13,"../board/Loader":15,"../effects":19,"../extras/TileHighlighter":21,"../play/EnemyTurn":25,"../play/UnitQueue":26,"../play/interface/HealthBar":37,"pixi.js":84}],21:[function(require,module,exports){
+},{"../../engine/listener/event":2,"../../engine/render/render":3,"../animation/BoardAnimator":9,"../board/BoardController":12,"../board/Loader":14,"../effects/EffectsManager":18,"../play/EnemyTurn":28,"../play/UnitQueue":29,"pixi.js":88}],22:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var TileHighlighter = (function () {
-    function TileHighlighter(m_renderer, m_board) {
-        var _this = this;
-        this.m_renderer = m_renderer;
-        this.m_board = m_board;
-        this.onPointerMove = function (data) {
-            _this.m_current_pos = {
-                x: data.x,
-                y: data.y,
-            };
-        };
-        this.update = function () {
-            var targets = _this.m_board.getElementsAt(_this.m_last_pos);
-            targets.forEach(function (entity) {
-            });
-            targets = _this.m_board.getElementsAt(_this.m_current_pos);
-            targets.forEach(function (entity) {
-            });
-            _this.m_last_pos = _this.m_current_pos;
-        };
-        this.m_renderer.on('POINTER_MOVE', this.onPointerMove);
-    }
-    return TileHighlighter;
-}());
-exports.default = TileHighlighter;
-
-},{}],22:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
+exports.InitRenderPlugins = void 0;
 var PIXI = require("pixi.js");
 var blue_frag = "\nvarying vec2 vTextureCoord;\nvarying vec4 vColor;\nvarying float vTextureId;\nuniform sampler2D uSamplers[%count%];\n\nvoid main(void){\n    vec4 color;\n    %forloop%\n    float blue = (color.r + color.g + color.b) / 3.0;\n    gl_FragColor = vec4(color.r / 2.0, color.g / 2.0, blue, color.a);\n}\n";
 var red_frag = "\nvarying vec2 vTextureCoord;\nvarying vec4 vColor;\nvarying float vTextureId;\nuniform sampler2D uSamplers[%count%];\n\nvoid main(void){\n    vec4 color;\n    %forloop%\n    float red = (color.r + color.g + color.b) / 3.0;\n    gl_FragColor = vec4(red, color.g / 2.0, color.b / 2.0, color.a);\n}\n";
@@ -1480,42 +1539,151 @@ function InitRenderPlugins() {
 }
 exports.InitRenderPlugins = InitRenderPlugins;
 
-},{"pixi.js":84}],23:[function(require,module,exports){
+},{"pixi.js":88}],23:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Button = void 0;
+var PIXI = require("pixi.js");
+var COLOR_FILL = 0xCCFFFF;
+var COLOR_LINE = 0x333333;
+var Button = (function () {
+    function Button(label, callback, width, height) {
+        var _this = this;
+        this.destroy = function () {
+            _this.m_container.removeChildren();
+            _this.m_container.removeAllListeners();
+        };
+        this.m_container = new PIXI.Container();
+        this.m_container.interactive = this.m_container.buttonMode = true;
+        this.m_container.on('click', callback);
+        var bg = new PIXI.Graphics()
+            .beginFill(COLOR_FILL)
+            .lineStyle(2, COLOR_LINE)
+            .drawRect(0, 0, width, height)
+            .endFill();
+        this.m_container.addChild(bg);
+    }
+    Object.defineProperty(Button.prototype, "container", {
+        get: function () {
+            return this.m_container;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    return Button;
+}());
+exports.Button = Button;
+
+},{"pixi.js":88}],24:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.BaseMenu = void 0;
+var PIXI = require("pixi.js");
+var Button_1 = require("../Button");
+var BaseMenu = (function () {
+    function BaseMenu() {
+        var _this = this;
+        this.m_offset_y = 0;
+        this.MakeButton = function (label, callback) {
+            var btn = new Button_1.Button(label, callback, 200, 40);
+            btn.container.position.y = _this.m_offset_y;
+            _this.m_offset_y += 60;
+            _this.m_container.addChild(btn.container);
+        };
+        this.m_container = new PIXI.Container();
+    }
+    Object.defineProperty(BaseMenu.prototype, "container", {
+        get: function () {
+            return this.m_container;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    return BaseMenu;
+}());
+exports.BaseMenu = BaseMenu;
+
+},{"../Button":23,"pixi.js":88}],25:[function(require,module,exports){
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ReplayMenu = void 0;
+var BaseMenu_1 = require("./BaseMenu");
+var ReplayMenu = (function (_super) {
+    __extends(ReplayMenu, _super);
+    function ReplayMenu(m_callback) {
+        var _this = _super.call(this) || this;
+        _this.m_callback = m_callback;
+        _this.OnCompletePressed = function () {
+            _this.m_callback();
+        };
+        _this.MakeButton('Complete', _this.OnCompletePressed);
+        return _this;
+    }
+    return ReplayMenu;
+}(BaseMenu_1.BaseMenu));
+exports.ReplayMenu = ReplayMenu;
+
+},{"./BaseMenu":24}],26:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PlayerParty = void 0;
 var immutable_1 = require("immutable");
 var PlayerParty = (function () {
-    function PlayerParty() {
+    function PlayerParty(m_events) {
         var _this = this;
+        this.m_events = m_events;
         this.m_units = immutable_1.List();
-        this.m_gold = 10;
+        this.m_gold = 0;
         this.addUnit = function (unit) {
             _this.m_units = _this.m_units.push(unit);
         };
+        this.addGold = function (amount) {
+            _this.changeGold(amount);
+            return _this.m_gold;
+        };
         this.chargeGold = function (amount) {
             if (_this.m_gold >= amount) {
-                _this.m_gold -= amount;
+                _this.changeGold(-amount);
                 return true;
             }
             else {
                 return false;
             }
         };
+        this.changeGold = function (amount) {
+            _this.m_gold += amount;
+            _this.m_events.emit("SET_GOLD", { amount: _this.m_gold });
+        };
+        this.addGold(10);
     }
     Object.defineProperty(PlayerParty.prototype, "units", {
         get: function () {
             return this.m_units;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return PlayerParty;
 }());
 exports.PlayerParty = PlayerParty;
 
-},{"immutable":78}],24:[function(require,module,exports){
+},{"immutable":82}],27:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.GetMoveOptions = void 0;
 var _ = require("lodash");
 var Tile_1 = require("../board/Tile");
 var PathList = (function () {
@@ -1646,9 +1814,10 @@ function GetTileCost(tile) {
     return 1;
 }
 
-},{"../board/Tile":16,"lodash":80}],25:[function(require,module,exports){
+},{"../board/Tile":15,"lodash":84}],28:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.EnemyTurn = void 0;
 var _ = require("lodash");
 var pathfinding_1 = require("../pathfinding");
 var abilities_1 = require("./action/abilities");
@@ -1772,9 +1941,10 @@ var EnemyTurn = (function () {
 }());
 exports.EnemyTurn = EnemyTurn;
 
-},{"../pathfinding":24,"./action/AbilityTargetUI":27,"./action/abilities":30,"lodash":80}],26:[function(require,module,exports){
+},{"../pathfinding":27,"./action/AbilityTargetUI":31,"./action/abilities":34,"lodash":84}],29:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.UnitQueue = void 0;
 var UnitQueue = (function () {
     function UnitQueue() {
         var _this = this;
@@ -1822,7 +1992,33 @@ var UnitQueue = (function () {
 }());
 exports.UnitQueue = UnitQueue;
 
-},{}],27:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.UpdateElements = void 0;
+var UpdateElements = (function () {
+    function UpdateElements() {
+    }
+    UpdateElements.AddEntity = function (elements, entity_id, entity) {
+        return elements.set(entity_id, entity);
+    };
+    UpdateElements.RemoveEntity = function (elements, entity_id) {
+        return elements.remove(entity_id);
+    };
+    UpdateElements.SetHP = function (elements, entity_id, hp) {
+        return elements.setIn([entity_id, 'status', 'hp'], hp);
+    };
+    UpdateElements.SetMP = function (elements, entity_id, mana) {
+        return elements.setIn([entity_id, 'status', 'mana'], mana);
+    };
+    UpdateElements.SetPosition = function (elements, entity_id, position) {
+        return elements.setIn([entity_id, 'pos'], position);
+    };
+    return UpdateElements;
+}());
+exports.UpdateElements = UpdateElements;
+
+},{}],31:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1838,6 +2034,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.AbilityTargetUI = void 0;
 var _ = require("lodash");
 var BoardActionUI_1 = require("./BoardActionUI");
 var AbilityTargetUI = (function (_super) {
@@ -1859,6 +2056,26 @@ var AbilityTargetUI = (function (_super) {
                     }
                     var tile = _this.m_controller.getTile({ x: start.x + offset_x, y: start.y + offset_y });
                     if (tile) {
+                        var unit = _this.m_controller.getUnitAtPosition(tile.pos);
+                        switch (_this.m_ability_def.target.target_type) {
+                            case "EMPTY":
+                                if (unit) {
+                                    continue;
+                                }
+                                break;
+                            case "ALLY":
+                                if (!unit || _this.m_active_unit.data.faction !== unit.data.faction) {
+                                    continue;
+                                }
+                                break;
+                            case "ENEMY":
+                                if (!unit || _this.m_active_unit.data.faction === unit.data.faction) {
+                                    continue;
+                                }
+                                break;
+                            case "ANY":
+                                break;
+                        }
                         options.push({ tile: tile });
                     }
                 }
@@ -1899,9 +2116,10 @@ var AbilityTargetUI = (function (_super) {
 }(BoardActionUI_1.BoardActionUI));
 exports.AbilityTargetUI = AbilityTargetUI;
 
-},{"./BoardActionUI":29,"lodash":80}],28:[function(require,module,exports){
+},{"./BoardActionUI":33,"lodash":84}],32:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ActionStack = void 0;
 var _ = require("lodash");
 var Movement_1 = require("./executors/action/Movement");
 var Damage_1 = require("./executors/action/Damage");
@@ -1974,7 +2192,7 @@ var ActionStack = (function () {
             }
             return tail;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return ActionStack;
@@ -1988,9 +2206,10 @@ function ExecuteDefault(action, elements, controller) {
     });
 }
 
-},{"./executors/action/Ability":31,"./executors/action/CreateUnit":32,"./executors/action/Damage":33,"./executors/action/Killed":34,"./executors/action/Movement":35,"./executors/action/SummonUnit":36,"lodash":80}],29:[function(require,module,exports){
+},{"./executors/action/Ability":35,"./executors/action/CreateUnit":36,"./executors/action/Damage":37,"./executors/action/Killed":38,"./executors/action/Movement":39,"./executors/action/SummonUnit":40,"lodash":84}],33:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.BoardActionUI = void 0;
 var UNIT_COLLISION;
 (function (UNIT_COLLISION) {
     UNIT_COLLISION[UNIT_COLLISION["NONE"] = 0] = "NONE";
@@ -2007,16 +2226,17 @@ var BoardActionUI = (function () {
         get: function () {
             return this.m_options;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return BoardActionUI;
 }());
 exports.BoardActionUI = BoardActionUI;
 
-},{}],30:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.GetAbilityDef = void 0;
 var _ = require("lodash");
 var Loader_1 = require("../../../board/Loader");
 var TARGET_TYPE;
@@ -2028,7 +2248,7 @@ var TARGET_TYPE;
     TARGET_TYPE[TARGET_TYPE["ALLY"] = 4] = "ALLY";
 })(TARGET_TYPE || (TARGET_TYPE = {}));
 var s_ability_map = new Map();
-_.forEach(["meteor", "strike", "shoot", "summon"], function (ability_name) {
+_.forEach(["meteor", "strike", "shoot", "summon", "wait"], function (ability_name) {
     Loader_1.LoadJSON('assets/data/abilities/' + ability_name + '.json').then(function (def) {
         s_ability_map.set(ability_name, def);
     });
@@ -2038,10 +2258,12 @@ function GetAbilityDef(ability_name) {
 }
 exports.GetAbilityDef = GetAbilityDef;
 
-},{"../../../board/Loader":15,"lodash":80}],31:[function(require,module,exports){
+},{"../../../board/Loader":14,"lodash":84}],35:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ExecuteAbility = void 0;
 var _ = require("lodash");
+var UpdateElements_1 = require("../../../UpdateElements");
 function ExecuteAbility(action, elements, controller) {
     return controller.animateGameAction(action).then(function () {
         _.forEach(action.data.ability.effects, function (effect) {
@@ -2064,28 +2286,34 @@ function ExecuteAbility(action, elements, controller) {
                 }
             });
         });
+        var unit_id = action.data.source.id;
+        var mana = action.data.source.status.mana;
         if (action.data.ability.cost > 0) {
-            var result = elements.setIn([action.data.source.id, 'status', 'mana'], action.data.source.status.mana - action.data.ability.cost);
-            return result;
+            mana -= action.data.ability.cost;
+            return UpdateElements_1.UpdateElements.SetMP(elements, unit_id, mana);
         }
         else {
-            var result = elements.setIn([action.data.source.id, 'status', 'mana'], action.data.source.status.mana + 2);
-            return result;
+            mana += 2;
+            return UpdateElements_1.UpdateElements.SetMP(elements, unit_id, mana);
         }
     });
 }
 exports.ExecuteAbility = ExecuteAbility;
 
-},{"lodash":80}],32:[function(require,module,exports){
+},{"../../../UpdateElements":30,"lodash":84}],36:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ExecuteCreateUnit = void 0;
+var UpdateElements_1 = require("../../../UpdateElements");
 function ExecuteCreateUnit(action, elements, controller) {
-    elements = elements.set(action.data.unit.id, action.data.unit);
+    var unit = action.data.unit;
+    var id = unit.id;
+    elements = UpdateElements_1.UpdateElements.AddEntity(elements, id, unit);
     return new Promise(function (resolve) {
         controller.sendAction({
             type: "UNIT_CREATED",
             data: {
-                unit: action.data.unit,
+                unit: unit
             }
         });
         resolve(elements);
@@ -2093,9 +2321,11 @@ function ExecuteCreateUnit(action, elements, controller) {
 }
 exports.ExecuteCreateUnit = ExecuteCreateUnit;
 
-},{}],33:[function(require,module,exports){
+},{"../../../UpdateElements":30}],37:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ExecuteDamage = void 0;
+var UpdateElements_1 = require("../../../UpdateElements");
 function ExecuteDamage(action, elements, controller) {
     return new Promise(function (resolve) {
         var unit = controller.getUnit(action.data.entity_id);
@@ -2107,11 +2337,12 @@ function ExecuteDamage(action, elements, controller) {
             return resolve(elements);
         }
         var new_hp = Math.max(starting_hp - action.data.amount, 0);
-        if (new_hp != starting_hp) {
+        var difference = starting_hp - new_hp;
+        if (difference != 0) {
             controller.sendAction({
                 type: "DAMAGE_DEALT",
                 data: {
-                    amount: starting_hp - new_hp,
+                    amount: difference,
                     entity_id: unit.id,
                 }
             });
@@ -2124,40 +2355,41 @@ function ExecuteDamage(action, elements, controller) {
                 }
             });
         }
-        var result = elements.setIn([action.data.entity_id, 'status', 'hp'], new_hp);
+        var result = UpdateElements_1.UpdateElements.SetHP(elements, unit.id, new_hp);
         resolve(result);
     });
 }
 exports.ExecuteDamage = ExecuteDamage;
 
-},{}],34:[function(require,module,exports){
+},{"../../../UpdateElements":30}],38:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ExecuteKilled = void 0;
+var UpdateElements_1 = require("../../../UpdateElements");
 function ExecuteKilled(action, elements, controller) {
     return controller.animateGameAction(action).then(function () {
         controller.removeEntity(action.data.entity_id);
-        return elements.remove(action.data.entity_id);
+        return UpdateElements_1.UpdateElements.RemoveEntity(elements, action.data.entity_id);
     });
 }
 exports.ExecuteKilled = ExecuteKilled;
 
-},{}],35:[function(require,module,exports){
+},{"../../../UpdateElements":30}],39:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ExecuteMove = void 0;
+var UpdateElements_1 = require("../../../UpdateElements");
 function ExecuteMove(action, elements, controller) {
     return controller.animateGameAction(action).then(function () {
-        var new_pos = {
-            x: action.data.move.to.x,
-            y: action.data.move.to.y
-        };
-        return elements.setIn([action.data.entity_id, 'pos'], new_pos);
+        return UpdateElements_1.UpdateElements.SetPosition(elements, action.data.entity_id, action.data.move.to);
     });
 }
 exports.ExecuteMove = ExecuteMove;
 
-},{}],36:[function(require,module,exports){
+},{"../../../UpdateElements":30}],40:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ExecuteSummonUnit = void 0;
 var GameBoard_1 = require("../../../../board/GameBoard");
 var UnitLoader_1 = require("../../../../assets/UnitLoader");
 function ExecuteSummonUnit(action, elements, controller) {
@@ -2179,66 +2411,35 @@ function ExecuteSummonUnit(action, elements, controller) {
 }
 exports.ExecuteSummonUnit = ExecuteSummonUnit;
 
-},{"../../../../assets/UnitLoader":12,"../../../../board/GameBoard":14}],37:[function(require,module,exports){
+},{"../../../../assets/UnitLoader":11,"../../../../board/GameBoard":13}],41:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.GoldDisplay = void 0;
 var PIXI = require("pixi.js");
-var HealthBar = (function () {
-    function HealthBar(unit_id, controller, renderer) {
-        var _this = this;
-        this.m_container = new PIXI.Container();
-        this.m_container.addChild(new PIXI.Graphics().beginFill(0x333333).drawRect(4, 4, 12, 4).endFill());
-        this.m_container.addChild(new PIXI.Graphics().beginFill(0x291f2e).drawRect(5, 5, 10, 2).endFill());
-        var hp = new PIXI.Graphics().beginFill(0x00CC00).drawRect(5, 5, 10, 2).endFill();
-        this.m_container.addChild(hp);
-        var unit = controller.getUnit(unit_id);
-        var screen_pos = renderer.getScreenPosition(unit.pos.x, unit.pos.y);
-        this.m_container.position.set(screen_pos.x - 1, screen_pos.y - 10);
-        this.m_container.visible = false;
-        controller.on("MOVE", function (data) {
-            if (data.entity_id === unit_id) {
-                var screen_pos_1 = renderer.getScreenPosition(data.move.to.x, data.move.to.y);
-                _this.m_container.position.set(screen_pos_1.x - 1, screen_pos_1.y - 10);
-            }
-        });
-        controller.on("DAMAGE_DEALT", function (data) {
-            if (data.entity_id === unit_id) {
-                _this.m_container.visible = true;
-                var unit_1 = controller.getUnit(unit_id);
-                var bar_width = Math.floor(unit_1.status.hp / unit_1.stats.hp * 10);
-                var color = 0x00CC00;
-                if (bar_width <= 3) {
-                    color = 0xCC0000;
-                }
-                else if (bar_width <= 6) {
-                    color = 0xCCCC00;
-                }
-                hp.clear().beginFill(color).drawRect(5, 5, bar_width, 2).endFill();
-            }
-        });
-        controller.on("UNIT_KILLED", function (data) {
-            if (data.entity_id === unit_id) {
-                _this.m_container.visible = false;
-            }
+var GoldDisplay = (function () {
+    function GoldDisplay(container, game_events) {
+        var text_style = {
+            fontSize: 24,
+            fill: 0xFFFF00,
+            stroke: 0x333333,
+            strokeThickness: 4,
+        };
+        var text = new PIXI.Text('0', text_style);
+        container.addChild(text);
+        game_events.on('SET_GOLD', function (data) {
+            text.text = data.amount + '';
         });
     }
-    Object.defineProperty(HealthBar.prototype, "sprite", {
-        get: function () {
-            return this.m_container;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    return HealthBar;
+    return GoldDisplay;
 }());
-exports.HealthBar = HealthBar;
+exports.GoldDisplay = GoldDisplay;
 
-},{"pixi.js":84}],38:[function(require,module,exports){
+},{"pixi.js":88}],42:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.RecruitableUnit = exports.RecruitableButton = exports.Tavern = void 0;
 var PIXI = require("pixi.js");
 var _ = require("lodash");
-var event_1 = require("../../engine/listener/event");
 var AssetManager_1 = require("../assets/AssetManager");
 var GameBoard_1 = require("../board/GameBoard");
 var UnitLoader_1 = require("../assets/UnitLoader");
@@ -2255,17 +2456,14 @@ function GetRandomRecruit() {
     return TIER_ONE[index];
 }
 var Tavern = (function () {
-    function Tavern() {
+    function Tavern(m_parent_container, m_events) {
         var _this = this;
+        this.m_events = m_events;
         this.m_container = new PIXI.Container();
-        this.m_event_manager = new event_1.EventManager();
         this.m_available_slots = 5;
         this.m_available_recruits = [];
         this.positionContainer = function (dimensions) {
             _this.m_container.position.set(dimensions.width / 2 - _this.m_container.width / 2, dimensions.height - 175);
-        };
-        this.on = function (event_name, callback) {
-            _this.m_event_manager.add(event_name, callback);
         };
         this.setPlayer = function (player) {
             _this.m_player = player;
@@ -2293,6 +2491,27 @@ var Tavern = (function () {
                 _this.m_player.addUnit(GameBoard_1.CreateUnit(unit_def, "PLAYER"));
             }
         };
+        this.render = function () {
+            var finished_btn = new PIXI.Container();
+            finished_btn.addChild(new PIXI.Graphics()
+                .beginFill(0x666666)
+                .lineStyle(1, 0x333333)
+                .drawRect(0, 0, 24, 8));
+            var label = new PIXI.Text("DONE", {
+                fill: 0xFFFFFF,
+                fontWeight: 'bold'
+            });
+            label.anchor.set(0.5, 0.5);
+            label.scale.set(0.25);
+            label.position.set(12, 4);
+            finished_btn.addChild(label);
+            finished_btn.position.set(46, 25);
+            finished_btn.interactive = finished_btn.buttonMode = true;
+            finished_btn.on('pointertap', function () {
+                _this.m_events.emit("LEAVE_TAVERN");
+            });
+            _this.m_container.addChild(finished_btn);
+        };
         this.clearRecruits = function () {
             _.forEach(_this.m_available_recruits, function (btn) {
                 btn.destroy();
@@ -2303,34 +2522,23 @@ var Tavern = (function () {
         };
         this.buyUnit = function (unit) {
         };
+        m_parent_container.addChild(this.m_container);
         this.m_container.scale.set(4);
         this.m_container.position.set(16, 16);
-        var finished_btn = new PIXI.Container();
-        finished_btn.addChild(new PIXI.Graphics()
-            .beginFill(0x666666)
-            .lineStyle(1, 0x333333)
-            .drawRect(0, 0, 24, 8));
-        var label = new PIXI.Text("DONE", {
-            fill: 0xFFFFFF,
-            fontWeight: 'bold'
+        this.render();
+        this.m_events.on('RESIZE', this.positionContainer);
+        this.m_events.once('LEAVE_TAVERN', function () {
+            _this.m_events.off('RESIZE', _this.positionContainer);
+            _this.clearRecruits();
+            m_parent_container.removeChild(_this.m_container);
         });
-        label.anchor.set(0.5, 0.5);
-        label.scale.set(0.25);
-        label.position.set(12, 4);
-        finished_btn.addChild(label);
-        finished_btn.position.set(46, 25);
-        finished_btn.interactive = finished_btn.buttonMode = true;
-        finished_btn.on('pointertap', function () {
-            _this.m_event_manager.emit("LEAVE_TAVERN");
-        });
-        this.m_container.addChild(finished_btn);
         this.refreshRecruits();
     }
     Object.defineProperty(Tavern.prototype, "sprite", {
         get: function () {
             return this.m_container;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return Tavern;
@@ -2342,6 +2550,7 @@ var RecruitableButton = (function () {
         this.type = type;
         this.m_locked = false;
         this.destroy = function () {
+            _this.m_animated_sprite.destroy();
             _this.m_container.removeChildren();
             _this.m_container.removeAllListeners();
         };
@@ -2421,7 +2630,7 @@ var RecruitableButton = (function () {
         get: function () {
             return this.m_container;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return RecruitableButton;
@@ -2435,16 +2644,17 @@ var RecruitableUnit = (function () {
         get: function () {
             return this.m_type;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return RecruitableUnit;
 }());
 exports.RecruitableUnit = RecruitableUnit;
 
-},{"../../engine/listener/event":3,"../assets/AssetManager":11,"../assets/UnitLoader":12,"../board/GameBoard":14,"lodash":80,"pixi.js":84}],39:[function(require,module,exports){
+},{"../assets/AssetManager":10,"../assets/UnitLoader":11,"../board/GameBoard":13,"lodash":84,"pixi.js":88}],43:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.DEBUG = void 0;
 var PIXI = require("pixi.js");
 var GameController_1 = require("./game/GameController");
 var render_1 = require("./engine/render/render");
@@ -2471,7 +2681,7 @@ AssetManager_1.default.init(function () {
     });
 });
 
-},{"./engine/render/render":4,"./game/GameController":9,"./game/assets/AssetManager":11,"./game/extras/plugins":22,"pixi.js":84}],40:[function(require,module,exports){
+},{"./engine/render/render":3,"./game/GameController":8,"./game/assets/AssetManager":10,"./game/extras/plugins":22,"pixi.js":88}],44:[function(require,module,exports){
 /*!
  * @pixi/accessibility - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -3122,7 +3332,7 @@ exports.AccessibilityManager = AccessibilityManager;
 exports.accessibleTarget = accessibleTarget;
 
 
-},{"@pixi/display":44,"@pixi/utils":73}],41:[function(require,module,exports){
+},{"@pixi/display":48,"@pixi/utils":77}],45:[function(require,module,exports){
 /*!
  * @pixi/app - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -3357,7 +3567,7 @@ Application.registerPlugin(ResizePlugin);
 exports.Application = Application;
 
 
-},{"@pixi/core":43,"@pixi/display":44}],42:[function(require,module,exports){
+},{"@pixi/core":47,"@pixi/display":48}],46:[function(require,module,exports){
 /*!
  * @pixi/constants - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -3707,7 +3917,7 @@ exports.TYPES = TYPES;
 exports.WRAP_MODES = WRAP_MODES;
 
 
-},{}],43:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 /*!
  * @pixi/core - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -16187,7 +16397,7 @@ exports.resources = index;
 exports.systems = systems;
 
 
-},{"@pixi/constants":42,"@pixi/display":44,"@pixi/math":55,"@pixi/runner":64,"@pixi/settings":65,"@pixi/ticker":72,"@pixi/utils":73}],44:[function(require,module,exports){
+},{"@pixi/constants":46,"@pixi/display":48,"@pixi/math":59,"@pixi/runner":68,"@pixi/settings":69,"@pixi/ticker":76,"@pixi/utils":77}],48:[function(require,module,exports){
 /*!
  * @pixi/display - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -17995,7 +18205,7 @@ exports.Container = Container;
 exports.DisplayObject = DisplayObject;
 
 
-},{"@pixi/math":55,"@pixi/settings":65,"@pixi/utils":73}],45:[function(require,module,exports){
+},{"@pixi/math":59,"@pixi/settings":69,"@pixi/utils":77}],49:[function(require,module,exports){
 /*!
  * @pixi/extract - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -18298,7 +18508,7 @@ Extract.arrayPostDivide = function arrayPostDivide (pixels, out)
 exports.Extract = Extract;
 
 
-},{"@pixi/core":43,"@pixi/math":55,"@pixi/utils":73}],46:[function(require,module,exports){
+},{"@pixi/core":47,"@pixi/math":59,"@pixi/utils":77}],50:[function(require,module,exports){
 /*!
  * @pixi/filter-alpha - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -18371,7 +18581,7 @@ var AlphaFilter = /*@__PURE__*/(function (Filter) {
 exports.AlphaFilter = AlphaFilter;
 
 
-},{"@pixi/core":43}],47:[function(require,module,exports){
+},{"@pixi/core":47}],51:[function(require,module,exports){
 /*!
  * @pixi/filter-blur - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -18807,7 +19017,7 @@ exports.BlurFilter = BlurFilter;
 exports.BlurFilterPass = BlurFilterPass;
 
 
-},{"@pixi/core":43,"@pixi/settings":65}],48:[function(require,module,exports){
+},{"@pixi/core":47,"@pixi/settings":69}],52:[function(require,module,exports){
 /*!
  * @pixi/filter-color-matrix - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -19414,7 +19624,7 @@ ColorMatrixFilter.prototype.grayscale = ColorMatrixFilter.prototype.greyscale;
 exports.ColorMatrixFilter = ColorMatrixFilter;
 
 
-},{"@pixi/core":43}],49:[function(require,module,exports){
+},{"@pixi/core":47}],53:[function(require,module,exports){
 /*!
  * @pixi/filter-displacement - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -19541,7 +19751,7 @@ var DisplacementFilter = /*@__PURE__*/(function (Filter) {
 exports.DisplacementFilter = DisplacementFilter;
 
 
-},{"@pixi/core":43,"@pixi/math":55}],50:[function(require,module,exports){
+},{"@pixi/core":47,"@pixi/math":59}],54:[function(require,module,exports){
 /*!
  * @pixi/filter-fxaa - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -19587,7 +19797,7 @@ var FXAAFilter = /*@__PURE__*/(function (Filter) {
 exports.FXAAFilter = FXAAFilter;
 
 
-},{"@pixi/core":43}],51:[function(require,module,exports){
+},{"@pixi/core":47}],55:[function(require,module,exports){
 /*!
  * @pixi/filter-noise - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -19675,7 +19885,7 @@ var NoiseFilter = /*@__PURE__*/(function (Filter) {
 exports.NoiseFilter = NoiseFilter;
 
 
-},{"@pixi/core":43}],52:[function(require,module,exports){
+},{"@pixi/core":47}],56:[function(require,module,exports){
 /*!
  * @pixi/graphics - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -23203,7 +23413,7 @@ exports.GraphicsGeometry = GraphicsGeometry;
 exports.LineStyle = LineStyle;
 
 
-},{"@pixi/constants":42,"@pixi/core":43,"@pixi/display":44,"@pixi/math":55,"@pixi/utils":73}],53:[function(require,module,exports){
+},{"@pixi/constants":46,"@pixi/core":47,"@pixi/display":48,"@pixi/math":59,"@pixi/utils":77}],57:[function(require,module,exports){
 /*!
  * @pixi/interaction - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -25681,7 +25891,7 @@ exports.InteractionTrackingData = InteractionTrackingData;
 exports.interactiveTarget = interactiveTarget;
 
 
-},{"@pixi/display":44,"@pixi/math":55,"@pixi/ticker":72,"@pixi/utils":73}],54:[function(require,module,exports){
+},{"@pixi/display":48,"@pixi/math":59,"@pixi/ticker":76,"@pixi/utils":77}],58:[function(require,module,exports){
 /*!
  * @pixi/loaders - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -25996,7 +26206,7 @@ exports.LoaderResource = LoaderResource;
 exports.TextureLoader = TextureLoader;
 
 
-},{"@pixi/core":43,"@pixi/utils":73,"resource-loader":90}],55:[function(require,module,exports){
+},{"@pixi/core":47,"@pixi/utils":77,"resource-loader":94}],59:[function(require,module,exports){
 /*!
  * @pixi/math - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -28118,7 +28328,7 @@ exports.SHAPES = SHAPES;
 exports.Transform = Transform;
 
 
-},{}],56:[function(require,module,exports){
+},{}],60:[function(require,module,exports){
 /*!
  * @pixi/mesh-extras - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -28888,7 +29098,7 @@ exports.SimplePlane = SimplePlane;
 exports.SimpleRope = SimpleRope;
 
 
-},{"@pixi/core":43,"@pixi/mesh":57}],57:[function(require,module,exports){
+},{"@pixi/core":47,"@pixi/mesh":61}],61:[function(require,module,exports){
 /*!
  * @pixi/mesh - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -29683,7 +29893,7 @@ exports.MeshGeometry = MeshGeometry;
 exports.MeshMaterial = MeshMaterial;
 
 
-},{"@pixi/constants":42,"@pixi/core":43,"@pixi/display":44,"@pixi/math":55,"@pixi/settings":65,"@pixi/utils":73}],58:[function(require,module,exports){
+},{"@pixi/constants":46,"@pixi/core":47,"@pixi/display":48,"@pixi/math":59,"@pixi/settings":69,"@pixi/utils":77}],62:[function(require,module,exports){
 /*!
  * @pixi/mixin-cache-as-bitmap - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -30118,7 +30328,7 @@ display.DisplayObject.prototype._cacheAsBitmapDestroy = function _cacheAsBitmapD
 };
 
 
-},{"@pixi/core":43,"@pixi/display":44,"@pixi/math":55,"@pixi/settings":65,"@pixi/sprite":68,"@pixi/utils":73}],59:[function(require,module,exports){
+},{"@pixi/core":47,"@pixi/display":48,"@pixi/math":59,"@pixi/settings":69,"@pixi/sprite":72,"@pixi/utils":77}],63:[function(require,module,exports){
 /*!
  * @pixi/mixin-get-child-by-name - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -30160,7 +30370,7 @@ display.Container.prototype.getChildByName = function getChildByName(name)
 };
 
 
-},{"@pixi/display":44}],60:[function(require,module,exports){
+},{"@pixi/display":48}],64:[function(require,module,exports){
 /*!
  * @pixi/mixin-get-global-position - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -30203,7 +30413,7 @@ display.DisplayObject.prototype.getGlobalPosition = function getGlobalPosition(p
 };
 
 
-},{"@pixi/display":44,"@pixi/math":55}],61:[function(require,module,exports){
+},{"@pixi/display":48,"@pixi/math":59}],65:[function(require,module,exports){
 /*!
  * @pixi/particles - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -31185,7 +31395,7 @@ exports.ParticleContainer = ParticleContainer;
 exports.ParticleRenderer = ParticleRenderer;
 
 
-},{"@pixi/constants":42,"@pixi/core":43,"@pixi/display":44,"@pixi/math":55,"@pixi/utils":73}],62:[function(require,module,exports){
+},{"@pixi/constants":46,"@pixi/core":47,"@pixi/display":48,"@pixi/math":59,"@pixi/utils":77}],66:[function(require,module,exports){
 (function (global){
 /*!
  * @pixi/polyfill - v5.1.6
@@ -31354,7 +31564,7 @@ if (!window.Int32Array)
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"es6-promise-polyfill":77,"object-assign":82}],63:[function(require,module,exports){
+},{"es6-promise-polyfill":81,"object-assign":86}],67:[function(require,module,exports){
 /*!
  * @pixi/prepare - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -32084,7 +32294,7 @@ exports.Prepare = Prepare;
 exports.TimeLimiter = TimeLimiter;
 
 
-},{"@pixi/core":43,"@pixi/display":44,"@pixi/graphics":52,"@pixi/settings":65,"@pixi/text":71,"@pixi/ticker":72}],64:[function(require,module,exports){
+},{"@pixi/core":47,"@pixi/display":48,"@pixi/graphics":56,"@pixi/settings":69,"@pixi/text":75,"@pixi/ticker":76}],68:[function(require,module,exports){
 /*!
  * @pixi/runner - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -32304,7 +32514,7 @@ Runner.prototype.run = Runner.prototype.emit;
 exports.Runner = Runner;
 
 
-},{}],65:[function(require,module,exports){
+},{}],69:[function(require,module,exports){
 /*!
  * @pixi/settings - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -32628,7 +32838,7 @@ exports.isMobile = isMobile;
 exports.settings = settings;
 
 
-},{"ismobilejs":79}],66:[function(require,module,exports){
+},{"ismobilejs":83}],70:[function(require,module,exports){
 /*!
  * @pixi/sprite-animated - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -33089,7 +33299,7 @@ var AnimatedSprite = /*@__PURE__*/(function (Sprite) {
 exports.AnimatedSprite = AnimatedSprite;
 
 
-},{"@pixi/core":43,"@pixi/sprite":68,"@pixi/ticker":72}],67:[function(require,module,exports){
+},{"@pixi/core":47,"@pixi/sprite":72,"@pixi/ticker":76}],71:[function(require,module,exports){
 /*!
  * @pixi/sprite-tiling - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -33599,7 +33809,7 @@ exports.TilingSprite = TilingSprite;
 exports.TilingSpriteRenderer = TilingSpriteRenderer;
 
 
-},{"@pixi/constants":42,"@pixi/core":43,"@pixi/math":55,"@pixi/sprite":68,"@pixi/utils":73}],68:[function(require,module,exports){
+},{"@pixi/constants":46,"@pixi/core":47,"@pixi/math":59,"@pixi/sprite":72,"@pixi/utils":77}],72:[function(require,module,exports){
 /*!
  * @pixi/sprite - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -34283,7 +34493,7 @@ var Sprite = /*@__PURE__*/(function (Container) {
 exports.Sprite = Sprite;
 
 
-},{"@pixi/constants":42,"@pixi/core":43,"@pixi/display":44,"@pixi/math":55,"@pixi/settings":65,"@pixi/utils":73}],69:[function(require,module,exports){
+},{"@pixi/constants":46,"@pixi/core":47,"@pixi/display":48,"@pixi/math":59,"@pixi/settings":69,"@pixi/utils":77}],73:[function(require,module,exports){
 /*!
  * @pixi/spritesheet - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -34704,7 +34914,7 @@ exports.Spritesheet = Spritesheet;
 exports.SpritesheetLoader = SpritesheetLoader;
 
 
-},{"@pixi/core":43,"@pixi/loaders":54,"@pixi/math":55,"@pixi/utils":73}],70:[function(require,module,exports){
+},{"@pixi/core":47,"@pixi/loaders":58,"@pixi/math":59,"@pixi/utils":77}],74:[function(require,module,exports){
 /*!
  * @pixi/text-bitmap - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -35545,7 +35755,7 @@ exports.BitmapFontLoader = BitmapFontLoader;
 exports.BitmapText = BitmapText;
 
 
-},{"@pixi/core":43,"@pixi/display":44,"@pixi/loaders":54,"@pixi/math":55,"@pixi/settings":65,"@pixi/sprite":68,"@pixi/utils":73}],71:[function(require,module,exports){
+},{"@pixi/core":47,"@pixi/display":48,"@pixi/loaders":58,"@pixi/math":59,"@pixi/settings":69,"@pixi/sprite":72,"@pixi/utils":77}],75:[function(require,module,exports){
 /*!
  * @pixi/text - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -37832,7 +38042,7 @@ exports.TextMetrics = TextMetrics;
 exports.TextStyle = TextStyle;
 
 
-},{"@pixi/core":43,"@pixi/math":55,"@pixi/settings":65,"@pixi/sprite":68,"@pixi/utils":73}],72:[function(require,module,exports){
+},{"@pixi/core":47,"@pixi/math":59,"@pixi/settings":69,"@pixi/sprite":72,"@pixi/utils":77}],76:[function(require,module,exports){
 /*!
  * @pixi/ticker - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -38795,7 +39005,7 @@ exports.TickerPlugin = TickerPlugin;
 exports.UPDATE_PRIORITY = UPDATE_PRIORITY;
 
 
-},{"@pixi/settings":65}],73:[function(require,module,exports){
+},{"@pixi/settings":69}],77:[function(require,module,exports){
 /*!
  * @pixi/utils - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -39822,7 +40032,7 @@ exports.trimCanvas = trimCanvas;
 exports.uid = uid;
 
 
-},{"@pixi/constants":42,"@pixi/settings":65,"earcut":76,"eventemitter3":74,"url":92}],74:[function(require,module,exports){
+},{"@pixi/constants":46,"@pixi/settings":69,"earcut":80,"eventemitter3":78,"url":96}],78:[function(require,module,exports){
 'use strict';
 
 var has = Object.prototype.hasOwnProperty
@@ -40160,7 +40370,7 @@ if ('undefined' !== typeof module) {
   module.exports = EventEmitter;
 }
 
-},{}],75:[function(require,module,exports){
+},{}],79:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -41130,7 +41340,7 @@ TWEEN.version = version;
 module.exports = TWEEN;
 
 }).call(this,require('_process'))
-},{"_process":85}],76:[function(require,module,exports){
+},{"_process":89}],80:[function(require,module,exports){
 'use strict';
 
 module.exports = earcut;
@@ -41811,7 +42021,7 @@ earcut.flatten = function (data) {
     return result;
 };
 
-},{}],77:[function(require,module,exports){
+},{}],81:[function(require,module,exports){
 (function (global,setImmediate){
 (function(global){
 
@@ -42161,7 +42371,7 @@ Promise.reject = function(reason){
 })(typeof window != 'undefined' ? window : typeof global != 'undefined' ? global : typeof self != 'undefined' ? self : this);
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("timers").setImmediate)
-},{"timers":91}],78:[function(require,module,exports){
+},{"timers":95}],82:[function(require,module,exports){
 /**
  * Copyright (c) 2014-present, Facebook, Inc.
  *
@@ -48027,9 +48237,9 @@ Promise.reject = function(reason){
 
 })));
 
-},{}],79:[function(require,module,exports){
+},{}],83:[function(require,module,exports){
 !function(e){var n=/iPhone/i,t=/iPod/i,r=/iPad/i,a=/\bAndroid(?:.+)Mobile\b/i,p=/Android/i,b=/\bAndroid(?:.+)SD4930UR\b/i,l=/\bAndroid(?:.+)(?:KF[A-Z]{2,4})\b/i,f=/Windows Phone/i,s=/\bWindows(?:.+)ARM\b/i,u=/BlackBerry/i,c=/BB10/i,h=/Opera Mini/i,v=/\b(CriOS|Chrome)(?:.+)Mobile/i,w=/Mobile(?:.+)Firefox\b/i;function m(e,i){return e.test(i)}function i(e){var i=e||("undefined"!=typeof navigator?navigator.userAgent:""),o=i.split("[FBAN");void 0!==o[1]&&(i=o[0]),void 0!==(o=i.split("Twitter"))[1]&&(i=o[0]);var d={apple:{phone:m(n,i)&&!m(f,i),ipod:m(t,i),tablet:!m(n,i)&&m(r,i)&&!m(f,i),device:(m(n,i)||m(t,i)||m(r,i))&&!m(f,i)},amazon:{phone:m(b,i),tablet:!m(b,i)&&m(l,i),device:m(b,i)||m(l,i)},android:{phone:!m(f,i)&&m(b,i)||!m(f,i)&&m(a,i),tablet:!m(f,i)&&!m(b,i)&&!m(a,i)&&(m(l,i)||m(p,i)),device:!m(f,i)&&(m(b,i)||m(l,i)||m(a,i)||m(p,i))||m(/\bokhttp\b/i,i)},windows:{phone:m(f,i),tablet:m(s,i),device:m(f,i)||m(s,i)},other:{blackberry:m(u,i),blackberry10:m(c,i),opera:m(h,i),firefox:m(w,i),chrome:m(v,i),device:m(u,i)||m(c,i)||m(h,i)||m(w,i)||m(v,i)}};return d.any=d.apple.device||d.android.device||d.windows.device||d.other.device,d.phone=d.apple.phone||d.android.phone||d.windows.phone,d.tablet=d.apple.tablet||d.android.tablet||d.windows.tablet,d}"undefined"!=typeof module&&module.exports&&"undefined"==typeof window?module.exports=i:"undefined"!=typeof module&&module.exports&&"undefined"!=typeof window?(module.exports=i(),module.exports.isMobile=i):"function"==typeof define&&define.amd?define([],e.isMobile=i()):e.isMobile=i()}(this);
-},{}],80:[function(require,module,exports){
+},{}],84:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -65145,7 +65355,7 @@ Promise.reject = function(reason){
 }.call(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],81:[function(require,module,exports){
+},{}],85:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -65312,7 +65522,7 @@ MiniSignal.MiniSignalBinding = MiniSignalBinding;
 exports['default'] = MiniSignal;
 module.exports = exports['default'];
 
-},{}],82:[function(require,module,exports){
+},{}],86:[function(require,module,exports){
 /*
 object-assign
 (c) Sindre Sorhus
@@ -65404,7 +65614,7 @@ module.exports = shouldUseNative() ? Object.assign : function (target, source) {
 	return to;
 };
 
-},{}],83:[function(require,module,exports){
+},{}],87:[function(require,module,exports){
 'use strict'
 
 module.exports = function parseURI (str, opts) {
@@ -65436,7 +65646,7 @@ module.exports = function parseURI (str, opts) {
   return uri
 }
 
-},{}],84:[function(require,module,exports){
+},{}],88:[function(require,module,exports){
 /*!
  * pixi.js - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -66870,7 +67080,7 @@ exports.filters = filters;
 exports.useDeprecated = useDeprecated;
 
 
-},{"@pixi/accessibility":40,"@pixi/app":41,"@pixi/constants":42,"@pixi/core":43,"@pixi/display":44,"@pixi/extract":45,"@pixi/filter-alpha":46,"@pixi/filter-blur":47,"@pixi/filter-color-matrix":48,"@pixi/filter-displacement":49,"@pixi/filter-fxaa":50,"@pixi/filter-noise":51,"@pixi/graphics":52,"@pixi/interaction":53,"@pixi/loaders":54,"@pixi/math":55,"@pixi/mesh":57,"@pixi/mesh-extras":56,"@pixi/mixin-cache-as-bitmap":58,"@pixi/mixin-get-child-by-name":59,"@pixi/mixin-get-global-position":60,"@pixi/particles":61,"@pixi/polyfill":62,"@pixi/prepare":63,"@pixi/runner":64,"@pixi/settings":65,"@pixi/sprite":68,"@pixi/sprite-animated":66,"@pixi/sprite-tiling":67,"@pixi/spritesheet":69,"@pixi/text":71,"@pixi/text-bitmap":70,"@pixi/ticker":72,"@pixi/utils":73}],85:[function(require,module,exports){
+},{"@pixi/accessibility":44,"@pixi/app":45,"@pixi/constants":46,"@pixi/core":47,"@pixi/display":48,"@pixi/extract":49,"@pixi/filter-alpha":50,"@pixi/filter-blur":51,"@pixi/filter-color-matrix":52,"@pixi/filter-displacement":53,"@pixi/filter-fxaa":54,"@pixi/filter-noise":55,"@pixi/graphics":56,"@pixi/interaction":57,"@pixi/loaders":58,"@pixi/math":59,"@pixi/mesh":61,"@pixi/mesh-extras":60,"@pixi/mixin-cache-as-bitmap":62,"@pixi/mixin-get-child-by-name":63,"@pixi/mixin-get-global-position":64,"@pixi/particles":65,"@pixi/polyfill":66,"@pixi/prepare":67,"@pixi/runner":68,"@pixi/settings":69,"@pixi/sprite":72,"@pixi/sprite-animated":70,"@pixi/sprite-tiling":71,"@pixi/spritesheet":73,"@pixi/text":75,"@pixi/text-bitmap":74,"@pixi/ticker":76,"@pixi/utils":77}],89:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -67056,7 +67266,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],86:[function(require,module,exports){
+},{}],90:[function(require,module,exports){
 (function (global){
 /*! https://mths.be/punycode v1.4.1 by @mathias */
 ;(function(root) {
@@ -67593,7 +67803,7 @@ process.umask = function() { return 0; };
 }(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],87:[function(require,module,exports){
+},{}],91:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -67679,7 +67889,7 @@ var isArray = Array.isArray || function (xs) {
   return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{}],88:[function(require,module,exports){
+},{}],92:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -67766,13 +67976,13 @@ var objectKeys = Object.keys || function (obj) {
   return res;
 };
 
-},{}],89:[function(require,module,exports){
+},{}],93:[function(require,module,exports){
 'use strict';
 
 exports.decode = exports.parse = require('./decode');
 exports.encode = exports.stringify = require('./encode');
 
-},{"./decode":87,"./encode":88}],90:[function(require,module,exports){
+},{"./decode":91,"./encode":92}],94:[function(require,module,exports){
 /*!
  * resource-loader - v3.0.1
  * https://github.com/pixijs/pixi-sound
@@ -70123,7 +70333,7 @@ exports.encodeBinary = encodeBinary;
 exports.middleware = index;
 
 
-},{"mini-signals":81,"parse-uri":83}],91:[function(require,module,exports){
+},{"mini-signals":85,"parse-uri":87}],95:[function(require,module,exports){
 (function (setImmediate,clearImmediate){
 var nextTick = require('process/browser.js').nextTick;
 var apply = Function.prototype.apply;
@@ -70202,7 +70412,7 @@ exports.clearImmediate = typeof clearImmediate === "function" ? clearImmediate :
   delete immediateIds[id];
 };
 }).call(this,require("timers").setImmediate,require("timers").clearImmediate)
-},{"process/browser.js":85,"timers":91}],92:[function(require,module,exports){
+},{"process/browser.js":89,"timers":95}],96:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -70936,7 +71146,7 @@ Url.prototype.parseHost = function() {
   if (host) this.hostname = host;
 };
 
-},{"./util":93,"punycode":86,"querystring":89}],93:[function(require,module,exports){
+},{"./util":97,"punycode":90,"querystring":93}],97:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -70954,4 +71164,4 @@ module.exports = {
   }
 };
 
-},{}]},{},[39]);
+},{}]},{},[43]);

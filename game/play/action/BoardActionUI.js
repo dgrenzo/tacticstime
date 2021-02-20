@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.BoardActionUI = void 0;
 var UNIT_COLLISION;
 (function (UNIT_COLLISION) {
     UNIT_COLLISION[UNIT_COLLISION["NONE"] = 0] = "NONE";
@@ -16,7 +17,7 @@ var BoardActionUI = (function () {
         get: function () {
             return this.m_options;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return BoardActionUI;

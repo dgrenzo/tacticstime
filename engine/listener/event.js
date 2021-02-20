@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.EventManager = exports.Signal = void 0;
 var Signal = (function () {
     function Signal() {
         this.listener_root = null;
@@ -67,6 +68,9 @@ var EventManager = (function () {
         else {
             this.m_signalMap.get(signal_name).remove(cb);
         }
+    };
+    EventManager.prototype.clear = function () {
+        this.m_signalMap.clear();
     };
     return EventManager;
 }());

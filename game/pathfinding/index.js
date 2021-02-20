@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.GetMoveOptions = void 0;
 var _ = require("lodash");
 var Tile_1 = require("../board/Tile");
 var PathList = (function () {

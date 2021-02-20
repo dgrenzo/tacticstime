@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.RecruitableUnit = exports.RecruitableButton = exports.Tavern = void 0;
 var PIXI = require("pixi.js");
 var _ = require("lodash");
-var event_1 = require("../../engine/listener/event");
 var AssetManager_1 = require("../assets/AssetManager");
 var GameBoard_1 = require("../board/GameBoard");
 var UnitLoader_1 = require("../assets/UnitLoader");
@@ -19,17 +19,14 @@ function GetRandomRecruit() {
     return TIER_ONE[index];
 }
 var Tavern = (function () {
-    function Tavern() {
+    function Tavern(m_parent_container, m_events) {
         var _this = this;
+        this.m_events = m_events;
         this.m_container = new PIXI.Container();
-        this.m_event_manager = new event_1.EventManager();
         this.m_available_slots = 5;
         this.m_available_recruits = [];
         this.positionContainer = function (dimensions) {
             _this.m_container.position.set(dimensions.width / 2 - _this.m_container.width / 2, dimensions.height - 175);
-        };
-        this.on = function (event_name, callback) {
-            _this.m_event_manager.add(event_name, callback);
         };
         this.setPlayer = function (player) {
             _this.m_player = player;
@@ -57,6 +54,27 @@ var Tavern = (function () {
                 _this.m_player.addUnit(GameBoard_1.CreateUnit(unit_def, "PLAYER"));
             }
         };
+        this.render = function () {
+            var finished_btn = new PIXI.Container();
+            finished_btn.addChild(new PIXI.Graphics()
+                .beginFill(0x666666)
+                .lineStyle(1, 0x333333)
+                .drawRect(0, 0, 24, 8));
+            var label = new PIXI.Text("DONE", {
+                fill: 0xFFFFFF,
+                fontWeight: 'bold'
+            });
+            label.anchor.set(0.5, 0.5);
+            label.scale.set(0.25);
+            label.position.set(12, 4);
+            finished_btn.addChild(label);
+            finished_btn.position.set(46, 25);
+            finished_btn.interactive = finished_btn.buttonMode = true;
+            finished_btn.on('pointertap', function () {
+                _this.m_events.emit("LEAVE_TAVERN");
+            });
+            _this.m_container.addChild(finished_btn);
+        };
         this.clearRecruits = function () {
             _.forEach(_this.m_available_recruits, function (btn) {
                 btn.destroy();
@@ -67,34 +85,23 @@ var Tavern = (function () {
         };
         this.buyUnit = function (unit) {
         };
+        m_parent_container.addChild(this.m_container);
         this.m_container.scale.set(4);
         this.m_container.position.set(16, 16);
-        var finished_btn = new PIXI.Container();
-        finished_btn.addChild(new PIXI.Graphics()
-            .beginFill(0x666666)
-            .lineStyle(1, 0x333333)
-            .drawRect(0, 0, 24, 8));
-        var label = new PIXI.Text("DONE", {
-            fill: 0xFFFFFF,
-            fontWeight: 'bold'
+        this.render();
+        this.m_events.on('RESIZE', this.positionContainer);
+        this.m_events.once('LEAVE_TAVERN', function () {
+            _this.m_events.off('RESIZE', _this.positionContainer);
+            _this.clearRecruits();
+            m_parent_container.removeChild(_this.m_container);
         });
-        label.anchor.set(0.5, 0.5);
-        label.scale.set(0.25);
-        label.position.set(12, 4);
-        finished_btn.addChild(label);
-        finished_btn.position.set(46, 25);
-        finished_btn.interactive = finished_btn.buttonMode = true;
-        finished_btn.on('pointertap', function () {
-            _this.m_event_manager.emit("LEAVE_TAVERN");
-        });
-        this.m_container.addChild(finished_btn);
         this.refreshRecruits();
     }
     Object.defineProperty(Tavern.prototype, "sprite", {
         get: function () {
             return this.m_container;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return Tavern;
@@ -106,6 +113,7 @@ var RecruitableButton = (function () {
         this.type = type;
         this.m_locked = false;
         this.destroy = function () {
+            _this.m_animated_sprite.destroy();
             _this.m_container.removeChildren();
             _this.m_container.removeAllListeners();
         };
@@ -185,7 +193,7 @@ var RecruitableButton = (function () {
         get: function () {
             return this.m_container;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return RecruitableButton;
@@ -199,7 +207,7 @@ var RecruitableUnit = (function () {
         get: function () {
             return this.m_type;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return RecruitableUnit;

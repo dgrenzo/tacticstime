@@ -1,14 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.EncounterController = exports.EncounterState = void 0;
 var PIXI = require("pixi.js");
 var BoardController_1 = require("../board/BoardController");
 var UnitQueue_1 = require("../play/UnitQueue");
 var event_1 = require("../../engine/listener/event");
 var Loader_1 = require("../board/Loader");
 var render_1 = require("../../engine/render/render");
-var HealthBar_1 = require("../play/interface/HealthBar");
-var TileHighlighter_1 = require("../extras/TileHighlighter");
-var effects_1 = require("../effects");
+var EffectsManager_1 = require("../effects/EffectsManager");
 var EnemyTurn_1 = require("../play/EnemyTurn");
 var BoardAnimator_1 = require("../animation/BoardAnimator");
 var EncounterState;
@@ -45,18 +44,12 @@ var EncounterController = (function () {
             _this.m_board_controller.on("UNIT_KILLED", function (data) {
                 _this.m_unit_queue.removeUnit(data.entity_id);
             });
-            _this.m_board_controller.on("UNIT_CREATED", function (data) {
-                var health_bar = new HealthBar_1.HealthBar(data.unit.id, _this.m_board_controller, _this.m_renderer);
-                _this.m_renderer.effects_container.addChild(health_bar.sprite);
-            });
         };
         this.onSetupComplete = function () {
             _this.m_config.pixi_app.stage.addChild(_this.m_renderer.stage);
             _this.m_config.pixi_app.stage.addChild(_this.m_renderer.effects_container);
             _this.m_config.pixi_app.stage.addChild(_this.m_interface_container);
-            var highlighter = new TileHighlighter_1.default(_this.m_renderer, _this.m_board_controller);
-            _this.m_config.pixi_app.ticker.add(highlighter.update);
-            effects_1.default.init(_this.m_renderer);
+            EffectsManager_1.default.init(_this.m_renderer);
         };
         this.startGame = function () {
             _this.m_board_controller.executeActionStack().then(_this.startTurn);
@@ -95,6 +88,12 @@ var EncounterController = (function () {
         };
         this.emit = function (event_name) {
             _this.m_event_manager.emit(event_name, _this);
+        };
+        this.destroy = function () {
+            _this.m_config.pixi_app.stage.removeChild(_this.m_renderer.stage);
+            _this.m_config.pixi_app.stage.removeChild(_this.m_renderer.effects_container);
+            _this.m_config.pixi_app.stage.removeChild(_this.m_interface_container);
+            _this.m_renderer.reset();
         };
         this.onTurnComplete = function () {
             _this.startTurn();

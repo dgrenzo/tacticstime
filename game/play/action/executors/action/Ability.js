@@ -1,6 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ExecuteAbility = void 0;
 var _ = require("lodash");
+var UpdateElements_1 = require("../../../UpdateElements");
 function ExecuteAbility(action, elements, controller) {
     return controller.animateGameAction(action).then(function () {
         _.forEach(action.data.ability.effects, function (effect) {
@@ -23,13 +25,15 @@ function ExecuteAbility(action, elements, controller) {
                 }
             });
         });
+        var unit_id = action.data.source.id;
+        var mana = action.data.source.status.mana;
         if (action.data.ability.cost > 0) {
-            var result = elements.setIn([action.data.source.id, 'status', 'mana'], action.data.source.status.mana - action.data.ability.cost);
-            return result;
+            mana -= action.data.ability.cost;
+            return UpdateElements_1.UpdateElements.SetMP(elements, unit_id, mana);
         }
         else {
-            var result = elements.setIn([action.data.source.id, 'status', 'mana'], action.data.source.status.mana + 2);
-            return result;
+            mana += 2;
+            return UpdateElements_1.UpdateElements.SetMP(elements, unit_id, mana);
         }
     });
 }

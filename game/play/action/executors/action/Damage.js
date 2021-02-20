@@ -1,5 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ExecuteDamage = void 0;
+var UpdateElements_1 = require("../../../UpdateElements");
 function ExecuteDamage(action, elements, controller) {
     return new Promise(function (resolve) {
         var unit = controller.getUnit(action.data.entity_id);
@@ -11,11 +13,12 @@ function ExecuteDamage(action, elements, controller) {
             return resolve(elements);
         }
         var new_hp = Math.max(starting_hp - action.data.amount, 0);
-        if (new_hp != starting_hp) {
+        var difference = starting_hp - new_hp;
+        if (difference != 0) {
             controller.sendAction({
                 type: "DAMAGE_DEALT",
                 data: {
-                    amount: starting_hp - new_hp,
+                    amount: difference,
                     entity_id: unit.id,
                 }
             });
@@ -28,7 +31,7 @@ function ExecuteDamage(action, elements, controller) {
                 }
             });
         }
-        var result = elements.setIn([action.data.entity_id, 'status', 'hp'], new_hp);
+        var result = UpdateElements_1.UpdateElements.SetHP(elements, unit.id, new_hp);
         resolve(result);
     });
 }

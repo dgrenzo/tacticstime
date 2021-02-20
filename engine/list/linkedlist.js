@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.LinkedList = void 0;
 var LinkedList = (function () {
     function LinkedList() {
         var _this = this;

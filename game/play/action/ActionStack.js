@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ActionStack = void 0;
 var _ = require("lodash");
 var Movement_1 = require("./executors/action/Movement");
 var Damage_1 = require("./executors/action/Damage");
@@ -72,7 +73,7 @@ var ActionStack = (function () {
             }
             return tail;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return ActionStack;

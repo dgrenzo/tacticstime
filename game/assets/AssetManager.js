@@ -41,6 +41,13 @@ var AssetManager = (function () {
     };
     AssetManager.getEffect = function (asset_info) {
         var effect = new PIXI.Container();
+        if (asset_info.name === "PROJECTILE_ARROW") {
+            var arrow = new PIXI.Graphics()
+                .beginFill(0x333333)
+                .drawRect(-5, 0, 6, 2);
+            effect.addChild(arrow);
+            return effect;
+        }
         var text = new PIXI.Text(asset_info.data.amount + '', {
             fill: 0xFFFFCC,
             size: 24,

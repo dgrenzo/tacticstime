@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.BoardEditor = void 0;
 var PIXI = require("pixi.js");
 var tile_palette_1 = require("./interface/tile_palette");
 var BoardEditor = (function () {

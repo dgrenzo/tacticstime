@@ -13,6 +13,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.AIBoardController = exports.BoardController = void 0;
 var GameBoard_1 = require("./GameBoard");
 var ActionStack_1 = require("../play/action/ActionStack");
 var pathfinding_1 = require("../pathfinding");
@@ -123,7 +124,7 @@ var AIBoardController = (function (_super) {
         get: function () {
             return this.m_board;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     return AIBoardController;

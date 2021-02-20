@@ -13,6 +13,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.CreateUnit = exports.CreateEffect = exports.CreateEntity = exports.GameBoard = void 0;
 var _ = require("lodash");
 var Tile_1 = require("./Tile");
 var Scene_1 = require("../../engine/scene/Scene");
@@ -21,8 +22,8 @@ var GameBoard = (function (_super) {
     __extends(GameBoard, _super);
     function GameBoard() {
         var _this = _super.call(this) || this;
-        _this.addTile = function (x, y, def) {
-            _this.addElement(CreateTile(x, y, def));
+        _this.addTile = function (pos, def) {
+            _this.addElement(CreateTile(pos, def));
         };
         _this.getUnitAtPosition = function (pos) {
             var unit = null;
@@ -70,9 +71,11 @@ var GameBoard = (function (_super) {
     GameBoard.prototype.init = function (board_config) {
         var _this = this;
         _.forEach(board_config.layout.tiles, function (tile, index) {
-            var x = index % board_config.layout.width;
-            var y = Math.floor(index / board_config.layout.width);
-            _this.addTile(x, y, tile);
+            var pos = {
+                x: index % board_config.layout.width,
+                y: Math.floor(index / board_config.layout.width)
+            };
+            _this.addTile(pos, tile);
         });
     };
     GameBoard.prototype.getElementsAt = function (pos) {
@@ -123,18 +126,15 @@ function CreateUnit(def, faction) {
             mana: 0,
             hp: def.stats.hp,
         },
-        abilities: _.cloneDeep(def.abilities),
+        abilities: _.concat(_.cloneDeep(def.abilities), "wait"),
     };
 }
 exports.CreateUnit = CreateUnit;
-function CreateTile(x, y, type) {
+function CreateTile(pos, type) {
     return {
         id: _ID++,
         entity_type: "TILE",
-        pos: {
-            x: x,
-            y: y,
-        },
+        pos: pos,
         data: {
             tile_type: type,
         }

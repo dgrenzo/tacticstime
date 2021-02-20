@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.PlayerTurn = void 0;
 var _ = require("lodash");
 var FSM_1 = require("../../engine/FSM");
 var MoveActionUI_1 = require("./action/MoveActionUI");

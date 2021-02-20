@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.EnemyTurn = void 0;
 var _ = require("lodash");
 var pathfinding_1 = require("../pathfinding");
 var abilities_1 = require("./action/abilities");

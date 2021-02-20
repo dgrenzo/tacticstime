@@ -13,6 +13,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.SceneRendererIsometric = void 0;
 var PIXI = require("pixi.js");
 var SceneRenderer_1 = require("../SceneRenderer");
 var TILE_WIDTH = 16;
@@ -35,12 +36,15 @@ var SceneRendererIsometric = (function (_super) {
                 y: game_y
             };
         };
-        _this.getScreenPosition = function (x, y) {
-            var point = new PIXI.Point((x - y) * _this.HALF_TILE_WIDTH, (x + y) * _this.HALF_TILE_HEIGHT);
+        _this.getScreenPosition = function (pos) {
+            var point = new PIXI.Point((pos.x - pos.y) * _this.HALF_TILE_WIDTH, (pos.x + pos.y) * _this.HALF_TILE_HEIGHT);
             return point;
         };
         _this.positionElement = function (element, pos) {
-            element.setPosition((pos.x - pos.y) * _this.HALF_TILE_WIDTH, (pos.x + pos.y) * _this.HALF_TILE_HEIGHT, _this.getElementDepth(pos) + element.depth_offset);
+            element.setPosition({
+                x: (pos.x - pos.y) * _this.HALF_TILE_WIDTH,
+                y: (pos.x + pos.y) * _this.HALF_TILE_HEIGHT,
+            }, _this.getElementDepth(pos) + element.depth_offset);
             _this.m_renderables.remove(element);
             var index = _this.m_renderables.getFirstIndex(function (e) {
                 return e.depth > element.depth;
@@ -51,7 +55,7 @@ var SceneRendererIsometric = (function (_super) {
         _this.getProjection = function (pos) {
             return {
                 x: (pos.x - pos.y),
-                y: (pos.x + pos.y),
+                y: (pos.x + pos.y)
             };
         };
         _this.getElementDepth = function (pos) {
@@ -61,18 +65,6 @@ var SceneRendererIsometric = (function (_super) {
         _this.m_container.scale.set(4);
         _this.m_screen_effects_container.position.set(500, 50);
         _this.m_screen_effects_container.scale.set(4);
-        pixi.renderer.plugins.interaction.on('pointermove', function (evt) {
-            _this.m_event_manager.emit("POINTER_MOVE", _this.screenToTilePos(evt.data.global));
-        });
-        pixi.renderer.plugins.interaction.on('pointerdown', function (evt) {
-            if (evt.stopped) {
-                return;
-            }
-            _this.m_event_manager.emit("POINTER_DOWN", _this.screenToTilePos(evt.data.global));
-        });
-        pixi.renderer.plugins.interaction.on('pointerup', function (evt) {
-            _this.m_event_manager.emit("POINTER_UP", _this.screenToTilePos(evt.data.global));
-        });
         return _this;
     }
     return SceneRendererIsometric;

@@ -13,6 +13,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.MoveActionUI = void 0;
 var _ = require("lodash");
 var BoardActionUI_1 = require("./BoardActionUI");
 var UNIT_COLLISION;

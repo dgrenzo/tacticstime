@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.RenderEntity = void 0;
 var PIXI = require("pixi.js");
 var AssetManager_1 = require("../../../game/assets/AssetManager");
 var _RenderEntityID = 0;
@@ -57,40 +58,40 @@ var RenderEntity = (function () {
         get: function () {
             return this.m_id;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(RenderEntity.prototype, "depth_offset", {
         get: function () {
             return this.m_depth_offset;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(RenderEntity.prototype, "depth", {
         get: function () {
             return this.m_depth;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(RenderEntity.prototype, "root", {
         get: function () {
             return this.m_root;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
     Object.defineProperty(RenderEntity.prototype, "sprite", {
         get: function () {
             return this.m_container;
         },
-        enumerable: true,
+        enumerable: false,
         configurable: true
     });
-    RenderEntity.prototype.setPosition = function (x, y, depth) {
+    RenderEntity.prototype.setPosition = function (pos, depth) {
         if (depth === void 0) { depth = 0; }
-        this.m_root.position.set(x, y);
+        this.m_root.position.set(pos.x, pos.y);
         this.m_depth = depth;
     };
     return RenderEntity;

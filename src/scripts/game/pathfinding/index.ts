@@ -15,7 +15,6 @@ export interface ISearchTile {
 }
 
 class PathList {
-  
   private m_list : IPathTile[] = [];
   constructor() {
 
@@ -120,16 +119,21 @@ export function GetMoveOptions (unit : IUnit, board : GameBoard) : IPathTile[] {
       return;
     });
   }
-  return closed_list.getPaths();
+  let paths = closed_list.getPaths().filter(path => CanOccupyTile(unit, path.tile, board));
+  return paths;
 }
 
 function CanOccupyTile (unit : IUnit, tile : ITile, board : GameBoard) : boolean {
-
+  const occupant = board.getUnitAtPosition(tile.pos);
+  if (occupant) {
+    return false;
+  }
   return true;
 }
 
 function CanPassTile (unit : IUnit, tile : ITile, board : GameBoard) : boolean {
-  if (board.getUnitAtPosition(tile.pos)) {
+  const occupant = board.getUnitAtPosition(tile.pos);
+  if (occupant && occupant.data.faction !== unit.data.faction) {
     return false;
   }
   return true;

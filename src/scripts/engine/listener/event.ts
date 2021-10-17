@@ -4,10 +4,10 @@ export type LinkedListener<T> = {
   next : LinkedListener<T>,
 }
 
-export class Signal<T> {
-  private listener_root : LinkedListener<T> = null;
+export class Signal {
+  private listener_root : LinkedListener<any> = null;
   
-  public emit(data : T) {
+  public emit(data) {
     let listener = this.listener_root;
     while (listener) {
       listener.fn(data);
@@ -15,7 +15,7 @@ export class Signal<T> {
     }
   }
 
-  public add (cb : (data:T)=>void) {
+  public add (cb : (data)=>void) {
     let current_root = this.listener_root;
     this.listener_root = {
       fn : cb,
@@ -23,15 +23,15 @@ export class Signal<T> {
     };
   }
 
-  public remove (cb : (data:T)=>void) {
+  public remove (cb : (data)=>void) {
 
     if (cb === this.listener_root.fn) {
       this.listener_root = this.listener_root.next;
       return;
     }
 
-    let current : LinkedListener<T> = this.listener_root;
-    let prev : LinkedListener<T> = null;
+    let current = this.listener_root;
+    let prev : LinkedListener<any> = null;
     while (current) {
       if (current.fn === cb) {
         if (prev) {
@@ -45,15 +45,17 @@ export class Signal<T> {
   }
 }
 
-export class EventManager<T> {
+export class EventManager<T extends Object> {
+  
+  
 
-  private m_signalMap : Map<T, Signal<any>> = new Map();
+  private m_signalMap : Map<any, Signal> = new Map();
 
   constructor () {
 
   }
 
-  public emit(signal_type : T, data ?: any) {
+  public emit<Key extends keyof T> (signal_type : Key, data ?: T[Key]) {
     if (!this.m_signalMap.has(signal_type)) {
       return;
     } else {
@@ -61,18 +63,18 @@ export class EventManager<T> {
     }
   }
 
-  public createSignal<DataType>(signal_name : T) {
-    this.m_signalMap.set(signal_name, new Signal<DataType>());
+  public createSignal<Key extends keyof T>(signal_name : Key) {
+    this.m_signalMap.set(signal_name, new Signal());
   }
 
-  public add<DataType>(signal_name : T, cb : (data:DataType)=>void) {
+  public add<Key extends keyof T>(signal_name : Key, cb : (data:T[Key])=>void) {
     if (!this.m_signalMap.get(signal_name)) {
-      this.createSignal<DataType>(signal_name);
+      this.createSignal(signal_name);
     }
     this.m_signalMap.get(signal_name).add(cb);
   }
 
-  public remove(signal_name : T, cb : (data:any)=>void) {
+  public remove<Key extends keyof T>(signal_name : Key, cb : (data:T[Key])=>void) {
     if (!this.m_signalMap.get(signal_name)) {
       return;
     } else {

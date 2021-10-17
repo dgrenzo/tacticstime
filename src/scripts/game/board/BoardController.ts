@@ -2,7 +2,7 @@ import { List } from 'immutable';
 import * as _ from 'lodash';
 
 import { GameBoard, IBoardPos, IBoardConfig } from "./GameBoard";
-import { ActionStack, IGameAction, GameEvent, IActionData } from "../play/action/ActionStack";
+import { ActionStack, IGameAction, IGameEvent, IActionData } from "../play/action/ActionStack";
 import { GetMoveOptions } from "../pathfinding";
 import { IRangeDef } from "../play/action/abilities";
 import { EventManager } from "../../engine/listener/event";
@@ -19,7 +19,7 @@ export class BoardController {
 
   protected m_board : GameBoard;
   private m_action_stack : ActionStack;
-  private m_event_manager = new EventManager<GameEvent>();
+  private m_event_manager = new EventManager<IGameEvent>();
   private m_animator : BoardAnimator;
   constructor() {
     this.m_action_stack = new ActionStack(this);
@@ -73,15 +73,15 @@ export class BoardController {
     this.sendAction(create_action);
   }
 
-  public on = (event_name : GameEvent, cb : (data:any) => void) => {
+  public on = <Key extends keyof IGameEvent>(event_name : Key, cb : (data:IGameEvent[Key]) => void) => {
     this.m_event_manager.add(event_name, cb);
   }
 
-  public off = (event_name : GameEvent, cb : (data:any) => void) => {
+  public off = <Key extends keyof IGameEvent>(event_name : Key, cb : (data:IGameEvent[Key]) => void) => {
     this.m_event_manager.remove(event_name, cb);
   }
 
-  public emit = (event_name : GameEvent, data ?: any) => {
+  public emit = <Key extends keyof IGameEvent>(event_name : Key, data ?: IGameEvent[Key]) => {
     this.m_event_manager.emit(event_name, data);
   }
 

@@ -6,6 +6,7 @@ export interface IUnit extends IEntity {
   data : {
     unit_type : string,
     faction : string,
+    unit_level : number,
   },
   stats : {
     speed : number,

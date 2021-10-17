@@ -13,9 +13,10 @@ import { ICreateUnitActionData } from "../play/action/executors/action/CreateUni
 import { IActionData } from "../play/action/ActionStack";
 import EffectsManager from "../effects/EffectsManager";
 import { EnemyTurn } from "../play/EnemyTurn";
-import { FSM } from '../../engine/FSM';
 import { IUnit } from '../board/Unit';
 import { BoardAnimator } from '../animation/BoardAnimator';
+import { HealthBar } from '../play/interface/HealthBar';
+import TilePointerEvents, { ITilePointerEvents } from '../extras/TilePointerEvents';
 
 export enum EncounterState {
   INIT = 0,
@@ -25,18 +26,22 @@ export enum EncounterState {
   CLEANUP
 }
 
-type EncounterEvent = "START" | "END";
+
+export interface IEncounterControllerEvent {
+  START : EncounterController,
+  END : EncounterController,
+}
+
+interface EncounterEvents extends IEncounterControllerEvent, ITilePointerEvents {};
 
 export class EncounterController {  
   private m_board_controller : BoardController;
-
-  private m_fsm : FSM;
 
   private m_renderer : SceneRenderer;
   private m_animator : BoardAnimator;
 
   private m_unit_queue : UnitQueue;
-  private m_event_manager = new EventManager<EncounterEvent>();
+  private m_event_manager = new EventManager<EncounterEvents>();
 
   private m_interface_container : PIXI.Container = new PIXI.Container();
 
@@ -45,7 +50,9 @@ export class EncounterController {
     this.m_unit_queue = new UnitQueue();
     this.m_renderer = CreateRenderer(this.m_config);
     this.m_animator = new BoardAnimator(this.m_renderer, this.m_board_controller);
-  }
+
+    const tile_events = new TilePointerEvents(this.m_renderer, this.m_board_controller, this.m_event_manager);
+   }
 
   public loadMap = (path : string) : Promise<void> => {
 
@@ -57,13 +64,16 @@ export class EncounterController {
       this.m_board_controller.sendToRenderer(this.m_renderer);
       this.m_board_controller.setAnimator(this.m_animator);
 
-
       this.onSetupComplete();
 
       return;
     });
   }
 
+  public addUnit = (unit : IUnit) => {
+    this.m_board_controller.addUnit(unit)
+  }
+  
   public addUnits = (units : List<IUnit>) => {
     units.forEach(this.m_board_controller.addUnit);
   }
@@ -78,10 +88,10 @@ export class EncounterController {
       this.m_unit_queue.removeUnit(data.entity_id);
     })
 
-    // this.m_board_controller.on("UNIT_CREATED", (data : ICreateUnitActionData) => {
-    //   let health_bar = new HealthBar(data.unit.id, this.m_board_controller, this.m_renderer);
-    //   this.m_renderer.effects_container.addChild(health_bar.sprite);
-    // });
+    this.m_board_controller.on("UNIT_CREATED", (data : ICreateUnitActionData) => {
+      let health_bar = new HealthBar(data.unit.id, this.m_board_controller, this.m_renderer);
+      this.m_renderer.effects_container.addChild(health_bar.sprite);
+    });
   }
 
 
@@ -96,15 +106,19 @@ export class EncounterController {
     EffectsManager.init(this.m_renderer);
   }
 
+  public executeStack = () => {
+    return this.m_board_controller.executeActionStack(); 
+  }
   
   public startGame = () => {
+    this.emit("START", this);
     this.m_board_controller.executeActionStack().then(this.startTurn);
   }
 
   private startTurn = () => {
 
     if (this.checkVictory()) {
-      this.emit("END");
+      this.emit("END", this);
       
       return;
     }
@@ -139,15 +153,14 @@ export class EncounterController {
     this.m_interface_container.addChild(element);
   }
   
-  public on = (event_name : EncounterEvent, cb : (encounter:EncounterController) => void) => {
+  public on = <Key extends keyof IEncounterControllerEvent>(event_name : Key, cb : (data:IEncounterControllerEvent[Key]) => void) => {
     this.m_event_manager.add(event_name, cb);
   }
-  public off = (event_name : EncounterEvent, cb : (encounter:EncounterController) => void) => {
+  public off = <Key extends keyof IEncounterControllerEvent>(event_name : Key, cb : (data:IEncounterControllerEvent[Key]) => void) => {
     this.m_event_manager.remove(event_name, cb);
   }
-
-  public emit = (event_name : EncounterEvent) => {
-    this.m_event_manager.emit(event_name, this);
+  public emit = <Key extends keyof IEncounterControllerEvent>(event_name : Key, data :IEncounterControllerEvent[Key]) => {
+    this.m_event_manager.emit(event_name, data);
   }
 
   public destroy = () => {

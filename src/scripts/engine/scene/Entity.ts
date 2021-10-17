@@ -1,4 +1,3 @@
-import { EventManager } from "../listener/event";
 import { Vector2 } from "../types";
 
 
@@ -11,6 +10,7 @@ export interface IEntityInfo {
 export interface IAssetInfo {
   type : "SPRITE" | "ANIMATED_SPRITE" | "EFFECT",
   name : string;
+  scale ?: number,
   depth_offset : number,
   data ?: any,
 }

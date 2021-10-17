@@ -14,6 +14,19 @@ export class PlayerParty {
 
   public addUnit = (unit : IUnit) => {
     this.m_units = this.m_units.push(unit);
+
+    let type = unit.data.unit_type;
+    let level = unit.data.unit_level;
+
+    // let matches = this.m_units.filter(unit => unit.data.unit_level === level && unit.data.unit_type === type);
+    // if (matches.count() === 3) {
+    //   this.m_units = this.m_units.filterNot(unit => unit.data.unit_level === level && unit.data.unit_type === type);
+
+    //   unit.stats.hp *= 2;
+    //   unit.data.unit_level ++;
+
+    //   this.m_units = this.m_units.push(unit);
+    // }
   }
 
 

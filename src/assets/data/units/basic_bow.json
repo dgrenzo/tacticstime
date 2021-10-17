@@ -7,7 +7,7 @@
   ],
   "stats" : {
     "speed": 4,
-    "move" : 1,
+    "move" : 0,
     "hp" : 8,
     "magic" : 2
   }

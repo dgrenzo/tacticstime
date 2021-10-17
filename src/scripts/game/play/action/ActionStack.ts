@@ -10,7 +10,18 @@ import { IElementMap } from '../../../engine/scene/Scene';
 import { ExecuteCreateUnit, ICreateUnitAction } from './executors/action/CreateUnit';
 import { ExecuteSummonUnit, ISummonUnitAction } from './executors/action/SummonUnit';
 
-export type GameEvent = "MOVE" | "ABILITY" | "STRIKE" | "DAMAGE" | "HEAL" | "DAMAGE_DEALT" | "SUMMON_UNIT" | "CREATE_UNIT" | "UNIT_CREATED" | "UNIT_KILLED";
+export interface IGameEvent {
+  MOVE : any,
+  ABILITY : any,
+  STRIKE : any,
+  DAMAGE : any,
+  HEAL : any,
+  DAMAGE_DEALT : any,
+  SUMMON_UNIT : any,
+  CREATE_UNIT : any,
+  UNIT_CREATED : any,
+  UNIT_KILLED : any
+}
 
 export interface IActionData {
   [index : string] : any,
@@ -18,7 +29,7 @@ export interface IActionData {
 }
 
 export interface IGameAction {
-  type : GameEvent,
+  type : keyof IGameEvent,
   data : IActionData,
 }
 

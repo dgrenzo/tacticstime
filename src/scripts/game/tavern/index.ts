@@ -7,6 +7,7 @@ import { PlayerParty } from '../party';
 import AssetManager from '../assets/AssetManager';
 import { CreateUnit } from '../board/GameBoard';
 import { UnitLoader } from '../assets/UnitLoader';
+import { ITile } from '../board/Tile';
 
 
 let TIER_ONE : UNIT_TYPE[] = [
@@ -45,7 +46,7 @@ export class Tavern {
       this.m_events.off('RESIZE', this.positionContainer);
       this.clearRecruits();
       m_parent_container.removeChild(this.m_container);
-    })
+    });
 
     this.refreshRecruits();
   }
@@ -86,7 +87,31 @@ export class Tavern {
       btn.onPurchase();
 
       let unit_def = UnitLoader.GetUnitDefinition(btn.type)
-      this.m_player.addUnit(CreateUnit(unit_def, "PLAYER"));
+      let unit = CreateUnit(unit_def, "PLAYER");
+
+      let free_space;
+      let attempts = 6000;
+      do {
+        free_space = true;
+        unit.pos.x = 5 + Math.round(Math.random() * 7);
+        unit.pos.y = 10 + Math.round(Math.random() * 3);
+
+        this.m_player.units.forEach(other => {
+          if (unit.pos.x === other.pos.x && unit.pos.y === other.pos.y) {
+            free_space = false;
+          }
+          return free_space;
+        });
+        attempts --;
+      } while (!free_space && attempts > 0);
+
+      if (attempts === 0) {
+        this.m_player.addGold(3);
+        return;
+      }
+
+      this.m_player.addUnit(unit);
+      this.m_events.emit("UNIT_HIRED", { unit })
     }
   }
 
@@ -130,6 +155,14 @@ export class Tavern {
   }
 
   public buyUnit = (unit : RecruitableUnit) => {
+
+  }
+
+  public onTileDown = (tile : ITile) => {
+    
+  }
+
+  public destroy = () => {
 
   }
 }

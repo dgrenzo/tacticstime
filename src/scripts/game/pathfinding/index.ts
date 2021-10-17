@@ -125,7 +125,7 @@ export function GetMoveOptions (unit : IUnit, board : GameBoard) : IPathTile[] {
 
 function CanOccupyTile (unit : IUnit, tile : ITile, board : GameBoard) : boolean {
   const occupant = board.getUnitAtPosition(tile.pos);
-  if (occupant) {
+  if (occupant && occupant !== unit) {
     return false;
   }
   return true;

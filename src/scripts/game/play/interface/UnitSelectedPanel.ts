@@ -6,12 +6,15 @@ import { IUnit } from '../../board/Unit';
 import { EventManager } from '../../../engine/listener/event';
 import { GetAbilityDef, IAbilityDef } from '../action/abilities';
 
-type SELECTION_PANEL_EVENT = "MOVE_SELECTED" | "ABILITY_SELECTED";
+export interface IUnitSelectedPanelEvent {
+  MOVE_SELECTED : any,
+  ABILITY_SELECTED : IAbilityDef,
+}
 
 export class UnitSelectedPanel {
 
   private m_container : PIXI.Container = new PIXI.Container();
-  private m_event_manager : EventManager<SELECTION_PANEL_EVENT> = new EventManager();
+  private m_event_manager : EventManager<IUnitSelectedPanelEvent> = new EventManager();
 
   constructor (private m_controller : GameController) {
     this.m_container.position.set(10, 500);

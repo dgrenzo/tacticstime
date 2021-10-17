@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 import { RenderEntity, RenderEntityID } from "./RenderEntity";
-import { Scene, IElementMap } from '../../scene/Scene';
+import { Scene } from '../../scene/Scene';
 import { EventManager } from '../../listener/event';
 import { isTile, GetTileName } from '../../../game/board/Tile';
 import { isUnit } from '../../../game/board/Unit';
@@ -9,8 +9,11 @@ import { RENDER_PLUGIN } from '../../../game/extras/plugins';
 import { LinkedList } from '../../list/linkedlist';
 import { Vector2 } from '../../types';
 
-
-type RendererEvent = "ENTITY_CLICKED" | "POINTER_UP" | "POINTER_DOWN" | "POINTER_MOVE";
+export interface ISceneRendererEvent {
+  POINTER_UP : Vector2
+  POINTER_DOWN : Vector2
+  POINTER_MOVE : Vector2
+}
 
 export abstract class SceneRenderer {
   
@@ -25,7 +28,7 @@ export abstract class SceneRenderer {
   public abstract readonly HALF_TILE_WIDTH : number;
   public abstract readonly HALF_TILE_HEIGHT : number;
 
-  protected m_event_manager = new EventManager<RendererEvent>();
+  protected m_event_manager = new EventManager<ISceneRendererEvent>();
 
   constructor(protected m_pixi : PIXI.Application) {
     this.m_container = new PIXI.Container();
@@ -53,10 +56,11 @@ export abstract class SceneRenderer {
     this.m_pixi.ticker.add(this.renderScene)
   }
 
-  public on = (event_name : RendererEvent, cb : (data:any) => void) => {
+  public on = <Key extends keyof ISceneRendererEvent>(event_name : Key, cb : (data:ISceneRendererEvent[Key]) => void) => {
     this.m_event_manager.add(event_name, cb);
   }
-  public off = (event_name : RendererEvent, cb : (data:any) => void) => {
+  
+  public off = <Key extends keyof ISceneRendererEvent>(event_name : Key, cb : (data:ISceneRendererEvent[Key]) => void) => {
     this.m_event_manager.remove(event_name, cb);
   }
 
@@ -97,6 +101,7 @@ export abstract class SceneRenderer {
     this.m_renderables = new LinkedList();
     this.m_container.removeChildren();
     this.m_screen_effects_container.removeChildren();
+    this.m_event_manager.clear();
     this.m_pixi.ticker.remove(this.renderScene)
   }
   public abstract getProjection(pos : Vector2) : Vector2;
@@ -109,11 +114,13 @@ export function getAsset(entity : IEntity) : IAssetInfo {
     return {
       type : "SPRITE",
       depth_offset : -8,
+      scale : 1,
       name : GetTileName(entity.data.tile_type),
     }
   } else if (isUnit(entity)) {
     return {
       type : "ANIMATED_SPRITE",
+      scale : (entity.data.unit_level - 1) * 0.25 + 1,
       depth_offset : 2,
       name : entity.data.unit_type + '_idle',
     }

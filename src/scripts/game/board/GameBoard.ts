@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { List, updateIn} from 'immutable';
+import { List } from 'immutable';
 import { ITile, TILE_DEF, isTile } from './Tile';
 import { Scene } from '../../engine/scene/Scene';
 import { IEntity } from '../../engine/scene/Entity';
@@ -128,6 +128,7 @@ export function CreateUnit(def : IUnitDef, faction ?: string) : IUnit {
       y : -1,
     },
     data : {
+      unit_level : 1,
       unit_type : def.display.sprite,
       faction,
     },

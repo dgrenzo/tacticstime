@@ -1,4 +1,4 @@
-import { IActionData, IGameAction } from "../../ActionStack";
+import { IGameAction } from "../../ActionStack";
 import { BoardController } from "../../../../board/BoardController";
 import { IElementMap } from "../../../../../engine/scene/Scene";
 import { UpdateElements } from "../../../UpdateElements";

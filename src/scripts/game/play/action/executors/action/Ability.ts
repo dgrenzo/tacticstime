@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 
-import { IActionData, IGameAction, GameEvent } from "../../ActionStack";
+import { IActionData, IGameAction, IGameEvent } from "../../ActionStack";
 import { IAbilityDef } from "../../abilities";
 import { BoardController } from '../../../../board/BoardController';
 import { IElementMap } from '../../../../../engine/scene/Scene';
@@ -20,7 +20,7 @@ export interface IAbilityActionData extends IActionData {
 }
 
 export interface IEffectAction extends IGameAction {
-  type : GameEvent,
+  type : keyof IGameEvent,
   data : {
     [index : string] : any
   }

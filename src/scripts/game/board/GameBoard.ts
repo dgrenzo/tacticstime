@@ -90,45 +90,27 @@ export class GameBoard extends Scene {
     });
   }
 
-  public executeStack(scene = this.scene) {
-    this.scene = GameBoard.ExecuteActionStack(scene, this.m_event_manager);
-  }
-
-
   public static ExecuteActionStack (scene : IImmutableScene, event_watcher ?: EventManager<IGameEvent>) {
     do {
       const action = GameBoard.GetNextAction(scene);
-
+      
       if (!action) {
         return scene;
-      } else {
-        scene = GameBoard.ShiftFirstAction(scene);
-        scene = GameBoard.ExecuteAction(scene, action);
+      }
+      scene = GameBoard.ShiftFirstAction(scene);
+      scene = GameBoard.ExecuteAction(scene, action);
 
-        if (event_watcher) {
-          console.log(action);
-          event_watcher.emit(action.type, { action, scene });
-        }
+      if (event_watcher) {
+        console.log(action);
+        event_watcher.emit(action.type, { action, scene });
       }
     } while (true);
   }
 
-  public static ExecuteNextAction = (scene : IImmutableScene) : IImmutableScene => {
-
-    const action = GameBoard.GetNextAction(scene);
-
-    if (!action) {
-      return null;
-    }
-
-    scene = GameBoard.ShiftFirstAction(scene);
-
-    scene = GameBoard.ExecuteAction(scene, action);
-     
-    return scene;
-  }
-
   public static ExecuteAction(scene : IImmutableScene, action : IGameAction) : IImmutableScene {
+    if (!action) {
+      return scene;
+    }
     
     switch (action.type) {
       case "MOVE" :

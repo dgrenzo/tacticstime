@@ -16,6 +16,7 @@ import { BoardAnimator } from '../animation/BoardAnimator';
 // import { HealthBar } from '../play/interface/HealthBar';
 import TilePointerEvents, { ITilePointerEvents } from '../extras/TilePointerEvents';
 import { GameBoard, IActionResult } from '../board/GameBoard';
+import { IImmutableScene } from '../../engine/scene/Scene';
 
 export enum EncounterState {
   INIT = 0,
@@ -120,13 +121,22 @@ export class EncounterController {
     EffectsManager.init(this.m_renderer);
   }
 
-  public executeTurn = async () => {
-    this.m_board.executeStack();
-    return this.m_animator.start();
+  public async executeTurn(scene : IImmutableScene = this.m_board.scene) {
+    let events = this.m_board.events;
+
+    scene = GameBoard.ExecuteActionStack(scene, events);
+
+    this.m_board.scene = scene;
+
+    if (!this.m_animator.hasQueuedAnimations()) {
+      console.log('no animations');
+      return;
+    }
+
+    await this.m_animator.start();
   }
   
   public startGame = async () => {
-
     this.emit("START", this);
     await this.executeTurn();
     await this.startTurn();
@@ -141,8 +151,8 @@ export class EncounterController {
 
     let id : number = this.m_unit_queue.getNextQueued();
     let scene = this.m_board.scene;
-    const unit = GameBoard.GetUnit(scene, id);
 
+    const unit = GameBoard.GetUnit(scene, id);
     if (!unit) {
       console.log('no units');
       return;
@@ -150,15 +160,7 @@ export class EncounterController {
 
     scene = EnemyTurn.FindBestMove(scene, unit.id);
 
-    scene = GameBoard.ExecuteActionStack(scene, this.m_board.events);
-
-    this.m_board.scene = scene;
-
-    if (!this.m_animator.hasQueuedAnimations()) {
-      console.log('no animations?');
-      return;
-    }
-    await this.m_animator.start();
+    await this.executeTurn(scene);
 
     this.onTurnComplete();   
   }

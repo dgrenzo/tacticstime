@@ -1,8 +1,8 @@
 import { SceneRenderer } from "../../engine/render/scene/SceneRenderer";
-import { BoardController } from "../board/BoardController";
 import { Vector2 } from "../../engine/types";
 import { EventManager } from "../../engine/listener/event";
 import { ITile } from "../board/Tile";
+import { GameBoard } from "../board/GameBoard";
 
 interface ITileEventData {
   pos : Vector2,
@@ -17,24 +17,24 @@ export interface ITilePointerEvents {
 
 export default class TilePointerEvents {
 
-  constructor (private m_renderer : SceneRenderer, private m_board : BoardController, private m_events:EventManager<ITilePointerEvents>) {
+  constructor (private m_renderer : SceneRenderer, private m_board : GameBoard, private m_events:EventManager<ITilePointerEvents>) {
     this.m_renderer.on('POINTER_MOVE', this.onPointerMove);
     this.m_renderer.on('POINTER_DOWN', this.onPointerDown);
     this.m_renderer.on('POINTER_UP', this.onPointerUp);
   }
-
+  //TODO: these events should include the scene so that they don't rely on the current view
   private onPointerMove = (pos : Vector2) => {
-    const tile = this.m_board.getTile(pos);
+    const tile = GameBoard.GetTileAtPosiiton(this.m_board.scene, pos)
     this.m_events.emit("TILE_HOVER", { pos, tile }); 
   }
 
   private onPointerDown = (pos : Vector2) => {
-    const tile = this.m_board.getTile(pos);
+    const tile = GameBoard.GetTileAtPosiiton(this.m_board.scene, pos)
     this.m_events.emit("TILE_DOWN", { pos, tile }); 
   }
 
   private onPointerUp = (pos : Vector2) => {
-    const tile = this.m_board.getTile(pos);
+    const tile = GameBoard.GetTileAtPosiiton(this.m_board.scene, pos)
     this.m_events.emit("TILE_UP", { pos, tile }); 
   }
 

@@ -1,7 +1,6 @@
+import { GameBoard, IGameAction } from '../../board/GameBoard';
 import { ITile } from '../../board/Tile';
 import { IUnit } from '../../board/Unit';
-import { BoardController } from "../../board/BoardController";
-import { IGameAction } from './ActionStack';
 
 enum UNIT_COLLISION {
   NONE = 0,
@@ -18,7 +17,7 @@ export interface IBoardOption {
 export abstract class BoardActionUI {
   protected m_options : IBoardOption[];
 
-  constructor(protected m_active_unit : IUnit, protected m_controller : BoardController) {
+  constructor(protected m_active_unit : IUnit, protected m_board : GameBoard) {
   }
   
   public get options() {

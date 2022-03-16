@@ -1,12 +1,11 @@
-import * as PIXI from 'pixi.js';
 import * as TWEEN from '@tweenjs/tween.js'
 import { IAbilityActionData } from '../play/action/executors/action/Ability';
-import { IGameAction } from '../play/action/ActionStack';
 import { DamageNumberEffect } from './DamageNumberEffect';
 import { IDamageActionData } from '../play/action/executors/action/Damage';
 import { SceneRenderer } from '../../engine/render/scene/SceneRenderer';
 import { ProjectileEffect } from './ProjectileEffect';
 import { GameEffect } from './GameEffect';
+import { IGameAction } from '../board/GameBoard';
 
 export default class EffectsManager {
   static s_renderer : SceneRenderer;

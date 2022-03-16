@@ -9,6 +9,7 @@ export class DamageNumberEffect extends GameEffect {
   constructor (renderer : SceneRenderer, data : IDamageActionData, onComplete ?: ()=>void) {
     super(renderer);
 
+    console.log('damage number: ' + data.amount);
     this.m_renderable.renderAsset({
       type : "EFFECT",
       name : "DAMAGE_DEALT",

@@ -1,9 +1,9 @@
 import * as _ from 'lodash';
+import { GameBoard } from '../../board/GameBoard';
 import { ITile } from '../../board/Tile';
 import { IUnit } from '../../board/Unit';
 import { IPathTile } from '../../pathfinding';
 import { BoardActionUI } from "./BoardActionUI";
-import { BoardController } from "../../board/BoardController";
 import { IMoveActionData, IMoveAction } from './executors/action/Movement';
 
 enum UNIT_COLLISION {
@@ -21,47 +21,48 @@ export interface IBoardOption {
 export class MoveActionUI extends BoardActionUI {
   protected m_options : IPathTile[];
 
-  constructor(protected m_active_unit : IUnit, protected m_controller : BoardController) {
-    super(m_active_unit, m_controller);
-    this.m_options = this.m_controller.getMoveOptions(this.m_active_unit);  
+  constructor(protected m_active_unit : IUnit, protected m_board : GameBoard) {
+    super(m_active_unit, m_board);
+    // this.m_options = this.m_controller.getMoveOptions(this.m_active_unit);  
   }
 
 
   public getAction = (tile : ITile) : IMoveAction[] => {
-    let option = this.getOptionFromTile(tile);
-    return option ? this.toMoveAction(option) : null;
+    return null;
+    // let option = this.getOptionFromTile(tile);
+    // return option ? this.toMoveAction(option) : null;
   }
   
-  private toMoveAction(path : IPathTile) : IMoveAction[] {
-    let action : IMoveAction[] = [];
+  // private toMoveAction(path : IPathTile) : IMoveAction[] {
+  //   let action : IMoveAction[] = [];
     
-    while (path) {
-      action.unshift({
-        type : "MOVE",
-        data : {
-          entity_id : this.m_active_unit.id,
-          move : {
-            to : {
-              x : path.tile.pos.x,
-              y : path.tile.pos.y,
-            }
-          }
-        }
-      });
-      path = path.last;
-    }
-    return action;
-  }
+  //   while (path) {
+  //     action.unshift({
+  //       type : "MOVE",
+  //       data : {
+  //         entity_id : this.m_active_unit.id,
+  //         move : {
+  //           to : {
+  //             x : path.tile.pos.x,
+  //             y : path.tile.pos.y,
+  //           }
+  //         }
+  //       }
+  //     });
+  //     path = path.last;
+  //   }
+  //   return action;
+  // }
 
-  private getOptionFromTile(tile : ITile) {
-    let path : IPathTile = null;
-    _.forEach(this.m_options, option => {
-      if (option.tile === tile) {
-        path = option as any;
-        return false;
-      }
-      return true;
-    });
-    return path;
-  }
+  // private getOptionFromTile(tile : ITile) {
+  //   let path : IPathTile = null;
+  //   _.forEach(this.m_options, option => {
+  //     if (option.tile === tile) {
+  //       path = option as any;
+  //       return false;
+  //     }
+  //     return true;
+  //   });
+  //   return path;
+  // }
 }

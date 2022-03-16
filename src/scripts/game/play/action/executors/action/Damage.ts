@@ -1,7 +1,6 @@
-import { IActionData, IGameAction } from "../../ActionStack";
-import { BoardController } from "../../../../board/BoardController";
-import { IElementMap } from "../../../../../engine/scene/Scene";
+import { IImmutableScene } from "../../../../../engine/scene/Scene";
 import { UpdateElements } from "../../../UpdateElements";
+import { GameBoard, IActionData, IGameAction } from "../../../../board/GameBoard";
 
 export interface IDamageAction extends IGameAction {
   type : "DAMAGE",
@@ -18,42 +17,42 @@ export interface IDamageDealtAction extends IGameAction {
 }
 
 
-export function ExecuteDamage(action : IDamageAction, elements : IElementMap, controller : BoardController):Promise<IElementMap> {
-  return new Promise((resolve) => {
-    const unit = controller.getUnit(action.data.entity_id);
-    if (!unit) {
-      return resolve(elements);
-    }
+export function ExecuteDamage(action : IDamageAction, scene : IImmutableScene):IImmutableScene {
 
-    let starting_hp = unit.status.hp;
+  const unit = GameBoard.GetUnit(scene, action.data.entity_id);
+  if (!unit) {
+    return scene
+  }
 
-    if (starting_hp === 0) {
-      return resolve(elements);
-    }
+  let starting_hp = unit.status.hp;
 
-    const new_hp = Math.max(starting_hp - action.data.amount, 0);
-    const difference = starting_hp - new_hp;
-    if (difference != 0) {
-      controller.sendAction({
-        type : "DAMAGE_DEALT",
-        data : {
-          amount : difference,
-          entity_id : unit.id,
-        }
-      } as IDamageDealtAction);
-    }
+  if (starting_hp === 0) {
+    return scene;
+  }
 
-    if (new_hp === 0) {
-      controller.sendAction({
-        type : "UNIT_KILLED",
-        data : {
-          entity_id : unit.id
-        }
-      })
-    }
+  const new_hp = Math.max(starting_hp - action.data.amount, 0);
+  const difference = starting_hp - new_hp;
 
-    const result = UpdateElements.SetHP(elements, unit.id, new_hp)
+  scene = GameBoard.SetHP(scene, unit.id, new_hp);
 
-    resolve(result);
-  });
+  if (difference != 0) {
+    scene = GameBoard.AddActions(scene, {
+      type : "DAMAGE_DEALT",
+      data : {
+        amount : difference,
+        entity_id : unit.id,
+      }
+    } as IDamageDealtAction);
+  }
+
+  if (new_hp === 0) {
+    scene = GameBoard.AddActions(scene, {
+      type : "UNIT_KILLED",
+      data : {
+        entity_id : unit.id
+      }
+    })
+  }
+
+  return scene;
 }

@@ -4,32 +4,53 @@ export type LinkedListElement<T> = {
 }
 
 export class LinkedList<T> {
-  private list_root : LinkedListElement<T> = null;
+  private list_root : LinkedListElement<T> = {
+    element : null,
+    next : null
+  };
 
-  public add (element : T) {
-    let current_root = this.list_root;
-    this.list_root = {
-      element : element,
-      next : current_root,
+  public unshift (element : T) {
+    this.list_root.next = {
+      element,
+      next : this.list_root.next
     };
   }
 
-  public remove (element : T) {
-    if (!this.list_root) {
-      return;
-    }
-    if (element === this.list_root.element) {
-      this.list_root = this.list_root.next;
-      return;
+  public isEmpty() {
+    return this.list_root.next === null;
+  }
+
+  protected get tail () : LinkedListElement<T> {
+    let node = this.list_root;
+    while (node && node.next) {
+      node = node.next;
     }
 
-    let current : LinkedListElement<T> = this.list_root;
-    let prev : LinkedListElement<T> = null;
+    return node ? node : null;
+  }
+
+  public push(element : T) {
+    this.tail.next = {
+      element,
+      next : null
+    }
+  }
+
+  public shift () {
+    let list_element = this.list_root.next;
+    if (list_element) {
+      this.list_root.next = list_element.next;
+      return list_element.element;
+    }
+    return null;
+  }
+
+  public remove (element : T) {
+    let current : LinkedListElement<T> = this.list_root.next;
+    let prev : LinkedListElement<T> = this.list_root;
     while (current) {
       if (current.element === element) {
-        if (prev) {
-          prev.next = current.next;
-        }
+        prev.next = current.next;
         return; 
       }
       prev = current;
@@ -38,7 +59,7 @@ export class LinkedList<T> {
   }
 
   public forEach = (fn : (element : T) => void) => {
-    let node = this.list_root;
+    let node = this.list_root.next;
     while (node) {
       fn(node.element);
       node = node.next;
@@ -46,7 +67,7 @@ export class LinkedList<T> {
   }
 
   public getFirst = (comparison : (element : T) => boolean) : T => {
-    let node = this.list_root;
+    let node = this.list_root.next;
     while (node) {
       if (comparison(node.element)) {
         return node.element;
@@ -57,7 +78,7 @@ export class LinkedList<T> {
   }
   
   public getFirstIndex = (comparison : (element : T) => boolean) : number => {
-    let node = this.list_root;
+    let node = this.list_root.next;
     let index = 0;
     while (node) {
       if (comparison(node.element)) {
@@ -71,11 +92,11 @@ export class LinkedList<T> {
 
   public insertAt = (element : T, index : number) => {
 
-    let node : LinkedListElement<T> = this.list_root;
-    let prev : LinkedListElement<T> = null;
+    let node : LinkedListElement<T> = this.list_root.next;
+    let prev : LinkedListElement<T> = this.list_root;
 
     if (index === 0) {
-      this.add(element);
+      this.unshift(element);
       return;
     }
     let count = 0;

@@ -4,14 +4,19 @@ import { IBoardPos } from "../board/GameBoard";
 
 export class UpdateElements {
   constructor() {
+    
   }
 
-  public static AddEntity(elements : IElementMap, entity_id : number, entity : IEntity) {
-    return elements.set(entity_id, entity);
-  }
+  // public static AddEntity(elements : IElementMap, entity_id : number, entity : IEntity) {
+  //   return elements.set(entity_id, entity);
+  // }
 
-  public static RemoveEntity(elements : IElementMap, entity_id : number) {
-    return elements.remove(entity_id);
+  // public static RemoveEntity(elements : IElementMap, entity_id : number) {
+  //   return elements.remove(entity_id);
+  // }
+
+  public static SetUnitFlag(elements : IElementMap, entity_id : number, flag : string, value : string | number | boolean) {
+    return elements.setIn([entity_id, 'status', 'flags', flag], value)
   }
 
   public static SetHP(elements : IElementMap, entity_id : number, hp : number) {

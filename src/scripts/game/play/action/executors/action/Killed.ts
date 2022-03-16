@@ -1,16 +1,12 @@
-import { IGameAction } from "../../ActionStack";
-import { BoardController } from "../../../../board/BoardController";
-import { IElementMap } from "../../../../../engine/scene/Scene";
-import { UpdateElements } from "../../../UpdateElements";
+import { IImmutableScene, Scene } from "../../../../../engine/scene/Scene";
+import { IGameAction } from "../../../../board/GameBoard";
 
 export interface IKilledAction extends IGameAction {
   type : "UNIT_KILLED",
 }
 
-export function ExecuteKilled(action : IGameAction, elements : IElementMap, controller : BoardController):Promise<IElementMap> {
-  return controller.animateGameAction(action).then( () => {
-    controller.removeEntity(action.data.entity_id);
-    return UpdateElements.RemoveEntity(elements, action.data.entity_id);
-  });
+export function ExecuteKilled(action : IGameAction, scene : IImmutableScene):IImmutableScene {
+  scene = Scene.RemoveElementById(scene, action.data.entity_id);
+  return scene;
 }
 

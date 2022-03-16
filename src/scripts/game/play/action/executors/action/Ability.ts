@@ -1,12 +1,10 @@
 import * as _ from 'lodash';
 
-import { IActionData, IGameAction, IGameEvent } from "../../ActionStack";
 import { IAbilityDef } from "../../abilities";
-import { BoardController } from '../../../../board/BoardController';
-import { IElementMap } from '../../../../../engine/scene/Scene';
+import { IImmutableScene, Scene } from '../../../../../engine/scene/Scene';
 import { IUnit } from '../../../../board/Unit';
 import { ITile } from '../../../../board/Tile';
-import { UpdateElements } from '../../../UpdateElements';
+import { GameBoard, IActionData, IGameAction } from '../../../../board/GameBoard';
 
 export interface IAbilityAction extends IGameAction {
   type : "ABILITY",
@@ -19,51 +17,42 @@ export interface IAbilityActionData extends IActionData {
   ability : IAbilityDef,
 }
 
-export interface IEffectAction extends IGameAction {
-  type : keyof IGameEvent,
-  data : {
-    [index : string] : any
-  }
-}
+export function ExecuteAbility(action : IAbilityAction, scene : IImmutableScene):IImmutableScene {
 
-export function ExecuteAbility(action : IAbilityAction, elements : IElementMap, controller : BoardController):Promise<IElementMap> {
-  
-  return controller.animateGameAction(action).then(() => {
-    _.forEach(action.data.ability.effects, effect => {
-     let tiles = controller.getTilesInRange(action.data.target.pos, effect.range);
-     tiles.forEach(tile => {
-       let data = _.cloneDeep(effect.data);
+  const effects = action.data.ability.effects;
+  _.forEach(effects, effect => {
 
-       data = _.defaults(data, {tile, source : action.data.source});
+    const tiles = GameBoard.GetTilesInRange(scene, action.data.target.pos, effect.range);
+    tiles.forEach(tile => {
 
-       let unit = controller.getUnitAtPosition(tile.pos);
-       if (unit) {
+      let data = _.cloneDeep(effect.data);
+      data = _.defaults(data, {tile, source : action.data.source});
 
-        controller.sendAction({
+      let unit = GameBoard.GetUnitAtPosition(scene, tile.pos);
+      if (unit) {
+        scene = GameBoard.AddActions(scene, {
           type : effect.type,
           data : _.defaults(data, {entity_id : unit.id})
-        } as IEffectAction);
-
+        } as IGameAction);
       } else {
-
-        controller.sendAction({
+        scene = GameBoard.AddActions(scene, {
           type : effect.type,
           data
-        } as IEffectAction);
-
+        } as IGameAction);
       }
-     });
     });
-
-    const unit_id = action.data.source.id;
-    let mana = action.data.source.status.mana;
-
-    if (action.data.ability.cost > 0) {
-      mana -= action.data.ability.cost;
-      return UpdateElements.SetMP(elements, unit_id, mana);
-    } else {
-      mana += 2;
-      return UpdateElements.SetMP(elements, unit_id, mana);
-    }
   });
+
+  const unit_id = action.data.source.id;
+  let mana = action.data.source.status.mana;
+
+  if (action.data.ability.cost > 0) {
+    mana -= action.data.ability.cost;
+  } else {
+    mana += 2;
+  }
+
+  scene = GameBoard.SetMP(scene, unit_id, mana);
+
+  return scene;
 }

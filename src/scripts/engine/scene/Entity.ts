@@ -1,10 +1,12 @@
 import { Vector2 } from "../types";
 
+export interface IElement {
+  id ?: number,
+}
 
-export interface IEntityInfo {
-  asset : IAssetInfo,
-  depth : number,
-  id : number,
+export interface IEntity extends IElement {
+  entity_type : string,
+  pos : Vector2
 }
 
 export interface IAssetInfo {
@@ -13,10 +15,4 @@ export interface IAssetInfo {
   scale ?: number,
   depth_offset : number,
   data ?: any,
-}
-
-export interface IEntity {
-  id ?: number,
-  entity_type : string,
-  pos : Vector2
 }

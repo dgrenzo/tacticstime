@@ -3,7 +3,6 @@ import * as _ from 'lodash';
 import * as PIXI from 'pixi.js';
 import { CreateUnit } from "./board/GameBoard";
 import { RenderMode } from '../engine/render/render';
-import { IGameEvent } from './play/action/ActionStack';
 import { UnitLoader } from './assets/UnitLoader';
 import { EncounterController } from './encounter/EncounterController';
 import { Tavern } from './tavern';
@@ -12,7 +11,6 @@ import { UNIT_TYPE } from './types/units';
 import { GoldDisplay } from './play/interface/GoldDisplay';
 import { ReplayMenu } from './interface/menus/ReplayMenu';
 import { IUnit } from './board/Unit';
-import { ITile } from './board/Tile';
 
 export type GameConfig = {
   pixi_app : PIXI.Application,
@@ -65,7 +63,7 @@ export class GameController {
     this.m_events.on('UNIT_HIRED', (data) => {
       const unit : IUnit = data.unit;
       this.m_encounter.addUnit(unit);
-      this.m_encounter.executeStack();
+      this.m_encounter.executeTurn();
     })
 
   }
@@ -99,7 +97,7 @@ export class GameController {
       });
 
       this.m_encounter.addUnits(this.m_player_party.units);
-      this.m_encounter.executeStack();
+      this.m_encounter.executeTurn();
 
     });
 
@@ -107,7 +105,7 @@ export class GameController {
 
   private startNextEncounter = () => {
     let types : UNIT_TYPE[] = ["lizard", "mooseman", "rhino"]
-    let amount = Math.round(Math.random()*5) + 3;
+    let amount = 1; //Math.round(Math.random()*5) + 3;
     for (let i = 0; i < amount; i ++) {
       let enemy = CreateUnit(UnitLoader.GetUnitDefinition(types[Math.floor(Math.random() * 3)]), "ENEMY");
       enemy.pos.x = 7 + i;

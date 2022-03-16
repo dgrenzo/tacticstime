@@ -1,7 +1,8 @@
 import * as _ from 'lodash';
 import { IUnit } from "../board/Unit";
 import { GameBoard, IBoardPos } from "../board/GameBoard";
-import { ITile, TILE_DEF, GetTileName } from "../board/Tile";
+import { ITile, TILE_DEF } from "../board/Tile";
+import { IImmutableScene } from '../../engine/scene/Scene';
 
 export interface IPathTile {
   cost : number,
@@ -90,7 +91,7 @@ class PathList {
   }
 }
 
-export function GetMoveOptions (unit : IUnit, board : GameBoard) : IPathTile[] {
+export function GetMoveOptions (unit : IUnit, scene : IImmutableScene) : IPathTile[] {
   if (!unit) {
     return [];
   }
@@ -99,7 +100,7 @@ export function GetMoveOptions (unit : IUnit, board : GameBoard) : IPathTile[] {
   let closed_list = new PathList();
   let open_list = new PathList();
   
-  let current_tile = board.getTileAtPos(unit.pos);
+  let current_tile = GameBoard.GetTileAtPosiiton(scene, unit.pos);
 
   open_list.push({ tile : current_tile, cost : 0, last : null});
 
@@ -108,10 +109,10 @@ export function GetMoveOptions (unit : IUnit, board : GameBoard) : IPathTile[] {
     let next : IPathTile = open_list.getLowestCost();
     closed_list.push(next);
 
-    let adjacent = GetAdjacent(next.tile.pos, board);
+    let adjacent = GetAdjacent(next.tile.pos, scene);
     _.forEach(adjacent, tile => {
       let path : IPathTile = ToPathTile(tile, next.cost, next);
-      if (closed_list.exists(path) || path.cost > max_cost || !CanPassTile(unit, tile, board)) {
+      if (closed_list.exists(path) || path.cost > max_cost || !CanPassTile(unit, tile, scene)) {
         return;
       }
 
@@ -119,32 +120,32 @@ export function GetMoveOptions (unit : IUnit, board : GameBoard) : IPathTile[] {
       return;
     });
   }
-  let paths = closed_list.getPaths().filter(path => CanOccupyTile(unit, path.tile, board));
+  let paths = closed_list.getPaths().filter(path => CanOccupyTile(unit, path.tile, scene));
   return paths;
 }
 
-function CanOccupyTile (unit : IUnit, tile : ITile, board : GameBoard) : boolean {
-  const occupant = board.getUnitAtPosition(tile.pos);
+function CanOccupyTile (unit : IUnit, tile : ITile,  scene : IImmutableScene) : boolean {
+  const occupant = GameBoard.GetUnitAtPosition(scene, tile.pos);
   if (occupant && occupant !== unit) {
     return false;
   }
   return true;
 }
 
-function CanPassTile (unit : IUnit, tile : ITile, board : GameBoard) : boolean {
-  const occupant = board.getUnitAtPosition(tile.pos);
+function CanPassTile (unit : IUnit, tile : ITile, scene : IImmutableScene) : boolean {
+  const occupant = GameBoard.GetUnitAtPosition(scene, tile.pos);
   if (occupant && occupant.data.faction !== unit.data.faction) {
     return false;
   }
   return true;
 }
 
-function GetAdjacent (tile : IBoardPos, board : GameBoard) : ITile[] {
+function GetAdjacent (tile : IBoardPos, scene : IImmutableScene) : ITile[] {
   return _.shuffle([
-    board.getTileAtPos({ x : tile.x - 1, y : tile.y    }),
-    board.getTileAtPos({ x : tile.x + 1, y : tile.y    }),
-    board.getTileAtPos({ x : tile.x    , y : tile.y - 1}),
-    board.getTileAtPos({ x : tile.x    , y : tile.y + 1}),
+    GameBoard.GetTileAtPosiiton(scene, { x : tile.x - 1, y : tile.y    }),
+    GameBoard.GetTileAtPosiiton(scene, { x : tile.x + 1, y : tile.y    }),
+    GameBoard.GetTileAtPosiiton(scene, { x : tile.x    , y : tile.y - 1}),
+    GameBoard.GetTileAtPosiiton(scene, { x : tile.x    , y : tile.y + 1}),
   ]);
 }
 

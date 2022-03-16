@@ -1,11 +1,47 @@
 import * as _ from 'lodash';
 import { List } from 'immutable';
 import { ITile, TILE_DEF, isTile } from './Tile';
-import { Scene } from '../../engine/scene/Scene';
+import { IImmutableScene, Scene } from '../../engine/scene/Scene';
 import { IEntity } from '../../engine/scene/Entity';
 import { IUnit, isUnit } from './Unit';
 import { IRangeDef } from '../play/action/abilities';
 import { IUnitDef } from '../assets/UnitLoader';
+import { ExecuteMove, IMoveAction } from '../play/action/executors/action/Movement';
+import { ExecuteAbility, IAbilityAction } from '../play/action/executors/action/Ability';
+import { ExecuteDamage, IDamageAction, IDamageDealtAction } from '../play/action/executors/action/Damage';
+import { ExecuteKilled } from '../play/action/executors/action/Killed';
+import { ExecuteCreateUnit, ICreateUnitAction, IUnitCreatedAction } from '../play/action/executors/action/CreateUnit';
+import { ExecuteSummonUnit, ISummonUnitAction } from '../play/action/executors/action/SummonUnit';
+import { EventManager } from '../../engine/listener/event';
+
+
+export interface IActionData {
+  [index : string] : any,
+  entity_id ?: number,
+}
+
+export interface IGameAction {
+  type : keyof IGameEvent,
+  data : IActionData
+}
+
+export interface IActionResult<T extends IGameAction = IGameAction> {
+  action : T,
+  scene : IImmutableScene,
+}
+
+export interface IGameEvent {
+  MOVE : IActionResult<IMoveAction>,
+  ABILITY : IActionResult<IAbilityAction>,
+  DAMAGE : IActionResult<IDamageAction>,
+  HEAL : IActionResult<IGameAction>,
+  DAMAGE_DEALT : IActionResult<IDamageDealtAction>,
+  SUMMON_UNIT : IActionResult<ISummonUnitAction>,
+  CREATE_UNIT : IActionResult<ICreateUnitAction>,
+  UNIT_CREATED : IActionResult<IUnitCreatedAction>,
+  UNIT_KILLED : IActionResult<IGameAction>
+}
+
 
 export interface IBoardConfig {
   layout : {
@@ -20,13 +56,29 @@ export interface IBoardPos {
   y : number,
 }
 
-export type UpdateFunction = (keyPath:Iterable<any>, updator:(value:any) => any) => void;
-
 export class GameBoard extends Scene {
 
+  private m_event_manager = new EventManager<IGameEvent>();
   constructor() {
     super();
   }
+
+  public on = <Key extends keyof IGameEvent>(event_name : Key, cb : (action_result:IGameEvent[Key]) => void) => {
+    this.m_event_manager.add(event_name, cb);
+  }
+
+  public off = <Key extends keyof IGameEvent>(event_name : Key, cb : (action_result:IGameEvent[Key]) => void) => {
+    this.m_event_manager.remove(event_name, cb);
+  }
+
+  public emit = <Key extends keyof IGameEvent>(event_name : Key, action_result ?: IGameEvent[Key]) => {
+    return this.m_event_manager.emit(event_name, action_result);
+  }
+
+  public get events () {
+    return this.m_event_manager;
+  }
+
 
   public init (board_config : IBoardConfig) {
     _.forEach(board_config.layout.tiles, (tile, index) => {
@@ -34,23 +86,132 @@ export class GameBoard extends Scene {
         x : index % board_config.layout.width,
         y : Math.floor(index / board_config.layout.width)
       }
-      this.addTile(pos, tile);
+      this.scene = GameBoard.AddElement(this.scene, CreateTile(pos, tile));
     });
   }
 
-  private addTile = (pos : IBoardPos, def : TILE_DEF) => {
-    this.addElement(CreateTile(pos, def));
+  public executeStack(scene = this.scene) {
+    this.scene = GameBoard.ExecuteActionStack(scene, this.m_event_manager);
   }
 
-  public getElementsAt(pos : IBoardPos) : List<IEntity> {
-    return this.m_elements.filter( entity => {
+
+  public static ExecuteActionStack (scene : IImmutableScene, event_watcher ?: EventManager<IGameEvent>) {
+    do {
+      const action = GameBoard.GetNextAction(scene);
+
+      if (!action) {
+        return scene;
+      } else {
+        scene = GameBoard.ShiftFirstAction(scene);
+        scene = GameBoard.ExecuteAction(scene, action);
+
+        if (event_watcher) {
+          console.log(action);
+          event_watcher.emit(action.type, { action, scene });
+        }
+      }
+    } while (true);
+  }
+
+  public static ExecuteNextAction = (scene : IImmutableScene) : IImmutableScene => {
+
+    const action = GameBoard.GetNextAction(scene);
+
+    if (!action) {
+      return null;
+    }
+
+    scene = GameBoard.ShiftFirstAction(scene);
+
+    scene = GameBoard.ExecuteAction(scene, action);
+     
+    return scene;
+  }
+
+  public static ExecuteAction(scene : IImmutableScene, action : IGameAction) : IImmutableScene {
+    
+    switch (action.type) {
+      case "MOVE" :
+        return ExecuteMove(action as IMoveAction, scene);
+      case "ABILITY" : 
+        return ExecuteAbility(action as IAbilityAction, scene);
+      case "DAMAGE" : 
+        return ExecuteDamage(action as IDamageAction, scene);
+      case "UNIT_KILLED" :
+        return ExecuteKilled(action as IGameAction, scene);
+      case "CREATE_UNIT" :
+        return ExecuteCreateUnit(action as ICreateUnitAction, scene);
+      case "SUMMON_UNIT" :
+        return ExecuteSummonUnit(action as ISummonUnitAction, scene);
+      default :
+        return scene;
+    }
+  }
+
+  public static GetTilesInRange(scene : IImmutableScene, pos : IBoardPos, range : IRangeDef) {
+    const tiles = GameBoard.GetTiles(scene);
+    return tiles.filter( tile => {
+      let distance = Math.abs(tile.pos.x - pos.x) + Math.abs(tile.pos.y - pos .y);
+      return range.max >= distance && range.min <= distance;
+    });
+  }
+
+  public static GetTiles(scene : IImmutableScene) {
+    return Scene.GetElements(scene).filter( element => {
+      return isTile(element);
+    }).toList() as List<ITile>;
+  }
+
+  public static GetNextAction(scene : IImmutableScene) : IGameAction {
+    const actions = Scene.GetActions(scene);
+    return actions.first();
+  }
+
+  public static ShiftFirstAction(scene : IImmutableScene) : IImmutableScene {
+    const actions = Scene.GetActions(scene);
+    return Scene.SetActions(scene, actions.shift());
+  }
+
+  public static SetElementPosition(scene : IImmutableScene, entity_id : number, pos : IBoardPos) : IImmutableScene {
+    const elements = Scene.GetElements(scene);
+    const result = elements.setIn([entity_id, 'pos'], pos);
+    return Scene.SetElements(scene, result);
+  }
+
+  public static GetElementsAt(scene : IImmutableScene, pos : IBoardPos) : List<IEntity> {
+    const elements = Scene.GetElements(scene);
+    return elements.filter( entity => {
       return pos && entity.pos.x === pos.x && entity.pos.y === pos.y
      }).toList();
   }
 
-  public getUnitAtPosition = (pos : IBoardPos) : IUnit => {
+  public static SetHP(scene : IImmutableScene, entity_id : number, hp : number) {
+    const elements = Scene.GetElements(scene);
+    const result = elements.setIn([entity_id, 'status', 'hp' ], hp);
+
+    return Scene.SetElements(scene, result);
+  }
+
+  public static SetMP(scene : IImmutableScene, entity_id : number, mana : number) {
+    const elements = Scene.GetElements(scene);
+    const result = elements.setIn([entity_id, 'status', 'mana' ], mana);
+
+    return Scene.SetElements(scene, result);
+  }
+
+  public static AddActions(scene : IImmutableScene, game_actions : IGameAction | IGameAction[]) : IImmutableScene {
+    game_actions = _.concat(game_actions);
+
+    let actions = Scene.GetActions(scene);
+    const result = actions.concat(game_actions);
+
+    return Scene.SetActions(scene, result);
+  }
+
+
+  public static GetUnitAtPosition = (scene : IImmutableScene, pos : IBoardPos) : IUnit => {
     let unit : IUnit = null;
-    this.getElementsAt(pos).forEach( element => {
+    GameBoard.GetElementsAt(scene, pos).forEach( element => {
       if (isUnit(element)) {
         unit = element;
         return false;
@@ -60,32 +221,9 @@ export class GameBoard extends Scene {
     return unit;
   }
 
-  public getUnit = (id : number) : IUnit => {
-    return this.m_elements.get(id) as IUnit;
-  }
-
-  public getUnits = () : List<IUnit> => {
-    return this.m_elements.filter( element => {
-      return isUnit(element);
-    }).toList() as List<IUnit>;
-  }
-
-  public getTiles = () : List<ITile> => {
-    return this.m_elements.filter( element => {
-      return isTile(element);
-    }).toList() as List<ITile>;
-  }
-
-  public getTilesInRange = (pos : IBoardPos, range : IRangeDef) : List<ITile> => {
-    return this.getTiles().filter( tile => {
-      let distance = Math.abs(tile.pos.x - pos.x) + Math.abs(tile.pos.y - pos .y);
-      return range.max >= distance && range.min <= distance;
-    });
-  }
-
-  public getTileAtPos = (pos : IBoardPos) : ITile => {
+  public static GetTileAtPosiiton = (scene : IImmutableScene, pos : IBoardPos) : ITile => {
     let tile : ITile = null;
-    this.getElementsAt(pos).forEach(element => {
+    GameBoard.GetElementsAt(scene, pos).forEach(element => {
       if (isTile(element)) {
         tile = element;
         return false;
@@ -93,6 +231,18 @@ export class GameBoard extends Scene {
       return true;
     });
     return tile;
+  }
+
+  public static GetUnit = (scene : IImmutableScene, id : number) : IUnit => {
+    const elements = Scene.GetElements(scene);
+    return elements.get(id) as IUnit;
+  }
+  
+  public static GetUnits = (scene : IImmutableScene) : List<IUnit> => {
+    const elements = Scene.GetElements(scene);
+    return elements.filter( element => {
+      return isUnit(element);
+    }).toList() as List<IUnit>;
   }
 }
 

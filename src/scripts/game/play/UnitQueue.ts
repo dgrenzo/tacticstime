@@ -16,10 +16,6 @@ export class UnitQueue {
 
   private m_current : IQueuedUnit = this.m_root;
 
-  public addUnits = (units : List<IUnit>) => {
-    units.forEach(this.addUnit);
-  }
-
   public addUnit = (unit : IUnit) => {
     let parent = this.m_root;
 

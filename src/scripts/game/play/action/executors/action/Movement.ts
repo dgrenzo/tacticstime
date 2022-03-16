@@ -1,8 +1,5 @@
-import { IActionData, IGameAction } from "../../ActionStack";
-import { UpdateFunction, IBoardPos } from "../../../../board/GameBoard";
-import { IElementMap } from "../../../../../engine/scene/Scene";
-import { BoardController } from "../../../../board/BoardController";
-import { UpdateElements } from "../../../UpdateElements";
+import { GameBoard, IActionData, IBoardPos, IGameAction } from "../../../../board/GameBoard";
+import { IImmutableScene } from "../../../../../engine/scene/Scene";
 
 
 export interface IMoveAction extends IGameAction {
@@ -16,9 +13,7 @@ export interface IMoveActionData extends IActionData {
   }
 }
 
-export function ExecuteMove(action : IMoveAction, elements : IElementMap, controller : BoardController):Promise<IElementMap> {
-  return controller.animateGameAction(action).then(( ) => { 
-    return UpdateElements.SetPosition(elements, action.data.entity_id, action.data.move.to);
-  });
-  
+export function ExecuteMove(action : IMoveAction, scene : IImmutableScene):IImmutableScene {
+  scene = GameBoard.SetElementPosition(scene, action.data.entity_id, action.data.move.to);
+  return scene;
 }

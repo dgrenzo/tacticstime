@@ -18,7 +18,7 @@ export class BoardEditor {
     let painting : boolean = false;
     
     let paintTile = (pos : IBoardPos, type : TILE_DEF) => {
-      let tile = this.m_board.getTileAtPos(pos);
+      const tile = GameBoard.GetTileAtPosiiton(this.m_board.scene, pos);
       if (!tile) { return; }
       if (tile.data.tile_type !== type) {
         //TODO FIX

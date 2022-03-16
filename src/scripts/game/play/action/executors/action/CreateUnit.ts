@@ -1,8 +1,6 @@
-import { IActionData, IGameAction } from "../../ActionStack";
 import { IUnit } from "../../../../board/Unit";
-import { BoardController } from "../../../../board/BoardController";
-import { IElementMap } from "../../../../../engine/scene/Scene";
-import { UpdateElements } from "../../../UpdateElements";
+import { IImmutableScene } from "../../../../../engine/scene/Scene";
+import { GameBoard, IActionData, IGameAction } from "../../../../board/GameBoard";
 
 
 export interface ICreateUnitAction extends IGameAction {
@@ -19,20 +17,17 @@ export interface IUnitCreatedAction extends IGameAction {
   data : ICreateUnitActionData,
 }
 
-export function ExecuteCreateUnit(action : ICreateUnitAction, elements : IElementMap, controller : BoardController):Promise<IElementMap> {
+export function ExecuteCreateUnit(action : ICreateUnitAction, scene : IImmutableScene):IImmutableScene {
   const unit : IUnit = action.data.unit;
-  const id : number = unit.id;
 
-  elements = UpdateElements.AddEntity(elements, id, unit);
+  scene = GameBoard.AddElement(scene, unit);
 
-  return new Promise((resolve) => {
-    controller.sendAction({
-      type : "UNIT_CREATED",
-      data : {
-        unit
-      }
-    } as IUnitCreatedAction);
+  scene = GameBoard.AddActions(scene, {
+    type : "UNIT_CREATED",
+    data : {
+      unit
+    }
+  } as IUnitCreatedAction);
 
-    resolve(elements);
-  });
+  return scene;
 }

@@ -1,9 +1,6 @@
-import { IActionData, IGameAction } from "../../ActionStack";
 import { IUnit } from "../../../../board/Unit";
-import { BoardController } from "../../../../board/BoardController";
-import { IElementMap } from "../../../../../engine/scene/Scene";
-import { CreateUnit } from "../../../../board/GameBoard";
-import { LoadJSON, IMissionUnit } from "../../../../board/Loader";
+import { IImmutableScene } from "../../../../../engine/scene/Scene";
+import { CreateUnit, GameBoard, IActionData, IGameAction } from "../../../../board/GameBoard";
 import { ITile } from "../../../../board/Tile";
 import { ICreateUnitAction } from "./CreateUnit";
 import { UnitLoader } from "../../../../assets/UnitLoader";
@@ -22,25 +19,22 @@ export interface ISummonUnitActionData extends IActionData {
 }
 
 
-export function ExecuteSummonUnit(action : ISummonUnitAction, elements : IElementMap, controller : BoardController):Promise<IElementMap> {
-
-  return new Promise((resolve) => {
-
+export function ExecuteSummonUnit(action : ISummonUnitAction, scene : IImmutableScene):IImmutableScene {
     let unit_data = UnitLoader.GetUnitDefinition(action.data.unit_type);
 
     let unit = CreateUnit(unit_data, action.data.source.data.faction);
+
     unit.pos = {
       x :  action.data.tile.pos.x,
       y :  action.data.tile.pos.y,
     };
 
-    controller.sendAction({
+    scene = GameBoard.AddActions(scene, {
       type : "CREATE_UNIT",
       data : {
         unit : unit,
       }
     } as ICreateUnitAction );
     
-    resolve(elements);
-  });
+    return scene;
 }

@@ -56,9 +56,7 @@ export class EventManager<T extends Object> {
   }
 
   public emit<Key extends keyof T> (signal_type : Key, data ?: T[Key]) {
-    if (!this.m_signalMap.has(signal_type)) {
-      return;
-    } else {
+    if (this.m_signalMap.has(signal_type)) {
       this.m_signalMap.get(signal_type).emit(data);
     }
   }

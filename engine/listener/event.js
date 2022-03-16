@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EventManager = exports.Signal = void 0;
 var Signal = (function () {
     function Signal() {
         this.listener_root = null;
@@ -45,10 +44,7 @@ var EventManager = (function () {
         this.m_signalMap = new Map();
     }
     EventManager.prototype.emit = function (signal_type, data) {
-        if (!this.m_signalMap.has(signal_type)) {
-            return;
-        }
-        else {
+        if (this.m_signalMap.has(signal_type)) {
             this.m_signalMap.get(signal_type).emit(data);
         }
     };

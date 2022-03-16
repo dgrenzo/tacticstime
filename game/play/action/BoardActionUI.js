@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BoardActionUI = void 0;
 var UNIT_COLLISION;
 (function (UNIT_COLLISION) {
     UNIT_COLLISION[UNIT_COLLISION["NONE"] = 0] = "NONE";
@@ -9,15 +8,15 @@ var UNIT_COLLISION;
     UNIT_COLLISION[UNIT_COLLISION["ALLY"] = 3] = "ALLY";
 })(UNIT_COLLISION || (UNIT_COLLISION = {}));
 var BoardActionUI = (function () {
-    function BoardActionUI(m_active_unit, m_controller) {
+    function BoardActionUI(m_active_unit, m_board) {
         this.m_active_unit = m_active_unit;
-        this.m_controller = m_controller;
+        this.m_board = m_board;
     }
     Object.defineProperty(BoardActionUI.prototype, "options", {
         get: function () {
             return this.m_options;
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     return BoardActionUI;

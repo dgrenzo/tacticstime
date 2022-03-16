@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TilePalette = void 0;
 var PIXI = require("pixi.js");
 var _ = require("lodash");
 var Tile_1 = require("../../board/Tile");
@@ -42,14 +41,14 @@ var TilePalette = (function () {
         get: function () {
             return this.m_activeBrush;
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     Object.defineProperty(TilePalette.prototype, "container", {
         get: function () {
             return this.m_container;
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     return TilePalette;

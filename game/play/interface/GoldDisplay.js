@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GoldDisplay = void 0;
 var PIXI = require("pixi.js");
 var GoldDisplay = (function () {
     function GoldDisplay(container, game_events) {

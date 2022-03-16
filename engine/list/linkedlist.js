@@ -1,19 +1,21 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.LinkedList = void 0;
 var LinkedList = (function () {
     function LinkedList() {
         var _this = this;
-        this.list_root = null;
+        this.list_root = {
+            element: null,
+            next: null
+        };
         this.forEach = function (fn) {
-            var node = _this.list_root;
+            var node = _this.list_root.next;
             while (node) {
                 fn(node.element);
                 node = node.next;
             }
         };
         this.getFirst = function (comparison) {
-            var node = _this.list_root;
+            var node = _this.list_root.next;
             while (node) {
                 if (comparison(node.element)) {
                     return node.element;
@@ -23,7 +25,7 @@ var LinkedList = (function () {
             return null;
         };
         this.getFirstIndex = function (comparison) {
-            var node = _this.list_root;
+            var node = _this.list_root.next;
             var index = 0;
             while (node) {
                 if (comparison(node.element)) {
@@ -35,10 +37,10 @@ var LinkedList = (function () {
             return index;
         };
         this.insertAt = function (element, index) {
-            var node = _this.list_root;
-            var prev = null;
+            var node = _this.list_root.next;
+            var prev = _this.list_root;
             if (index === 0) {
-                _this.add(element);
+                _this.unshift(element);
                 return;
             }
             var count = 0;
@@ -53,28 +55,46 @@ var LinkedList = (function () {
             };
         };
     }
-    LinkedList.prototype.add = function (element) {
-        var current_root = this.list_root;
-        this.list_root = {
+    LinkedList.prototype.unshift = function (element) {
+        this.list_root.next = {
             element: element,
-            next: current_root,
+            next: this.list_root.next
         };
     };
+    LinkedList.prototype.isEmpty = function () {
+        return this.list_root.next === null;
+    };
+    Object.defineProperty(LinkedList.prototype, "tail", {
+        get: function () {
+            var node = this.list_root;
+            while (node && node.next) {
+                node = node.next;
+            }
+            return node ? node : null;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    LinkedList.prototype.push = function (element) {
+        this.tail.next = {
+            element: element,
+            next: null
+        };
+    };
+    LinkedList.prototype.shift = function () {
+        var list_element = this.list_root.next;
+        if (list_element) {
+            this.list_root.next = list_element.next;
+            return list_element.element;
+        }
+        return null;
+    };
     LinkedList.prototype.remove = function (element) {
-        if (!this.list_root) {
-            return;
-        }
-        if (element === this.list_root.element) {
-            this.list_root = this.list_root.next;
-            return;
-        }
-        var current = this.list_root;
-        var prev = null;
+        var current = this.list_root.next;
+        var prev = this.list_root;
         while (current) {
             if (current.element === element) {
-                if (prev) {
-                    prev.next = current.next;
-                }
+                prev.next = current.next;
                 return;
             }
             prev = current;

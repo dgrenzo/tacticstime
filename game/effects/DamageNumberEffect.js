@@ -13,13 +13,13 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DamageNumberEffect = void 0;
 var TWEEN = require("@tweenjs/tween.js");
 var GameEffect_1 = require("./GameEffect");
 var DamageNumberEffect = (function (_super) {
     __extends(DamageNumberEffect, _super);
     function DamageNumberEffect(renderer, data, onComplete) {
         var _this = _super.call(this, renderer) || this;
+        console.log('damage number: ' + data.amount);
         _this.m_renderable.renderAsset({
             type: "EFFECT",
             name: "DAMAGE_DEALT",

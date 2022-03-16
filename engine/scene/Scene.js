@@ -1,32 +1,98 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Scene = void 0;
 var immutable_1 = require("immutable");
+var KEY_ENTITIES = "ENTITIES";
+var KEY_LISTENERS = "LISTENERS";
+var KEY_ACTIONS = "ACTIONS";
 var Scene = (function () {
     function Scene() {
         var _this = this;
-        this.m_elements = immutable_1.Map();
         this.getElement = function (id) {
-            return _this.m_elements.get(id);
+            return _this.elements.get(id);
         };
-        this.removeElement = function (id) {
-            var element = _this.getElement(id);
-            _this.m_elements = _this.m_elements.remove(id);
-            return element;
-        };
+        this.m_immutable_scene = immutable_1.Map();
+        this.listeners = immutable_1.Map();
+        this.elements = immutable_1.Map();
+        this.actions = immutable_1.List();
     }
-    Scene.prototype.addElement = function (element) {
-        this.m_elements = this.m_elements.set(element.id, element);
-        return element;
+    Scene.prototype.addEventListener = function (event_name, event) {
+        if (!this.listeners.get(event_name)) {
+            this.listeners = this.listeners.set(event_name, immutable_1.List());
+        }
+        var list = this.listeners.get(event_name);
+        this.listeners = this.listeners.setIn(event_name, list.push(event));
+        return event;
     };
-    Object.defineProperty(Scene.prototype, "elements", {
+    Scene.prototype.removeEventListener = function (event_name, event) {
+    };
+    Scene.GetElements = function (scene) {
+        return scene.get(KEY_ENTITIES);
+    };
+    Scene.SetElements = function (scene, elements) {
+        return scene.set(KEY_ENTITIES, elements);
+    };
+    Scene.GetListeners = function (scene) {
+        return scene.get(KEY_LISTENERS);
+    };
+    Scene.SetListeners = function (scene, listeners) {
+        return scene.set(KEY_LISTENERS, listeners);
+    };
+    Scene.GetActions = function (scene) {
+        return scene.get(KEY_ACTIONS);
+    };
+    Scene.SetActions = function (scene, actions) {
+        return scene.set(KEY_ACTIONS, actions);
+    };
+    Scene.AddElement = function (scene, element) {
+        var elements = Scene.GetElements(scene);
+        return Scene.SetElements(scene, elements.set(element.id, element));
+    };
+    Scene.RemoveElement = function (scene, element) {
+        var elements = Scene.GetElements(scene);
+        return Scene.SetElements(scene, elements.remove(element.id));
+    };
+    Scene.RemoveElementById = function (scene, element_id) {
+        var elements = Scene.GetElements(scene);
+        return Scene.SetElements(scene, elements.remove(element_id));
+    };
+    Object.defineProperty(Scene.prototype, "scene", {
         get: function () {
-            return this.m_elements;
+            return this.m_immutable_scene;
         },
         set: function (val) {
-            this.m_elements = val;
+            this.m_immutable_scene = val;
         },
-        enumerable: false,
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Scene.prototype, "actions", {
+        get: function () {
+            return this.m_immutable_scene.get(KEY_ACTIONS);
+        },
+        set: function (val) {
+            this.m_immutable_scene = this.m_immutable_scene.set(KEY_ACTIONS, val);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Scene.prototype, "listeners", {
+        get: function () {
+            return this.m_immutable_scene.get(KEY_LISTENERS);
+        },
+        set: function (val) {
+            this.m_immutable_scene = this.m_immutable_scene.set(KEY_LISTENERS, val);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Scene.prototype, "elements", {
+        get: function () {
+            return this.m_immutable_scene.get(KEY_ENTITIES);
+        },
+        set: function (val) {
+            this.m_immutable_scene = this.m_immutable_scene.set(KEY_ENTITIES, val);
+        },
+        enumerable: true,
         configurable: true
     });
     return Scene;

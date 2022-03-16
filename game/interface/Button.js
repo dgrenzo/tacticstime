@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Button = void 0;
 var PIXI = require("pixi.js");
 var COLOR_FILL = 0xCCFFFF;
 var COLOR_LINE = 0x333333;
@@ -25,7 +24,7 @@ var Button = (function () {
         get: function () {
             return this.m_container;
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     return Button;

@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PlayerParty = void 0;
 var immutable_1 = require("immutable");
 var PlayerParty = (function () {
     function PlayerParty(m_events) {
@@ -10,6 +9,8 @@ var PlayerParty = (function () {
         this.m_gold = 0;
         this.addUnit = function (unit) {
             _this.m_units = _this.m_units.push(unit);
+            var type = unit.data.unit_type;
+            var level = unit.data.unit_level;
         };
         this.addGold = function (amount) {
             _this.changeGold(amount);
@@ -34,7 +35,7 @@ var PlayerParty = (function () {
         get: function () {
             return this.m_units;
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     return PlayerParty;

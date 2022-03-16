@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GetMoveOptions = void 0;
 var _ = require("lodash");
+var GameBoard_1 = require("../board/GameBoard");
 var Tile_1 = require("../board/Tile");
 var PathList = (function () {
     function PathList() {
@@ -69,22 +69,22 @@ var PathList = (function () {
     };
     return PathList;
 }());
-function GetMoveOptions(unit, board) {
+function GetMoveOptions(unit, scene) {
     if (!unit) {
         return [];
     }
     var max_cost = unit.stats.move;
     var closed_list = new PathList();
     var open_list = new PathList();
-    var current_tile = board.getTileAtPos(unit.pos);
+    var current_tile = GameBoard_1.GameBoard.GetTileAtPosiiton(scene, unit.pos);
     open_list.push({ tile: current_tile, cost: 0, last: null });
     var _loop_1 = function () {
         var next = open_list.getLowestCost();
         closed_list.push(next);
-        var adjacent = GetAdjacent(next.tile.pos, board);
+        var adjacent = GetAdjacent(next.tile.pos, scene);
         _.forEach(adjacent, function (tile) {
             var path = ToPathTile(tile, next.cost, next);
-            if (closed_list.exists(path) || path.cost > max_cost || !CanPassTile(unit, tile, board)) {
+            if (closed_list.exists(path) || path.cost > max_cost || !CanPassTile(unit, tile, scene)) {
                 return;
             }
             open_list.push(path);
@@ -94,24 +94,30 @@ function GetMoveOptions(unit, board) {
     while (!open_list.isEmpty()) {
         _loop_1();
     }
-    return closed_list.getPaths();
+    var paths = closed_list.getPaths().filter(function (path) { return CanOccupyTile(unit, path.tile, scene); });
+    return paths;
 }
 exports.GetMoveOptions = GetMoveOptions;
-function CanOccupyTile(unit, tile, board) {
-    return true;
-}
-function CanPassTile(unit, tile, board) {
-    if (board.getUnitAtPosition(tile.pos)) {
+function CanOccupyTile(unit, tile, scene) {
+    var occupant = GameBoard_1.GameBoard.GetUnitAtPosition(scene, tile.pos);
+    if (occupant && occupant !== unit) {
         return false;
     }
     return true;
 }
-function GetAdjacent(tile, board) {
+function CanPassTile(unit, tile, scene) {
+    var occupant = GameBoard_1.GameBoard.GetUnitAtPosition(scene, tile.pos);
+    if (occupant && occupant.data.faction !== unit.data.faction) {
+        return false;
+    }
+    return true;
+}
+function GetAdjacent(tile, scene) {
     return _.shuffle([
-        board.getTileAtPos({ x: tile.x - 1, y: tile.y }),
-        board.getTileAtPos({ x: tile.x + 1, y: tile.y }),
-        board.getTileAtPos({ x: tile.x, y: tile.y - 1 }),
-        board.getTileAtPos({ x: tile.x, y: tile.y + 1 }),
+        GameBoard_1.GameBoard.GetTileAtPosiiton(scene, { x: tile.x - 1, y: tile.y }),
+        GameBoard_1.GameBoard.GetTileAtPosiiton(scene, { x: tile.x + 1, y: tile.y }),
+        GameBoard_1.GameBoard.GetTileAtPosiiton(scene, { x: tile.x, y: tile.y - 1 }),
+        GameBoard_1.GameBoard.GetTileAtPosiiton(scene, { x: tile.x, y: tile.y + 1 }),
     ]);
 }
 function ToPathTile(tile, cost, last) {

@@ -13,7 +13,6 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SceneRendererIsometric = void 0;
 var PIXI = require("pixi.js");
 var SceneRenderer_1 = require("../SceneRenderer");
 var TILE_WIDTH = 16;
@@ -65,6 +64,18 @@ var SceneRendererIsometric = (function (_super) {
         _this.m_container.scale.set(4);
         _this.m_screen_effects_container.position.set(500, 50);
         _this.m_screen_effects_container.scale.set(4);
+        pixi.renderer.plugins.interaction.on('pointermove', function (evt) {
+            _this.m_event_manager.emit("POINTER_MOVE", _this.screenToTilePos(evt.data.global));
+        });
+        pixi.renderer.plugins.interaction.on('pointerdown', function (evt) {
+            if (evt.stopped) {
+                return;
+            }
+            _this.m_event_manager.emit("POINTER_DOWN", _this.screenToTilePos(evt.data.global));
+        });
+        pixi.renderer.plugins.interaction.on('pointerup', function (evt) {
+            _this.m_event_manager.emit("POINTER_UP", _this.screenToTilePos(evt.data.global));
+        });
         return _this;
     }
     return SceneRendererIsometric;

@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+var GameBoard_1 = require("../board/GameBoard");
 var TileHighlighter = (function () {
     function TileHighlighter(m_renderer, m_board) {
         var _this = this;
@@ -12,10 +13,10 @@ var TileHighlighter = (function () {
             };
         };
         this.update = function () {
-            var targets = _this.m_board.getElementsAt(_this.m_last_pos);
+            var targets = GameBoard_1.GameBoard.GetElementsAt(_this.m_board.scene, _this.m_last_pos);
             targets.forEach(function (entity) {
             });
-            targets = _this.m_board.getElementsAt(_this.m_current_pos);
+            targets = GameBoard_1.GameBoard.GetElementsAt(_this.m_board.scene, _this.m_current_pos);
             targets.forEach(function (entity) {
             });
             _this.m_last_pos = _this.m_current_pos;

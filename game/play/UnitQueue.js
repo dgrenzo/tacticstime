@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UnitQueue = void 0;
 var UnitQueue = (function () {
     function UnitQueue() {
         var _this = this;
@@ -9,9 +8,6 @@ var UnitQueue = (function () {
             unit: null,
         };
         this.m_current = this.m_root;
-        this.addUnits = function (units) {
-            units.forEach(_this.addUnit);
-        };
         this.addUnit = function (unit) {
             var parent = _this.m_root;
             while (parent.next && parent.next.unit.stats.speed >= unit.stats.speed) {

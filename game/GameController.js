@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GameController = exports.GameState = void 0;
 var PIXI = require("pixi.js");
 var GameBoard_1 = require("./board/GameBoard");
 var UnitLoader_1 = require("./assets/UnitLoader");
@@ -30,33 +29,29 @@ var GameController = (function () {
             });
         };
         this.startNextTavern = function () {
-            var tavern = new tavern_1.Tavern(_this.m_config.pixi_app.stage, _this.m_events);
-            tavern.setPlayer(_this.m_player_party);
-            tavern.positionContainer({
-                width: _this.m_config.pixi_app.renderer.width,
-                height: _this.m_config.pixi_app.renderer.height,
+            _this.m_encounter = new EncounterController_1.EncounterController(_this.m_config);
+            _this.m_encounter.loadMap('assets/data/boards/coast.json').then(function () {
+                var tavern = new tavern_1.Tavern(_this.m_config.pixi_app.stage, _this.m_events);
+                tavern.setPlayer(_this.m_player_party);
+                tavern.positionContainer({
+                    width: _this.m_config.pixi_app.renderer.width,
+                    height: _this.m_config.pixi_app.renderer.height,
+                });
+                _this.m_encounter.addUnits(_this.m_player_party.units);
+                _this.m_encounter.executeTurn();
             });
         };
         this.startNextEncounter = function () {
-            var encounter = new EncounterController_1.EncounterController(_this.m_config);
-            encounter.loadMap('assets/data/boards/coast.json').then(function () {
-                var units = _this.m_player_party.units;
-                units.forEach(function (unit, index) {
-                    unit.pos.x = 5 + index;
-                    unit.pos.y = 12;
-                });
-                var types = ["lizard", "mooseman", "rhino"];
-                var amount = Math.round(Math.random() * 5) + 3;
-                for (var i = 0; i < amount; i++) {
-                    var enemy = GameBoard_1.CreateUnit(UnitLoader_1.UnitLoader.GetUnitDefinition(types[Math.floor(Math.random() * 3)]), "ENEMY");
-                    enemy.pos.x = 7 + i;
-                    enemy.pos.y = 7;
-                    units = units.push(enemy);
-                }
-                encounter.addUnits(units);
-                encounter.startGame();
-            });
-            encounter.on('END', function (encounter) {
+            var types = ["lizard", "mooseman", "rhino"];
+            var amount = 1;
+            for (var i = 0; i < amount; i++) {
+                var enemy = GameBoard_1.CreateUnit(UnitLoader_1.UnitLoader.GetUnitDefinition(types[Math.floor(Math.random() * 3)]), "ENEMY");
+                enemy.pos.x = 7 + i;
+                enemy.pos.y = 7;
+                _this.m_encounter.addUnit(enemy);
+            }
+            _this.m_encounter.startGame();
+            _this.m_encounter.on('END', function (encounter) {
                 _this.m_player_party.addGold(6);
                 var replay;
                 var onEnd = function () {
@@ -77,6 +72,11 @@ var GameController = (function () {
         });
         this.m_events.on("LEAVE_TAVERN", function () {
             _this.startNextEncounter();
+        });
+        this.m_events.on('UNIT_HIRED', function (data) {
+            var unit = data.unit;
+            _this.m_encounter.addUnit(unit);
+            _this.m_encounter.executeTurn();
         });
     }
     return GameController;

@@ -13,7 +13,6 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ProjectileEffect = void 0;
 var GameEffect_1 = require("./GameEffect");
 var TWEEN = require("@tweenjs/tween.js");
 var ProjectileEffect = (function (_super) {

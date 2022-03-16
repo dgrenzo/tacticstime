@@ -1,10 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ExecuteMove = void 0;
-var UpdateElements_1 = require("../../../UpdateElements");
-function ExecuteMove(action, elements, controller) {
-    return controller.animateGameAction(action).then(function () {
-        return UpdateElements_1.UpdateElements.SetPosition(elements, action.data.entity_id, action.data.move.to);
-    });
+var GameBoard_1 = require("../../../../board/GameBoard");
+function ExecuteMove(action, scene) {
+    scene = GameBoard_1.GameBoard.SetElementPosition(scene, action.data.entity_id, action.data.move.to);
+    return scene;
 }
 exports.ExecuteMove = ExecuteMove;

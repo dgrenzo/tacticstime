@@ -1,40 +1,38 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ExecuteAbility = void 0;
 var _ = require("lodash");
-var UpdateElements_1 = require("../../../UpdateElements");
-function ExecuteAbility(action, elements, controller) {
-    return controller.animateGameAction(action).then(function () {
-        _.forEach(action.data.ability.effects, function (effect) {
-            var tiles = controller.getTilesInRange(action.data.target.pos, effect.range);
-            tiles.forEach(function (tile) {
-                var data = _.cloneDeep(effect.data);
-                data = _.defaults(data, { tile: tile, source: action.data.source });
-                var unit = controller.getUnitAtPosition(tile.pos);
-                if (unit) {
-                    controller.sendAction({
-                        type: effect.type,
-                        data: _.defaults(data, { entity_id: unit.id })
-                    });
-                }
-                else {
-                    controller.sendAction({
-                        type: effect.type,
-                        data: data
-                    });
-                }
-            });
+var GameBoard_1 = require("../../../../board/GameBoard");
+function ExecuteAbility(action, scene) {
+    var effects = action.data.ability.effects;
+    _.forEach(effects, function (effect) {
+        var tiles = GameBoard_1.GameBoard.GetTilesInRange(scene, action.data.target.pos, effect.range);
+        tiles.forEach(function (tile) {
+            var data = _.cloneDeep(effect.data);
+            data = _.defaults(data, { tile: tile, source: action.data.source });
+            var unit = GameBoard_1.GameBoard.GetUnitAtPosition(scene, tile.pos);
+            if (unit) {
+                scene = GameBoard_1.GameBoard.AddActions(scene, {
+                    type: effect.type,
+                    data: _.defaults(data, { entity_id: unit.id })
+                });
+            }
+            else {
+                scene = GameBoard_1.GameBoard.AddActions(scene, {
+                    type: effect.type,
+                    data: data
+                });
+            }
         });
-        var unit_id = action.data.source.id;
-        var mana = action.data.source.status.mana;
-        if (action.data.ability.cost > 0) {
-            mana -= action.data.ability.cost;
-            return UpdateElements_1.UpdateElements.SetMP(elements, unit_id, mana);
-        }
-        else {
-            mana += 2;
-            return UpdateElements_1.UpdateElements.SetMP(elements, unit_id, mana);
-        }
     });
+    var unit_id = action.data.source.id;
+    var mana = action.data.source.status.mana;
+    if (action.data.ability.cost > 0) {
+        mana -= action.data.ability.cost;
+    }
+    else {
+        mana += 2;
+    }
+    scene = GameBoard_1.GameBoard.SetMP(scene, unit_id, mana);
+    return scene;
 }
 exports.ExecuteAbility = ExecuteAbility;

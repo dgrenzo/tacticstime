@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GetAbilityDef = void 0;
 var _ = require("lodash");
 var Loader_1 = require("../../../board/Loader");
 var TARGET_TYPE;

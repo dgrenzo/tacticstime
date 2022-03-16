@@ -13,7 +13,6 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ReplayMenu = void 0;
 var BaseMenu_1 = require("./BaseMenu");
 var ReplayMenu = (function (_super) {
     __extends(ReplayMenu, _super);

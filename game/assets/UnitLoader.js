@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UnitLoader = void 0;
 var _ = require("lodash");
 var immutable_1 = require("immutable");
 var Loader_1 = require("../board/Loader");

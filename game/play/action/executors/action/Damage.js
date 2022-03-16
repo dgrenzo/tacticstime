@@ -1,38 +1,35 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ExecuteDamage = void 0;
-var UpdateElements_1 = require("../../../UpdateElements");
-function ExecuteDamage(action, elements, controller) {
-    return new Promise(function (resolve) {
-        var unit = controller.getUnit(action.data.entity_id);
-        if (!unit) {
-            return resolve(elements);
-        }
-        var starting_hp = unit.status.hp;
-        if (starting_hp === 0) {
-            return resolve(elements);
-        }
-        var new_hp = Math.max(starting_hp - action.data.amount, 0);
-        var difference = starting_hp - new_hp;
-        if (difference != 0) {
-            controller.sendAction({
-                type: "DAMAGE_DEALT",
-                data: {
-                    amount: difference,
-                    entity_id: unit.id,
-                }
-            });
-        }
-        if (new_hp === 0) {
-            controller.sendAction({
-                type: "UNIT_KILLED",
-                data: {
-                    entity_id: unit.id
-                }
-            });
-        }
-        var result = UpdateElements_1.UpdateElements.SetHP(elements, unit.id, new_hp);
-        resolve(result);
-    });
+var GameBoard_1 = require("../../../../board/GameBoard");
+function ExecuteDamage(action, scene) {
+    var unit = GameBoard_1.GameBoard.GetUnit(scene, action.data.entity_id);
+    if (!unit) {
+        return scene;
+    }
+    var starting_hp = unit.status.hp;
+    if (starting_hp === 0) {
+        return scene;
+    }
+    var new_hp = Math.max(starting_hp - action.data.amount, 0);
+    var difference = starting_hp - new_hp;
+    scene = GameBoard_1.GameBoard.SetHP(scene, unit.id, new_hp);
+    if (difference != 0) {
+        scene = GameBoard_1.GameBoard.AddActions(scene, {
+            type: "DAMAGE_DEALT",
+            data: {
+                amount: difference,
+                entity_id: unit.id,
+            }
+        });
+    }
+    if (new_hp === 0) {
+        scene = GameBoard_1.GameBoard.AddActions(scene, {
+            type: "UNIT_KILLED",
+            data: {
+                entity_id: unit.id
+            }
+        });
+    }
+    return scene;
 }
 exports.ExecuteDamage = ExecuteDamage;

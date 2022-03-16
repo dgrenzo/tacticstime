@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GameEffect = void 0;
 var GameEffect = (function () {
     function GameEffect(m_renderer) {
         var _this = this;
@@ -25,14 +24,14 @@ var GameEffect = (function () {
                 y: this.m_pos.y,
             };
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     Object.defineProperty(GameEffect.prototype, "entity_type", {
         get: function () {
             return "EFFECT";
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     GameEffect.prototype.destroy = function () {

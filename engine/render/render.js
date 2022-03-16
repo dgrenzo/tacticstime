@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CreateRenderer = exports.RenderMode = void 0;
 var SceneRendererIsometric_1 = require("./scene/isometric/SceneRendererIsometric");
 var RenderMode;
 (function (RenderMode) {

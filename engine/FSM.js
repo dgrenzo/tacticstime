@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.FSM = void 0;
 var _ = require("lodash");
 var FSM = (function () {
     function FSM() {
@@ -30,14 +29,14 @@ var FSM = (function () {
         get: function () {
             return this.m_state_objects.get(this.m_state);
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     Object.defineProperty(FSM.prototype, "state", {
         get: function () {
             return this.m_state;
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     return FSM;

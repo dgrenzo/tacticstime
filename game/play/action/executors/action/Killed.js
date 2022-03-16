@@ -1,11 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ExecuteKilled = void 0;
-var UpdateElements_1 = require("../../../UpdateElements");
-function ExecuteKilled(action, elements, controller) {
-    return controller.animateGameAction(action).then(function () {
-        controller.removeEntity(action.data.entity_id);
-        return UpdateElements_1.UpdateElements.RemoveEntity(elements, action.data.entity_id);
-    });
+var Scene_1 = require("../../../../../engine/scene/Scene");
+function ExecuteKilled(action, scene) {
+    scene = Scene_1.Scene.RemoveElementById(scene, action.data.entity_id);
+    return scene;
 }
 exports.ExecuteKilled = ExecuteKilled;

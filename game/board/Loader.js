@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.LoadFromURLParam = exports.LoadJSON = exports.LoadBoard = exports.LoadMission = void 0;
 var PIXI = require("pixi.js");
 var _ = require("lodash");
 var UnitLoader_1 = require("../assets/UnitLoader");

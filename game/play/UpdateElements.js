@@ -1,14 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UpdateElements = void 0;
 var UpdateElements = (function () {
     function UpdateElements() {
     }
-    UpdateElements.AddEntity = function (elements, entity_id, entity) {
-        return elements.set(entity_id, entity);
-    };
-    UpdateElements.RemoveEntity = function (elements, entity_id) {
-        return elements.remove(entity_id);
+    UpdateElements.SetUnitFlag = function (elements, entity_id, flag, value) {
+        return elements.setIn([entity_id, 'status', 'flags', flag], value);
     };
     UpdateElements.SetHP = function (elements, entity_id, hp) {
         return elements.setIn([entity_id, 'status', 'hp'], hp);

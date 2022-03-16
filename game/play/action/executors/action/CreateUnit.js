@@ -1,19 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ExecuteCreateUnit = void 0;
-var UpdateElements_1 = require("../../../UpdateElements");
-function ExecuteCreateUnit(action, elements, controller) {
+var GameBoard_1 = require("../../../../board/GameBoard");
+function ExecuteCreateUnit(action, scene) {
     var unit = action.data.unit;
-    var id = unit.id;
-    elements = UpdateElements_1.UpdateElements.AddEntity(elements, id, unit);
-    return new Promise(function (resolve) {
-        controller.sendAction({
-            type: "UNIT_CREATED",
-            data: {
-                unit: unit
-            }
-        });
-        resolve(elements);
+    scene = GameBoard_1.GameBoard.AddElement(scene, unit);
+    scene = GameBoard_1.GameBoard.AddActions(scene, {
+        type: "UNIT_CREATED",
+        data: {
+            unit: unit
+        }
     });
+    return scene;
 }
 exports.ExecuteCreateUnit = ExecuteCreateUnit;

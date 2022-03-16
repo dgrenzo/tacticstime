@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RecruitableUnit = exports.RecruitableButton = exports.Tavern = void 0;
 var PIXI = require("pixi.js");
 var _ = require("lodash");
 var AssetManager_1 = require("../assets/AssetManager");
@@ -51,7 +50,27 @@ var Tavern = (function () {
             if (_this.m_player.chargeGold(3)) {
                 btn.onPurchase();
                 var unit_def = UnitLoader_1.UnitLoader.GetUnitDefinition(btn.type);
-                _this.m_player.addUnit(GameBoard_1.CreateUnit(unit_def, "PLAYER"));
+                var unit_1 = GameBoard_1.CreateUnit(unit_def, "PLAYER");
+                var free_space_1;
+                var attempts = 6000;
+                do {
+                    free_space_1 = true;
+                    unit_1.pos.x = 5 + Math.round(Math.random() * 7);
+                    unit_1.pos.y = 10 + Math.round(Math.random() * 3);
+                    _this.m_player.units.forEach(function (other) {
+                        if (unit_1.pos.x === other.pos.x && unit_1.pos.y === other.pos.y) {
+                            free_space_1 = false;
+                        }
+                        return free_space_1;
+                    });
+                    attempts--;
+                } while (!free_space_1 && attempts > 0);
+                if (attempts === 0) {
+                    _this.m_player.addGold(3);
+                    return;
+                }
+                _this.m_player.addUnit(unit_1);
+                _this.m_events.emit("UNIT_HIRED", { unit: unit_1 });
             }
         };
         this.render = function () {
@@ -85,6 +104,10 @@ var Tavern = (function () {
         };
         this.buyUnit = function (unit) {
         };
+        this.onTileDown = function (tile) {
+        };
+        this.destroy = function () {
+        };
         m_parent_container.addChild(this.m_container);
         this.m_container.scale.set(4);
         this.m_container.position.set(16, 16);
@@ -101,7 +124,7 @@ var Tavern = (function () {
         get: function () {
             return this.m_container;
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     return Tavern;
@@ -193,7 +216,7 @@ var RecruitableButton = (function () {
         get: function () {
             return this.m_container;
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     return RecruitableButton;
@@ -207,7 +230,7 @@ var RecruitableUnit = (function () {
         get: function () {
             return this.m_type;
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     return RecruitableUnit;

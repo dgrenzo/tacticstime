@@ -1,20 +1,22 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.LinkedList = void 0;
 var LinkedList = (function () {
     function LinkedList() {
         var _this = this;
-        this.list_root = null;
+        this.list_root = {
+            element: null,
+            next: null
+        };
         this.forEach = function (fn) {
-            var node = _this.list_root;
+            var node = _this.list_root.next;
             while (node) {
                 fn(node.element);
                 node = node.next;
             }
         };
         this.getFirst = function (comparison) {
-            var node = _this.list_root;
+            var node = _this.list_root.next;
             while (node) {
                 if (comparison(node.element)) {
                     return node.element;
@@ -24,7 +26,7 @@ var LinkedList = (function () {
             return null;
         };
         this.getFirstIndex = function (comparison) {
-            var node = _this.list_root;
+            var node = _this.list_root.next;
             var index = 0;
             while (node) {
                 if (comparison(node.element)) {
@@ -36,10 +38,10 @@ var LinkedList = (function () {
             return index;
         };
         this.insertAt = function (element, index) {
-            var node = _this.list_root;
-            var prev = null;
+            var node = _this.list_root.next;
+            var prev = _this.list_root;
             if (index === 0) {
-                _this.add(element);
+                _this.unshift(element);
                 return;
             }
             var count = 0;
@@ -54,28 +56,46 @@ var LinkedList = (function () {
             };
         };
     }
-    LinkedList.prototype.add = function (element) {
-        var current_root = this.list_root;
-        this.list_root = {
+    LinkedList.prototype.unshift = function (element) {
+        this.list_root.next = {
             element: element,
-            next: current_root,
+            next: this.list_root.next
         };
     };
+    LinkedList.prototype.isEmpty = function () {
+        return this.list_root.next === null;
+    };
+    Object.defineProperty(LinkedList.prototype, "tail", {
+        get: function () {
+            var node = this.list_root;
+            while (node && node.next) {
+                node = node.next;
+            }
+            return node ? node : null;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    LinkedList.prototype.push = function (element) {
+        this.tail.next = {
+            element: element,
+            next: null
+        };
+    };
+    LinkedList.prototype.shift = function () {
+        var list_element = this.list_root.next;
+        if (list_element) {
+            this.list_root.next = list_element.next;
+            return list_element.element;
+        }
+        return null;
+    };
     LinkedList.prototype.remove = function (element) {
-        if (!this.list_root) {
-            return;
-        }
-        if (element === this.list_root.element) {
-            this.list_root = this.list_root.next;
-            return;
-        }
-        var current = this.list_root;
-        var prev = null;
+        var current = this.list_root.next;
+        var prev = this.list_root;
         while (current) {
             if (current.element === element) {
-                if (prev) {
-                    prev.next = current.next;
-                }
+                prev.next = current.next;
                 return;
             }
             prev = current;
@@ -89,7 +109,6 @@ exports.LinkedList = LinkedList;
 },{}],2:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EventManager = exports.Signal = void 0;
 var Signal = (function () {
     function Signal() {
         this.listener_root = null;
@@ -134,10 +153,7 @@ var EventManager = (function () {
         this.m_signalMap = new Map();
     }
     EventManager.prototype.emit = function (signal_type, data) {
-        if (!this.m_signalMap.has(signal_type)) {
-            return;
-        }
-        else {
+        if (this.m_signalMap.has(signal_type)) {
             this.m_signalMap.get(signal_type).emit(data);
         }
     };
@@ -168,7 +184,6 @@ exports.EventManager = EventManager;
 },{}],3:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CreateRenderer = exports.RenderMode = void 0;
 var SceneRendererIsometric_1 = require("./scene/isometric/SceneRendererIsometric");
 var RenderMode;
 (function (RenderMode) {
@@ -185,7 +200,6 @@ exports.CreateRenderer = CreateRenderer;
 },{"./scene/isometric/SceneRendererIsometric":6}],4:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RenderEntity = void 0;
 var PIXI = require("pixi.js");
 var AssetManager_1 = require("../../../game/assets/AssetManager");
 var _RenderEntityID = 0;
@@ -243,35 +257,35 @@ var RenderEntity = (function () {
         get: function () {
             return this.m_id;
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     Object.defineProperty(RenderEntity.prototype, "depth_offset", {
         get: function () {
             return this.m_depth_offset;
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     Object.defineProperty(RenderEntity.prototype, "depth", {
         get: function () {
             return this.m_depth;
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     Object.defineProperty(RenderEntity.prototype, "root", {
         get: function () {
             return this.m_root;
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     Object.defineProperty(RenderEntity.prototype, "sprite", {
         get: function () {
             return this.m_container;
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     RenderEntity.prototype.setPosition = function (pos, depth) {
@@ -283,10 +297,9 @@ var RenderEntity = (function () {
 }());
 exports.RenderEntity = RenderEntity;
 
-},{"../../../game/assets/AssetManager":10,"pixi.js":88}],5:[function(require,module,exports){
+},{"../../../game/assets/AssetManager":10,"pixi.js":83}],5:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAsset = exports.SceneRenderer = void 0;
 var PIXI = require("pixi.js");
 var RenderEntity_1 = require("./RenderEntity");
 var event_1 = require("../../listener/event");
@@ -343,6 +356,7 @@ var SceneRenderer = (function () {
             _this.m_renderables = new linkedlist_1.LinkedList();
             _this.m_container.removeChildren();
             _this.m_screen_effects_container.removeChildren();
+            _this.m_event_manager.clear();
             _this.m_pixi.ticker.remove(_this.renderScene);
         };
         this.m_container = new PIXI.Container();
@@ -352,21 +366,21 @@ var SceneRenderer = (function () {
         get: function () {
             return this.m_pixi;
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     Object.defineProperty(SceneRenderer.prototype, "stage", {
         get: function () {
             return this.m_container;
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     Object.defineProperty(SceneRenderer.prototype, "effects_container", {
         get: function () {
             return this.m_screen_effects_container;
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     return SceneRenderer;
@@ -377,12 +391,14 @@ function getAsset(entity) {
         return {
             type: "SPRITE",
             depth_offset: -8,
+            scale: 1,
             name: Tile_1.GetTileName(entity.data.tile_type),
         };
     }
     else if (Unit_1.isUnit(entity)) {
         return {
             type: "ANIMATED_SPRITE",
+            scale: (entity.data.unit_level - 1) * 0.25 + 1,
             depth_offset: 2,
             name: entity.data.unit_type + '_idle',
         };
@@ -394,7 +410,7 @@ function CreateRenderable(entity) {
     return new RenderEntity_1.RenderEntity();
 }
 
-},{"../../../game/board/Tile":15,"../../../game/board/Unit":16,"../../list/linkedlist":1,"../../listener/event":2,"./RenderEntity":4,"pixi.js":88}],6:[function(require,module,exports){
+},{"../../../game/board/Tile":14,"../../../game/board/Unit":15,"../../list/linkedlist":1,"../../listener/event":2,"./RenderEntity":4,"pixi.js":83}],6:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -410,7 +426,6 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SceneRendererIsometric = void 0;
 var PIXI = require("pixi.js");
 var SceneRenderer_1 = require("../SceneRenderer");
 var TILE_WIDTH = 16;
@@ -462,52 +477,129 @@ var SceneRendererIsometric = (function (_super) {
         _this.m_container.scale.set(4);
         _this.m_screen_effects_container.position.set(500, 50);
         _this.m_screen_effects_container.scale.set(4);
+        pixi.renderer.plugins.interaction.on('pointermove', function (evt) {
+            _this.m_event_manager.emit("POINTER_MOVE", _this.screenToTilePos(evt.data.global));
+        });
+        pixi.renderer.plugins.interaction.on('pointerdown', function (evt) {
+            if (evt.stopped) {
+                return;
+            }
+            _this.m_event_manager.emit("POINTER_DOWN", _this.screenToTilePos(evt.data.global));
+        });
+        pixi.renderer.plugins.interaction.on('pointerup', function (evt) {
+            _this.m_event_manager.emit("POINTER_UP", _this.screenToTilePos(evt.data.global));
+        });
         return _this;
     }
     return SceneRendererIsometric;
 }(SceneRenderer_1.SceneRenderer));
 exports.SceneRendererIsometric = SceneRendererIsometric;
 
-},{"../SceneRenderer":5,"pixi.js":88}],7:[function(require,module,exports){
+},{"../SceneRenderer":5,"pixi.js":83}],7:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Scene = void 0;
 var immutable_1 = require("immutable");
+var KEY_ENTITIES = "ENTITIES";
+var KEY_LISTENERS = "LISTENERS";
+var KEY_ACTIONS = "ACTIONS";
 var Scene = (function () {
     function Scene() {
         var _this = this;
-        this.m_elements = immutable_1.Map();
         this.getElement = function (id) {
-            return _this.m_elements.get(id);
+            return _this.elements.get(id);
         };
-        this.removeElement = function (id) {
-            var element = _this.getElement(id);
-            _this.m_elements = _this.m_elements.remove(id);
-            return element;
-        };
+        this.m_immutable_scene = immutable_1.Map();
+        this.listeners = immutable_1.Map();
+        this.elements = immutable_1.Map();
+        this.actions = immutable_1.List();
     }
-    Scene.prototype.addElement = function (element) {
-        this.m_elements = this.m_elements.set(element.id, element);
-        return element;
+    Scene.prototype.addEventListener = function (event_name, event) {
+        if (!this.listeners.get(event_name)) {
+            this.listeners = this.listeners.set(event_name, immutable_1.List());
+        }
+        var list = this.listeners.get(event_name);
+        this.listeners = this.listeners.setIn(event_name, list.push(event));
+        return event;
     };
-    Object.defineProperty(Scene.prototype, "elements", {
+    Scene.prototype.removeEventListener = function (event_name, event) {
+    };
+    Scene.GetElements = function (scene) {
+        return scene.get(KEY_ENTITIES);
+    };
+    Scene.SetElements = function (scene, elements) {
+        return scene.set(KEY_ENTITIES, elements);
+    };
+    Scene.GetListeners = function (scene) {
+        return scene.get(KEY_LISTENERS);
+    };
+    Scene.SetListeners = function (scene, listeners) {
+        return scene.set(KEY_LISTENERS, listeners);
+    };
+    Scene.GetActions = function (scene) {
+        return scene.get(KEY_ACTIONS);
+    };
+    Scene.SetActions = function (scene, actions) {
+        return scene.set(KEY_ACTIONS, actions);
+    };
+    Scene.AddElement = function (scene, element) {
+        var elements = Scene.GetElements(scene);
+        return Scene.SetElements(scene, elements.set(element.id, element));
+    };
+    Scene.RemoveElement = function (scene, element) {
+        var elements = Scene.GetElements(scene);
+        return Scene.SetElements(scene, elements.remove(element.id));
+    };
+    Scene.RemoveElementById = function (scene, element_id) {
+        var elements = Scene.GetElements(scene);
+        return Scene.SetElements(scene, elements.remove(element_id));
+    };
+    Object.defineProperty(Scene.prototype, "scene", {
         get: function () {
-            return this.m_elements;
+            return this.m_immutable_scene;
         },
         set: function (val) {
-            this.m_elements = val;
+            this.m_immutable_scene = val;
         },
-        enumerable: false,
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Scene.prototype, "actions", {
+        get: function () {
+            return this.m_immutable_scene.get(KEY_ACTIONS);
+        },
+        set: function (val) {
+            this.m_immutable_scene = this.m_immutable_scene.set(KEY_ACTIONS, val);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Scene.prototype, "listeners", {
+        get: function () {
+            return this.m_immutable_scene.get(KEY_LISTENERS);
+        },
+        set: function (val) {
+            this.m_immutable_scene = this.m_immutable_scene.set(KEY_LISTENERS, val);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Scene.prototype, "elements", {
+        get: function () {
+            return this.m_immutable_scene.get(KEY_ENTITIES);
+        },
+        set: function (val) {
+            this.m_immutable_scene = this.m_immutable_scene.set(KEY_ENTITIES, val);
+        },
+        enumerable: true,
         configurable: true
     });
     return Scene;
 }());
 exports.Scene = Scene;
 
-},{"immutable":82}],8:[function(require,module,exports){
+},{"immutable":77}],8:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GameController = exports.GameState = void 0;
 var PIXI = require("pixi.js");
 var GameBoard_1 = require("./board/GameBoard");
 var UnitLoader_1 = require("./assets/UnitLoader");
@@ -537,33 +629,29 @@ var GameController = (function () {
             });
         };
         this.startNextTavern = function () {
-            var tavern = new tavern_1.Tavern(_this.m_config.pixi_app.stage, _this.m_events);
-            tavern.setPlayer(_this.m_player_party);
-            tavern.positionContainer({
-                width: _this.m_config.pixi_app.renderer.width,
-                height: _this.m_config.pixi_app.renderer.height,
+            _this.m_encounter = new EncounterController_1.EncounterController(_this.m_config);
+            _this.m_encounter.loadMap('assets/data/boards/coast.json').then(function () {
+                var tavern = new tavern_1.Tavern(_this.m_config.pixi_app.stage, _this.m_events);
+                tavern.setPlayer(_this.m_player_party);
+                tavern.positionContainer({
+                    width: _this.m_config.pixi_app.renderer.width,
+                    height: _this.m_config.pixi_app.renderer.height,
+                });
+                _this.m_encounter.addUnits(_this.m_player_party.units);
+                _this.m_encounter.executeTurn();
             });
         };
         this.startNextEncounter = function () {
-            var encounter = new EncounterController_1.EncounterController(_this.m_config);
-            encounter.loadMap('assets/data/boards/coast.json').then(function () {
-                var units = _this.m_player_party.units;
-                units.forEach(function (unit, index) {
-                    unit.pos.x = 5 + index;
-                    unit.pos.y = 12;
-                });
-                var types = ["lizard", "mooseman", "rhino"];
-                var amount = Math.round(Math.random() * 5) + 3;
-                for (var i = 0; i < amount; i++) {
-                    var enemy = GameBoard_1.CreateUnit(UnitLoader_1.UnitLoader.GetUnitDefinition(types[Math.floor(Math.random() * 3)]), "ENEMY");
-                    enemy.pos.x = 7 + i;
-                    enemy.pos.y = 7;
-                    units = units.push(enemy);
-                }
-                encounter.addUnits(units);
-                encounter.startGame();
-            });
-            encounter.on('END', function (encounter) {
+            var types = ["lizard", "mooseman", "rhino"];
+            var amount = 1;
+            for (var i = 0; i < amount; i++) {
+                var enemy = GameBoard_1.CreateUnit(UnitLoader_1.UnitLoader.GetUnitDefinition(types[Math.floor(Math.random() * 3)]), "ENEMY");
+                enemy.pos.x = 7 + i;
+                enemy.pos.y = 7;
+                _this.m_encounter.addUnit(enemy);
+            }
+            _this.m_encounter.startGame();
+            _this.m_encounter.on('END', function (encounter) {
                 _this.m_player_party.addGold(6);
                 var replay;
                 var onEnd = function () {
@@ -585,65 +673,175 @@ var GameController = (function () {
         this.m_events.on("LEAVE_TAVERN", function () {
             _this.startNextEncounter();
         });
+        this.m_events.on('UNIT_HIRED', function (data) {
+            var unit = data.unit;
+            _this.m_encounter.addUnit(unit);
+            _this.m_encounter.executeTurn();
+        });
     }
     return GameController;
 }());
 exports.GameController = GameController;
 
-},{"./assets/UnitLoader":11,"./board/GameBoard":13,"./encounter/EncounterController":21,"./interface/menus/ReplayMenu":25,"./party":26,"./play/interface/GoldDisplay":41,"./tavern":42,"pixi.js":88}],9:[function(require,module,exports){
+},{"./assets/UnitLoader":11,"./board/GameBoard":12,"./encounter/EncounterController":20,"./interface/menus/ReplayMenu":24,"./party":25,"./play/interface/GoldDisplay":36,"./tavern":37,"pixi.js":83}],9:[function(require,module,exports){
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BoardAnimator = void 0;
+var linkedlist_1 = require("../../engine/list/linkedlist");
 var SceneRenderer_1 = require("../../engine/render/scene/SceneRenderer");
+var GameBoard_1 = require("../board/GameBoard");
 var EffectsManager_1 = require("../effects/EffectsManager");
+var ANIMATABLE_ACTIONS = [
+    "ABILITY",
+    "DAMAGE_DEALT",
+    "CREATE_UNIT",
+    "MOVE",
+    "UNIT_KILLED"
+];
 var BoardAnimator = (function () {
-    function BoardAnimator(m_renderer, m_board_controller) {
+    function BoardAnimator(m_renderer, m_board) {
         var _this = this;
         this.m_renderer = m_renderer;
-        this.m_board_controller = m_board_controller;
+        this.m_board = m_board;
         this.m_render_elements = new Map();
+        this.m_action_list = new linkedlist_1.LinkedList();
+        this.m_busy_promise = null;
+        this.m_busy_promise_resolver = null;
         this.setRenderElement = function (id, renderable) {
             _this.m_render_elements.set(id, renderable);
         };
         this.getRenderElement = function (entity_id) {
             return _this.m_render_elements.get(entity_id);
         };
+        this.onAnimatableAction = function (action_result) {
+            _this.m_action_list.push(action_result);
+        };
+        this.start = function () {
+            if (!_this.m_busy_promise) {
+                _this.m_busy_promise = new Promise(function (resolve) {
+                    _this.m_busy_promise_resolver = resolve;
+                });
+                _this.execute();
+            }
+            return _this.m_busy_promise;
+        };
+        this.execute = function () { return __awaiter(_this, void 0, void 0, function () {
+            var next_action;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        next_action = this.m_action_list.shift();
+                        _a.label = 1;
+                    case 1:
+                        if (!next_action) return [3, 3];
+                        console.log('animating');
+                        console.log(next_action);
+                        return [4, this.animateGameAction(next_action.action, next_action.scene)];
+                    case 2:
+                        _a.sent();
+                        next_action = this.m_action_list.shift();
+                        return [3, 1];
+                    case 3:
+                        this.m_busy_promise_resolver();
+                        this.m_busy_promise = null;
+                        return [2];
+                }
+            });
+        }); };
         this.createEffect = function (ability, cb) {
             return EffectsManager_1.default.RenderEffect(ability, cb);
         };
-        this.m_board_controller.on("CREATE_UNIT", function (data) {
-            var renderable = _this.m_renderer.addEntity(data.unit);
-            renderable.renderAsset(SceneRenderer_1.getAsset(data.unit));
-            _this.setRenderElement(data.unit.id, renderable);
-        });
-        this.m_board_controller.on("UNIT_KILLED", function (data) {
-            var renderable = _this.m_render_elements.get(data.entity_id);
-            _this.m_renderer.removeEntity(renderable.id);
-        });
-        this.m_board_controller.on("MOVE", function (data) {
-            _this.m_renderer.positionElement(_this.getRenderElement(data.entity_id), data.move.to);
+        ANIMATABLE_ACTIONS.forEach(function (event) {
+            _this.m_board.on(event, _this.onAnimatableAction);
         });
     }
-    BoardAnimator.prototype.animateGameAction = function (action, board) {
-        var _this = this;
-        if (action.type === 'ABILITY') {
-            return this.animateAbility(action, board);
-        }
-        return new Promise(function (resolve) {
-            var effect = _this.createEffect(action, resolve);
-            if (effect) {
-                var action_target = board.getElement(action.data.entity_id);
-                effect.setPosition(action_target.pos);
-            }
-            else {
-                setTimeout(resolve, 100);
-            }
-            setTimeout(resolve, 100);
+    BoardAnimator.prototype.hasQueuedAnimations = function () {
+        return !this.m_action_list.isEmpty();
+    };
+    BoardAnimator.prototype.animateGameAction = function (action, scene) {
+        return __awaiter(this, void 0, void 0, function () {
+            var elements, data, renderable, _a;
+            var _this = this;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        elements = GameBoard_1.GameBoard.GetElements(scene);
+                        data = action.data;
+                        _a = action.type;
+                        switch (_a) {
+                            case "CREATE_UNIT": return [3, 1];
+                            case "UNIT_KILLED": return [3, 2];
+                            case "MOVE": return [3, 3];
+                            case "ABILITY": return [3, 5];
+                        }
+                        return [3, 6];
+                    case 1:
+                        renderable = this.m_renderer.addEntity(data.unit);
+                        renderable.renderAsset(SceneRenderer_1.getAsset(data.unit));
+                        this.setRenderElement(data.unit.id, renderable);
+                        return [3, 7];
+                    case 2:
+                        renderable = this.m_render_elements.get(data.entity_id);
+                        this.m_renderer.removeEntity(renderable.id);
+                        return [3, 7];
+                    case 3: return [4, new Promise(function (resolve) { return setTimeout(resolve, 100); })];
+                    case 4:
+                        _b.sent();
+                        renderable = this.getRenderElement(data.entity_id);
+                        this.m_renderer.positionElement(renderable, data.move.to);
+                        return [3, 7];
+                    case 5: return [2, this.animateAbility(action, scene)];
+                    case 6: return [2, new Promise(function (resolve) {
+                            var effect = _this.createEffect(action, resolve);
+                            if (effect) {
+                                var action_target = elements.get(action.data.entity_id);
+                                effect.setPosition(action_target.pos);
+                            }
+                            setTimeout(resolve, 100);
+                        })];
+                    case 7: return [2];
+                }
+            });
         });
     };
-    BoardAnimator.prototype.animateAbility = function (action, board) {
+    BoardAnimator.prototype.animateAbility = function (action, scene) {
         var _this = this;
-        if (!board.getUnitAtPosition(action.data.target.pos)) {
+        if (action.data.ability.name === 'Wait' || !GameBoard_1.GameBoard.GetUnitAtPosition(scene, action.data.target.pos)) {
             return Promise.resolve();
         }
         if (action.data.ability.name === "Shoot") {
@@ -684,7 +882,7 @@ var BoardAnimator = (function () {
 }());
 exports.BoardAnimator = BoardAnimator;
 
-},{"../../engine/render/scene/SceneRenderer":5,"../effects/EffectsManager":18}],10:[function(require,module,exports){
+},{"../../engine/list/linkedlist":1,"../../engine/render/scene/SceneRenderer":5,"../board/GameBoard":12,"../effects/EffectsManager":17}],10:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
@@ -755,10 +953,9 @@ var AssetManager = (function () {
 }());
 exports.default = AssetManager;
 
-},{"lodash":84,"pixi.js":88}],11:[function(require,module,exports){
+},{"lodash":79,"pixi.js":83}],11:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UnitLoader = void 0;
 var _ = require("lodash");
 var immutable_1 = require("immutable");
 var Loader_1 = require("../board/Loader");
@@ -800,7 +997,7 @@ function GetDefURL(unit_type) {
     return "assets/data/units/" + unit_type + ".json";
 }
 
-},{"../board/Loader":14,"immutable":82,"lodash":84}],12:[function(require,module,exports){
+},{"../board/Loader":13,"immutable":77,"lodash":79}],12:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -816,195 +1013,40 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AIBoardController = exports.BoardController = void 0;
-var GameBoard_1 = require("./GameBoard");
-var ActionStack_1 = require("../play/action/ActionStack");
-var pathfinding_1 = require("../pathfinding");
-var event_1 = require("../../engine/listener/event");
-var BoardController = (function () {
-    function BoardController() {
-        var _this = this;
-        this.m_event_manager = new event_1.EventManager();
-        this.createClone = function () {
-            var ctrl = new AIBoardController(_this.m_board.elements);
-            return ctrl;
-        };
-        this.initBoard = function (data) {
-            _this.m_board = new GameBoard_1.GameBoard();
-            _this.m_board.init(data);
-        };
-        this.sendToRenderer = function (renderer) {
-            renderer.initializeScene(_this.m_board);
-        };
-        this.setAnimator = function (animator) {
-            _this.m_animator = animator;
-        };
-        this.sendAction = function (action) {
-            _this.m_action_stack.push(action);
-        };
-        this.executeActionStack = function () {
-            return _this.m_action_stack.execute(_this.m_board.elements).then(function (updated_board) {
-                if (!updated_board) {
-                    return null;
-                }
-                else {
-                    _this.m_board.elements = updated_board;
-                    return _this.executeActionStack();
-                }
-            });
-        };
-        this.addUnit = function (unit) {
-            var create_action = {
-                type: "CREATE_UNIT",
-                data: {
-                    unit: unit
-                }
-            };
-            _this.sendAction(create_action);
-        };
-        this.on = function (event_name, cb) {
-            _this.m_event_manager.add(event_name, cb);
-        };
-        this.off = function (event_name, cb) {
-            _this.m_event_manager.remove(event_name, cb);
-        };
-        this.emit = function (event_name, data) {
-            _this.m_event_manager.emit(event_name, data);
-        };
-        this.getMoveOptions = function (unit) {
-            return pathfinding_1.GetMoveOptions(unit, _this.m_board);
-        };
-        this.removeEntity = function (id) {
-            _this.m_board.removeElement(id);
-        };
-        this.getTile = function (pos) {
-            return _this.m_board.getTileAtPos(pos);
-        };
-        this.getUnit = function (id) {
-            if (id === undefined) {
-                return null;
-            }
-            return _this.m_board.getUnit(id);
-        };
-        this.getUnits = function () {
-            return _this.m_board.getUnits();
-        };
-        this.getUnitAtPosition = function (pos) {
-            return _this.m_board.getUnitAtPosition(pos);
-        };
-        this.getTilesInRange = function (pos, range) {
-            if (!range) {
-                range = {
-                    max: 0,
-                    min: 0,
-                };
-            }
-            return _this.m_board.getTilesInRange(pos, range);
-        };
-        this.getElementsAt = function (pos) {
-            return _this.m_board.getElementsAt(pos);
-        };
-        this.m_action_stack = new ActionStack_1.ActionStack(this);
-    }
-    BoardController.prototype.animateGameAction = function (action) {
-        return this.m_animator.animateGameAction(action, this.m_board);
-    };
-    return BoardController;
-}());
-exports.BoardController = BoardController;
-var AIBoardController = (function (_super) {
-    __extends(AIBoardController, _super);
-    function AIBoardController(elements) {
-        var _this = _super.call(this) || this;
-        _this.m_board = new GameBoard_1.GameBoard();
-        _this.m_board.elements = elements;
-        return _this;
-    }
-    AIBoardController.prototype.animateGameAction = function (action) {
-        return Promise.resolve();
-    };
-    Object.defineProperty(AIBoardController.prototype, "board", {
-        get: function () {
-            return this.m_board;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    return AIBoardController;
-}(BoardController));
-exports.AIBoardController = AIBoardController;
-
-},{"../../engine/listener/event":2,"../pathfinding":27,"../play/action/ActionStack":32,"./GameBoard":13}],13:[function(require,module,exports){
-"use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.CreateUnit = exports.CreateEffect = exports.CreateEntity = exports.GameBoard = void 0;
 var _ = require("lodash");
 var Tile_1 = require("./Tile");
 var Scene_1 = require("../../engine/scene/Scene");
 var Unit_1 = require("./Unit");
+var Movement_1 = require("../play/action/executors/action/Movement");
+var Ability_1 = require("../play/action/executors/action/Ability");
+var Damage_1 = require("../play/action/executors/action/Damage");
+var Killed_1 = require("../play/action/executors/action/Killed");
+var CreateUnit_1 = require("../play/action/executors/action/CreateUnit");
+var SummonUnit_1 = require("../play/action/executors/action/SummonUnit");
+var event_1 = require("../../engine/listener/event");
 var GameBoard = (function (_super) {
     __extends(GameBoard, _super);
     function GameBoard() {
         var _this = _super.call(this) || this;
-        _this.addTile = function (pos, def) {
-            _this.addElement(CreateTile(pos, def));
+        _this.m_event_manager = new event_1.EventManager();
+        _this.on = function (event_name, cb) {
+            _this.m_event_manager.add(event_name, cb);
         };
-        _this.getUnitAtPosition = function (pos) {
-            var unit = null;
-            _this.getElementsAt(pos).forEach(function (element) {
-                if (Unit_1.isUnit(element)) {
-                    unit = element;
-                    return false;
-                }
-                return true;
-            });
-            return unit;
+        _this.off = function (event_name, cb) {
+            _this.m_event_manager.remove(event_name, cb);
         };
-        _this.getUnit = function (id) {
-            return _this.m_elements.get(id);
-        };
-        _this.getUnits = function () {
-            return _this.m_elements.filter(function (element) {
-                return Unit_1.isUnit(element);
-            }).toList();
-        };
-        _this.getTiles = function () {
-            return _this.m_elements.filter(function (element) {
-                return Tile_1.isTile(element);
-            }).toList();
-        };
-        _this.getTilesInRange = function (pos, range) {
-            return _this.getTiles().filter(function (tile) {
-                var distance = Math.abs(tile.pos.x - pos.x) + Math.abs(tile.pos.y - pos.y);
-                return range.max >= distance && range.min <= distance;
-            });
-        };
-        _this.getTileAtPos = function (pos) {
-            var tile = null;
-            _this.getElementsAt(pos).forEach(function (element) {
-                if (Tile_1.isTile(element)) {
-                    tile = element;
-                    return false;
-                }
-                return true;
-            });
-            return tile;
+        _this.emit = function (event_name, action_result) {
+            return _this.m_event_manager.emit(event_name, action_result);
         };
         return _this;
     }
+    Object.defineProperty(GameBoard.prototype, "events", {
+        get: function () {
+            return this.m_event_manager;
+        },
+        enumerable: true,
+        configurable: true
+    });
     GameBoard.prototype.init = function (board_config) {
         var _this = this;
         _.forEach(board_config.layout.tiles, function (tile, index) {
@@ -1012,12 +1054,121 @@ var GameBoard = (function (_super) {
                 x: index % board_config.layout.width,
                 y: Math.floor(index / board_config.layout.width)
             };
-            _this.addTile(pos, tile);
+            _this.scene = GameBoard.AddElement(_this.scene, CreateTile(pos, tile));
         });
     };
-    GameBoard.prototype.getElementsAt = function (pos) {
-        return this.m_elements.filter(function (entity) {
+    GameBoard.ExecuteActionStack = function (scene, event_watcher) {
+        do {
+            var action = GameBoard.GetNextAction(scene);
+            if (!action) {
+                return scene;
+            }
+            scene = GameBoard.ShiftFirstAction(scene);
+            scene = GameBoard.ExecuteAction(scene, action);
+            if (event_watcher) {
+                console.log(action);
+                event_watcher.emit(action.type, { action: action, scene: scene });
+            }
+        } while (true);
+    };
+    GameBoard.ExecuteAction = function (scene, action) {
+        if (!action) {
+            return scene;
+        }
+        switch (action.type) {
+            case "MOVE":
+                return Movement_1.ExecuteMove(action, scene);
+            case "ABILITY":
+                return Ability_1.ExecuteAbility(action, scene);
+            case "DAMAGE":
+                return Damage_1.ExecuteDamage(action, scene);
+            case "UNIT_KILLED":
+                return Killed_1.ExecuteKilled(action, scene);
+            case "CREATE_UNIT":
+                return CreateUnit_1.ExecuteCreateUnit(action, scene);
+            case "SUMMON_UNIT":
+                return SummonUnit_1.ExecuteSummonUnit(action, scene);
+            default:
+                return scene;
+        }
+    };
+    GameBoard.GetTilesInRange = function (scene, pos, range) {
+        var tiles = GameBoard.GetTiles(scene);
+        return tiles.filter(function (tile) {
+            var distance = Math.abs(tile.pos.x - pos.x) + Math.abs(tile.pos.y - pos.y);
+            return range.max >= distance && range.min <= distance;
+        });
+    };
+    GameBoard.GetTiles = function (scene) {
+        return Scene_1.Scene.GetElements(scene).filter(function (element) {
+            return Tile_1.isTile(element);
+        }).toList();
+    };
+    GameBoard.GetNextAction = function (scene) {
+        var actions = Scene_1.Scene.GetActions(scene);
+        return actions.first();
+    };
+    GameBoard.ShiftFirstAction = function (scene) {
+        var actions = Scene_1.Scene.GetActions(scene);
+        return Scene_1.Scene.SetActions(scene, actions.shift());
+    };
+    GameBoard.SetElementPosition = function (scene, entity_id, pos) {
+        var elements = Scene_1.Scene.GetElements(scene);
+        var result = elements.setIn([entity_id, 'pos'], pos);
+        return Scene_1.Scene.SetElements(scene, result);
+    };
+    GameBoard.GetElementsAt = function (scene, pos) {
+        var elements = Scene_1.Scene.GetElements(scene);
+        return elements.filter(function (entity) {
             return pos && entity.pos.x === pos.x && entity.pos.y === pos.y;
+        }).toList();
+    };
+    GameBoard.SetHP = function (scene, entity_id, hp) {
+        var elements = Scene_1.Scene.GetElements(scene);
+        var result = elements.setIn([entity_id, 'status', 'hp'], hp);
+        return Scene_1.Scene.SetElements(scene, result);
+    };
+    GameBoard.SetMP = function (scene, entity_id, mana) {
+        var elements = Scene_1.Scene.GetElements(scene);
+        var result = elements.setIn([entity_id, 'status', 'mana'], mana);
+        return Scene_1.Scene.SetElements(scene, result);
+    };
+    GameBoard.AddActions = function (scene, game_actions) {
+        game_actions = _.concat(game_actions);
+        var actions = Scene_1.Scene.GetActions(scene);
+        var result = actions.concat(game_actions);
+        return Scene_1.Scene.SetActions(scene, result);
+    };
+    GameBoard.GetUnitAtPosition = function (scene, pos) {
+        var unit = null;
+        GameBoard.GetElementsAt(scene, pos).forEach(function (element) {
+            if (Unit_1.isUnit(element)) {
+                unit = element;
+                return false;
+            }
+            return true;
+        });
+        return unit;
+    };
+    GameBoard.GetTileAtPosiiton = function (scene, pos) {
+        var tile = null;
+        GameBoard.GetElementsAt(scene, pos).forEach(function (element) {
+            if (Tile_1.isTile(element)) {
+                tile = element;
+                return false;
+            }
+            return true;
+        });
+        return tile;
+    };
+    GameBoard.GetUnit = function (scene, id) {
+        var elements = Scene_1.Scene.GetElements(scene);
+        return elements.get(id);
+    };
+    GameBoard.GetUnits = function (scene) {
+        var elements = Scene_1.Scene.GetElements(scene);
+        return elements.filter(function (element) {
+            return Unit_1.isUnit(element);
         }).toList();
     };
     return GameBoard;
@@ -1055,6 +1206,7 @@ function CreateUnit(def, faction) {
             y: -1,
         },
         data: {
+            unit_level: 1,
             unit_type: def.display.sprite,
             faction: faction,
         },
@@ -1078,10 +1230,9 @@ function CreateTile(pos, type) {
     };
 }
 
-},{"../../engine/scene/Scene":7,"./Tile":15,"./Unit":16,"lodash":84}],14:[function(require,module,exports){
+},{"../../engine/listener/event":2,"../../engine/scene/Scene":7,"../play/action/executors/action/Ability":30,"../play/action/executors/action/CreateUnit":31,"../play/action/executors/action/Damage":32,"../play/action/executors/action/Killed":33,"../play/action/executors/action/Movement":34,"../play/action/executors/action/SummonUnit":35,"./Tile":14,"./Unit":15,"lodash":79}],13:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.LoadFromURLParam = exports.LoadJSON = exports.LoadBoard = exports.LoadMission = void 0;
 var PIXI = require("pixi.js");
 var _ = require("lodash");
 var UnitLoader_1 = require("../assets/UnitLoader");
@@ -1168,10 +1319,9 @@ function LoadFromURLParam() {
 }
 exports.LoadFromURLParam = LoadFromURLParam;
 
-},{"../assets/UnitLoader":11,"lodash":84,"pixi.js":88}],15:[function(require,module,exports){
+},{"../assets/UnitLoader":11,"lodash":79,"pixi.js":83}],14:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GetTileName = exports.isTile = exports.TILE_DEF = void 0;
 var TILE_DEF;
 (function (TILE_DEF) {
     TILE_DEF[TILE_DEF["GRASS_EMPTY"] = 10] = "GRASS_EMPTY";
@@ -1212,16 +1362,15 @@ var getType = function (type) {
     return ["empty", "mtn", "tree", "hut"][type];
 };
 
-},{}],16:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isUnit = void 0;
 function isUnit(entity) {
     return entity.entity_type === "UNIT";
 }
 exports.isUnit = isUnit;
 
-},{}],17:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1237,13 +1386,13 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DamageNumberEffect = void 0;
 var TWEEN = require("@tweenjs/tween.js");
 var GameEffect_1 = require("./GameEffect");
 var DamageNumberEffect = (function (_super) {
     __extends(DamageNumberEffect, _super);
     function DamageNumberEffect(renderer, data, onComplete) {
         var _this = _super.call(this, renderer) || this;
+        console.log('damage number: ' + data.amount);
         _this.m_renderable.renderAsset({
             type: "EFFECT",
             name: "DAMAGE_DEALT",
@@ -1271,7 +1420,7 @@ var DamageNumberEffect = (function (_super) {
 }(GameEffect_1.GameEffect));
 exports.DamageNumberEffect = DamageNumberEffect;
 
-},{"./GameEffect":19,"@tweenjs/tween.js":79}],18:[function(require,module,exports){
+},{"./GameEffect":18,"@tweenjs/tween.js":74}],17:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var TWEEN = require("@tweenjs/tween.js");
@@ -1303,10 +1452,9 @@ var EffectsManager = (function () {
 }());
 exports.default = EffectsManager;
 
-},{"./DamageNumberEffect":17,"./ProjectileEffect":20,"@tweenjs/tween.js":79}],19:[function(require,module,exports){
+},{"./DamageNumberEffect":16,"./ProjectileEffect":19,"@tweenjs/tween.js":74}],18:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GameEffect = void 0;
 var GameEffect = (function () {
     function GameEffect(m_renderer) {
         var _this = this;
@@ -1331,14 +1479,14 @@ var GameEffect = (function () {
                 y: this.m_pos.y,
             };
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     Object.defineProperty(GameEffect.prototype, "entity_type", {
         get: function () {
             return "EFFECT";
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     GameEffect.prototype.destroy = function () {
@@ -1347,7 +1495,7 @@ var GameEffect = (function () {
 }());
 exports.GameEffect = GameEffect;
 
-},{}],20:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1363,7 +1511,6 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ProjectileEffect = void 0;
 var GameEffect_1 = require("./GameEffect");
 var TWEEN = require("@tweenjs/tween.js");
 var ProjectileEffect = (function (_super) {
@@ -1411,12 +1558,46 @@ var ProjectileEffect = (function (_super) {
 }(GameEffect_1.GameEffect));
 exports.ProjectileEffect = ProjectileEffect;
 
-},{"./GameEffect":19,"@tweenjs/tween.js":79}],21:[function(require,module,exports){
+},{"./GameEffect":18,"@tweenjs/tween.js":74}],20:[function(require,module,exports){
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EncounterController = exports.EncounterState = void 0;
 var PIXI = require("pixi.js");
-var BoardController_1 = require("../board/BoardController");
 var UnitQueue_1 = require("../play/UnitQueue");
 var event_1 = require("../../engine/listener/event");
 var Loader_1 = require("../board/Loader");
@@ -1424,6 +1605,7 @@ var render_1 = require("../../engine/render/render");
 var EffectsManager_1 = require("../effects/EffectsManager");
 var EnemyTurn_1 = require("../play/EnemyTurn");
 var BoardAnimator_1 = require("../animation/BoardAnimator");
+var GameBoard_1 = require("../board/GameBoard");
 var EncounterState;
 (function (EncounterState) {
     EncounterState[EncounterState["INIT"] = 0] = "INIT";
@@ -1432,6 +1614,7 @@ var EncounterState;
     EncounterState[EncounterState["RESULT"] = 3] = "RESULT";
     EncounterState[EncounterState["CLEANUP"] = 4] = "CLEANUP";
 })(EncounterState = exports.EncounterState || (exports.EncounterState = {}));
+;
 var EncounterController = (function () {
     function EncounterController(m_config) {
         var _this = this;
@@ -1440,23 +1623,39 @@ var EncounterController = (function () {
         this.m_interface_container = new PIXI.Container();
         this.loadMap = function (path) {
             return Loader_1.LoadBoard(path).then(function (board_data) {
-                _this.m_board_controller.initBoard(board_data);
+                _this.m_board.init(board_data);
                 _this.setupListeners();
-                _this.m_board_controller.sendToRenderer(_this.m_renderer);
-                _this.m_board_controller.setAnimator(_this.m_animator);
+                _this.m_renderer.initializeScene(_this.m_board);
                 _this.onSetupComplete();
                 return;
             });
         };
+        this.loadGameRules = function (path) {
+            return Promise.resolve();
+        };
+        this.addUnit = function (unit) {
+            var create_action = {
+                type: "CREATE_UNIT",
+                data: {
+                    unit: unit
+                }
+            };
+            _this.m_board.scene = GameBoard_1.GameBoard.AddActions(_this.m_board.scene, create_action);
+        };
         this.addUnits = function (units) {
-            units.forEach(_this.m_board_controller.addUnit);
+            units.forEach(_this.addUnit);
         };
         this.setupListeners = function () {
-            _this.m_board_controller.on("CREATE_UNIT", function (data) {
+            _this.m_board.on("CREATE_UNIT", function (result) {
+                var data = result.action.data;
                 _this.m_unit_queue.addUnit(data.unit);
             });
-            _this.m_board_controller.on("UNIT_KILLED", function (data) {
+            _this.m_board.on("UNIT_KILLED", function (result) {
+                var data = result.action.data;
                 _this.m_unit_queue.removeUnit(data.entity_id);
+            });
+            _this.m_board.on("UNIT_CREATED", function (result) {
+                var data = result.action.data;
             });
         };
         this.onSetupComplete = function () {
@@ -1465,24 +1664,48 @@ var EncounterController = (function () {
             _this.m_config.pixi_app.stage.addChild(_this.m_interface_container);
             EffectsManager_1.default.init(_this.m_renderer);
         };
-        this.startGame = function () {
-            _this.m_board_controller.executeActionStack().then(_this.startTurn);
-        };
-        this.startTurn = function () {
-            if (_this.checkVictory()) {
-                _this.emit("END");
-                return;
-            }
-            var id = _this.m_unit_queue.getNextQueued();
-            var unit = _this.m_board_controller.getUnit(id);
-            if (!unit) {
-                console.log('no units');
-                return;
-            }
-            new EnemyTurn_1.EnemyTurn(id, _this.m_board_controller, _this.onTurnComplete);
-        };
+        this.startGame = function () { return __awaiter(_this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        this.emit("START", this);
+                        return [4, this.executeTurn()];
+                    case 1:
+                        _a.sent();
+                        return [4, this.startTurn()];
+                    case 2:
+                        _a.sent();
+                        return [2];
+                }
+            });
+        }); };
+        this.startTurn = function () { return __awaiter(_this, void 0, void 0, function () {
+            var id, scene, unit;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (this.checkVictory()) {
+                            this.emit("END", this);
+                            return [2];
+                        }
+                        id = this.m_unit_queue.getNextQueued();
+                        scene = this.m_board.scene;
+                        unit = GameBoard_1.GameBoard.GetUnit(scene, id);
+                        if (!unit) {
+                            console.log('no units');
+                            return [2];
+                        }
+                        scene = EnemyTurn_1.EnemyTurn.FindBestMove(scene, unit.id);
+                        return [4, this.executeTurn(scene)];
+                    case 1:
+                        _a.sent();
+                        this.onTurnComplete();
+                        return [2];
+                }
+            });
+        }); };
         this.checkVictory = function () {
-            var units = _this.m_board_controller.getUnits();
+            var units = GameBoard_1.GameBoard.GetUnits(_this.m_board.scene);
             var remaining_teams = [];
             units.forEach(function (unit) {
                 if (unit.data.faction && remaining_teams.indexOf(unit.data.faction) === -1) {
@@ -1500,8 +1723,8 @@ var EncounterController = (function () {
         this.off = function (event_name, cb) {
             _this.m_event_manager.remove(event_name, cb);
         };
-        this.emit = function (event_name) {
-            _this.m_event_manager.emit(event_name, _this);
+        this.emit = function (event_name, data) {
+            _this.m_event_manager.emit(event_name, data);
         };
         this.destroy = function () {
             _this.m_config.pixi_app.stage.removeChild(_this.m_renderer.stage);
@@ -1512,11 +1735,33 @@ var EncounterController = (function () {
         this.onTurnComplete = function () {
             _this.startTurn();
         };
-        this.m_board_controller = new BoardController_1.BoardController();
-        this.m_unit_queue = new UnitQueue_1.UnitQueue();
+        this.m_board = new GameBoard_1.GameBoard();
         this.m_renderer = render_1.CreateRenderer(this.m_config);
-        this.m_animator = new BoardAnimator_1.BoardAnimator(this.m_renderer, this.m_board_controller);
+        this.m_animator = new BoardAnimator_1.BoardAnimator(this.m_renderer, this.m_board);
+        this.m_unit_queue = new UnitQueue_1.UnitQueue();
     }
+    EncounterController.prototype.executeTurn = function (scene) {
+        if (scene === void 0) { scene = this.m_board.scene; }
+        return __awaiter(this, void 0, void 0, function () {
+            var events;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        events = this.m_board.events;
+                        scene = GameBoard_1.GameBoard.ExecuteActionStack(scene, events);
+                        this.m_board.scene = scene;
+                        if (!this.m_animator.hasQueuedAnimations()) {
+                            console.log('no animations');
+                            return [2];
+                        }
+                        return [4, this.m_animator.start()];
+                    case 1:
+                        _a.sent();
+                        return [2];
+                }
+            });
+        });
+    };
     EncounterController.prototype.addInterfaceElement = function (element) {
         this.m_interface_container.addChild(element);
     };
@@ -1524,10 +1769,9 @@ var EncounterController = (function () {
 }());
 exports.EncounterController = EncounterController;
 
-},{"../../engine/listener/event":2,"../../engine/render/render":3,"../animation/BoardAnimator":9,"../board/BoardController":12,"../board/Loader":14,"../effects/EffectsManager":18,"../play/EnemyTurn":28,"../play/UnitQueue":29,"pixi.js":88}],22:[function(require,module,exports){
+},{"../../engine/listener/event":2,"../../engine/render/render":3,"../animation/BoardAnimator":9,"../board/GameBoard":12,"../board/Loader":13,"../effects/EffectsManager":17,"../play/EnemyTurn":27,"../play/UnitQueue":28,"pixi.js":83}],21:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.InitRenderPlugins = void 0;
 var PIXI = require("pixi.js");
 var blue_frag = "\nvarying vec2 vTextureCoord;\nvarying vec4 vColor;\nvarying float vTextureId;\nuniform sampler2D uSamplers[%count%];\n\nvoid main(void){\n    vec4 color;\n    %forloop%\n    float blue = (color.r + color.g + color.b) / 3.0;\n    gl_FragColor = vec4(color.r / 2.0, color.g / 2.0, blue, color.a);\n}\n";
 var red_frag = "\nvarying vec2 vTextureCoord;\nvarying vec4 vColor;\nvarying float vTextureId;\nuniform sampler2D uSamplers[%count%];\n\nvoid main(void){\n    vec4 color;\n    %forloop%\n    float red = (color.r + color.g + color.b) / 3.0;\n    gl_FragColor = vec4(red, color.g / 2.0, color.b / 2.0, color.a);\n}\n";
@@ -1539,10 +1783,9 @@ function InitRenderPlugins() {
 }
 exports.InitRenderPlugins = InitRenderPlugins;
 
-},{"pixi.js":88}],23:[function(require,module,exports){
+},{"pixi.js":83}],22:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Button = void 0;
 var PIXI = require("pixi.js");
 var COLOR_FILL = 0xCCFFFF;
 var COLOR_LINE = 0x333333;
@@ -1567,17 +1810,16 @@ var Button = (function () {
         get: function () {
             return this.m_container;
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     return Button;
 }());
 exports.Button = Button;
 
-},{"pixi.js":88}],24:[function(require,module,exports){
+},{"pixi.js":83}],23:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BaseMenu = void 0;
 var PIXI = require("pixi.js");
 var Button_1 = require("../Button");
 var BaseMenu = (function () {
@@ -1596,14 +1838,14 @@ var BaseMenu = (function () {
         get: function () {
             return this.m_container;
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     return BaseMenu;
 }());
 exports.BaseMenu = BaseMenu;
 
-},{"../Button":23,"pixi.js":88}],25:[function(require,module,exports){
+},{"../Button":22,"pixi.js":83}],24:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1619,7 +1861,6 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ReplayMenu = void 0;
 var BaseMenu_1 = require("./BaseMenu");
 var ReplayMenu = (function (_super) {
     __extends(ReplayMenu, _super);
@@ -1636,10 +1877,9 @@ var ReplayMenu = (function (_super) {
 }(BaseMenu_1.BaseMenu));
 exports.ReplayMenu = ReplayMenu;
 
-},{"./BaseMenu":24}],26:[function(require,module,exports){
+},{"./BaseMenu":23}],25:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PlayerParty = void 0;
 var immutable_1 = require("immutable");
 var PlayerParty = (function () {
     function PlayerParty(m_events) {
@@ -1649,6 +1889,8 @@ var PlayerParty = (function () {
         this.m_gold = 0;
         this.addUnit = function (unit) {
             _this.m_units = _this.m_units.push(unit);
+            var type = unit.data.unit_type;
+            var level = unit.data.unit_level;
         };
         this.addGold = function (amount) {
             _this.changeGold(amount);
@@ -1673,18 +1915,18 @@ var PlayerParty = (function () {
         get: function () {
             return this.m_units;
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     return PlayerParty;
 }());
 exports.PlayerParty = PlayerParty;
 
-},{"immutable":82}],27:[function(require,module,exports){
+},{"immutable":77}],26:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GetMoveOptions = void 0;
 var _ = require("lodash");
+var GameBoard_1 = require("../board/GameBoard");
 var Tile_1 = require("../board/Tile");
 var PathList = (function () {
     function PathList() {
@@ -1752,22 +1994,22 @@ var PathList = (function () {
     };
     return PathList;
 }());
-function GetMoveOptions(unit, board) {
+function GetMoveOptions(unit, scene) {
     if (!unit) {
         return [];
     }
     var max_cost = unit.stats.move;
     var closed_list = new PathList();
     var open_list = new PathList();
-    var current_tile = board.getTileAtPos(unit.pos);
+    var current_tile = GameBoard_1.GameBoard.GetTileAtPosiiton(scene, unit.pos);
     open_list.push({ tile: current_tile, cost: 0, last: null });
     var _loop_1 = function () {
         var next = open_list.getLowestCost();
         closed_list.push(next);
-        var adjacent = GetAdjacent(next.tile.pos, board);
+        var adjacent = GetAdjacent(next.tile.pos, scene);
         _.forEach(adjacent, function (tile) {
             var path = ToPathTile(tile, next.cost, next);
-            if (closed_list.exists(path) || path.cost > max_cost || !CanPassTile(unit, tile, board)) {
+            if (closed_list.exists(path) || path.cost > max_cost || !CanPassTile(unit, tile, scene)) {
                 return;
             }
             open_list.push(path);
@@ -1777,24 +2019,30 @@ function GetMoveOptions(unit, board) {
     while (!open_list.isEmpty()) {
         _loop_1();
     }
-    return closed_list.getPaths();
+    var paths = closed_list.getPaths().filter(function (path) { return CanOccupyTile(unit, path.tile, scene); });
+    return paths;
 }
 exports.GetMoveOptions = GetMoveOptions;
-function CanOccupyTile(unit, tile, board) {
-    return true;
-}
-function CanPassTile(unit, tile, board) {
-    if (board.getUnitAtPosition(tile.pos)) {
+function CanOccupyTile(unit, tile, scene) {
+    var occupant = GameBoard_1.GameBoard.GetUnitAtPosition(scene, tile.pos);
+    if (occupant && occupant !== unit) {
         return false;
     }
     return true;
 }
-function GetAdjacent(tile, board) {
+function CanPassTile(unit, tile, scene) {
+    var occupant = GameBoard_1.GameBoard.GetUnitAtPosition(scene, tile.pos);
+    if (occupant && occupant.data.faction !== unit.data.faction) {
+        return false;
+    }
+    return true;
+}
+function GetAdjacent(tile, scene) {
     return _.shuffle([
-        board.getTileAtPos({ x: tile.x - 1, y: tile.y }),
-        board.getTileAtPos({ x: tile.x + 1, y: tile.y }),
-        board.getTileAtPos({ x: tile.x, y: tile.y - 1 }),
-        board.getTileAtPos({ x: tile.x, y: tile.y + 1 }),
+        GameBoard_1.GameBoard.GetTileAtPosiiton(scene, { x: tile.x - 1, y: tile.y }),
+        GameBoard_1.GameBoard.GetTileAtPosiiton(scene, { x: tile.x + 1, y: tile.y }),
+        GameBoard_1.GameBoard.GetTileAtPosiiton(scene, { x: tile.x, y: tile.y - 1 }),
+        GameBoard_1.GameBoard.GetTileAtPosiiton(scene, { x: tile.x, y: tile.y + 1 }),
     ]);
 }
 function ToPathTile(tile, cost, last) {
@@ -1814,14 +2062,13 @@ function GetTileCost(tile) {
     return 1;
 }
 
-},{"../board/Tile":15,"lodash":84}],28:[function(require,module,exports){
+},{"../board/GameBoard":12,"../board/Tile":14,"lodash":79}],27:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EnemyTurn = void 0;
 var _ = require("lodash");
+var GameBoard_1 = require("../board/GameBoard");
 var pathfinding_1 = require("../pathfinding");
 var abilities_1 = require("./action/abilities");
-var AbilityTargetUI_1 = require("./action/AbilityTargetUI");
 var TURN_STATE;
 (function (TURN_STATE) {
     TURN_STATE[TURN_STATE["BEFORE_MOVE"] = 0] = "BEFORE_MOVE";
@@ -1831,120 +2078,167 @@ var TURN_STATE;
     TURN_STATE[TURN_STATE["AFTER_ACTING"] = 4] = "AFTER_ACTING";
 })(TURN_STATE || (TURN_STATE = {}));
 var EnemyTurn = (function () {
-    function EnemyTurn(m_unit_id, m_board_controller, m_onComplete) {
-        var _this = this;
-        this.m_unit_id = m_unit_id;
-        this.m_board_controller = m_board_controller;
-        this.m_onComplete = m_onComplete;
-        this.m_faction = null;
-        this.scoreBoard = function (board) {
-            var score = Math.random() / 4;
-            board.getUnits().forEach(function (unit) {
-                if (unit.data.faction !== _this.m_faction) {
-                    score -= unit.status.hp;
-                    score -= 5;
-                }
-                else {
-                    score += 50;
-                    score += unit.status.hp;
-                }
-            });
-            var active_unit = board.getUnit(_this.m_unit_id);
-            if (active_unit) {
-                var closest_1 = Infinity;
-                board.getUnits().forEach(function (unit) {
-                    if (unit.data.faction !== _this.m_faction) {
-                        var distance = Math.random() / 4 + Math.abs(active_unit.pos.x - unit.pos.x) + Math.abs(active_unit.pos.y - unit.pos.y);
-                        if (distance < closest_1) {
-                            closest_1 = distance;
-                        }
-                    }
-                });
-                if (closest_1 != Infinity) {
-                    score -= closest_1;
-                }
-            }
-            return score;
-        };
-        var move_promises = [];
-        var action_promises = [];
-        this.m_faction = this.m_board_controller.getUnit(this.m_unit_id).data.faction;
-        var ai_ctrl = this.m_board_controller.createClone();
-        var move_options = pathfinding_1.GetMoveOptions(ai_ctrl.getUnit(m_unit_id), ai_ctrl.board);
+    function EnemyTurn() {
+    }
+    EnemyTurn.FindBestMove = function (base_scene, unit_id) {
+        var unit = GameBoard_1.GameBoard.GetUnit(base_scene, unit_id);
+        var move_options = pathfinding_1.GetMoveOptions(unit, base_scene);
         var ai_options = [];
         _.forEach(move_options, function (option) {
-            var move_ctrl = ai_ctrl.createClone();
-            var move_action = _this.toMoveAction(option);
-            move_ctrl.sendAction(move_action);
-            move_promises.push(move_ctrl.executeActionStack().then(function () {
-                var active_unit = move_ctrl.getUnit(_this.m_unit_id);
-                _.forEach(active_unit.abilities, function (ability_name) {
-                    var ability_def = abilities_1.GetAbilityDef(ability_name);
-                    if (active_unit.status.mana < ability_def.cost) {
-                        return;
-                    }
-                    var ability_ui = new AbilityTargetUI_1.AbilityTargetUI(ability_def, active_unit, move_ctrl);
-                    _.forEach(ability_ui.options, function (ability_option) {
-                        var ability_action = ability_ui.getAction(ability_option.tile);
-                        var ability_ctrl = move_ctrl.createClone();
-                        ability_ctrl.sendAction(ability_action);
-                        action_promises.push(ability_ctrl.executeActionStack().then(function () {
-                            var opt = {
-                                score: _this.scoreBoard(ability_ctrl.board),
-                                move_action: move_action,
-                                ability_action: ability_action,
-                            };
-                            return ai_options.push(opt);
-                        }));
-                    });
+            var move_action = ToMoveAction(option, unit.id);
+            var move_scene = base_scene;
+            move_scene = GameBoard_1.GameBoard.AddActions(move_scene, move_action);
+            move_scene = GameBoard_1.GameBoard.ExecuteActionStack(move_scene);
+            var active_unit = GameBoard_1.GameBoard.GetUnit(move_scene, unit_id);
+            _.forEach(active_unit.abilities, function (ability_name) {
+                var ability_def = abilities_1.GetAbilityDef(ability_name);
+                if (active_unit.status.mana < ability_def.cost) {
+                    return;
+                }
+                var ability_options = GetAbilityOptions(move_scene, active_unit, ability_def);
+                _.forEach(ability_options, function (ability_option) {
+                    var ability_action = ToAction(ability_option.tile, unit, ability_def);
+                    var ability_scene = move_scene;
+                    ability_scene = GameBoard_1.GameBoard.AddActions(ability_scene, ability_action);
+                    ability_scene = GameBoard_1.GameBoard.ExecuteActionStack(ability_scene);
+                    var opt = {
+                        score: ScoreBoard(ability_scene, active_unit.id),
+                        move_action: move_action,
+                        ability_action: ability_action,
+                    };
+                    return ai_options.push(opt);
                 });
-            }));
-        });
-        Promise.all(move_promises)
-            .then(function () {
-            return Promise.all(action_promises);
-        })
-            .then(function () {
-            var best = null;
-            _.forEach(ai_options, function (option) {
-                if (best === null || option.score > best.score) {
-                    best = option;
-                }
-            });
-            _this.m_board_controller.sendAction(best.move_action);
-            _this.m_board_controller.executeActionStack().then(function () {
-                _this.m_board_controller.sendAction(best.ability_action);
-                _this.m_board_controller.executeActionStack().then(_this.m_onComplete);
             });
         });
-    }
-    EnemyTurn.prototype.toMoveAction = function (path) {
-        var action = [];
-        while (path) {
-            action.unshift({
-                type: "MOVE",
-                data: {
-                    entity_id: this.m_unit_id,
-                    move: {
-                        to: {
-                            x: path.tile.pos.x,
-                            y: path.tile.pos.y,
-                        }
-                    }
-                }
-            });
-            path = path.last;
-        }
-        return action;
+        var best = null;
+        _.forEach(ai_options, function (option) {
+            if (best === null || option.score > best.score) {
+                best = option;
+            }
+        });
+        console.log('best');
+        console.log(best.move_action);
+        console.log(best.ability_action);
+        var scene = base_scene;
+        scene = GameBoard_1.GameBoard.AddActions(scene, best.move_action);
+        scene = GameBoard_1.GameBoard.AddActions(scene, best.ability_action);
+        return scene;
     };
     return EnemyTurn;
 }());
 exports.EnemyTurn = EnemyTurn;
+function GetAbilityOptions(scene, active_unit, ability_def) {
+    var target_def = ability_def.target;
+    var start = active_unit.pos;
+    var max_range = target_def.range.max;
+    var min_range = target_def.range.min;
+    var options = [];
+    for (var offset_x = -max_range; offset_x <= max_range; offset_x++) {
+        var max_y = max_range - Math.abs(offset_x);
+        for (var offset_y = -max_y; offset_y <= max_y; offset_y++) {
+            if (Math.abs(offset_x) + Math.abs(offset_y) < min_range) {
+                continue;
+            }
+            var target_pos = {
+                x: start.x + offset_x,
+                y: start.y + offset_y
+            };
+            var tile = GameBoard_1.GameBoard.GetTileAtPosiiton(scene, target_pos);
+            if (tile) {
+                var target_unit = GameBoard_1.GameBoard.GetUnitAtPosition(scene, tile.pos);
+                switch (ability_def.target.target_type) {
+                    case "EMPTY":
+                        if (target_unit) {
+                            continue;
+                        }
+                        break;
+                    case "ALLY":
+                        if (!target_unit || active_unit.data.faction !== target_unit.data.faction) {
+                            continue;
+                        }
+                        break;
+                    case "ENEMY":
+                        if (!target_unit || active_unit.data.faction === target_unit.data.faction) {
+                            continue;
+                        }
+                        break;
+                    case "ANY":
+                        break;
+                }
+                options.push({ tile: tile });
+            }
+        }
+    }
+    return options;
+}
+function ScoreBoard(scene, unit_id) {
+    var score = Math.random() / 4;
+    var active_unit = GameBoard_1.GameBoard.GetUnit(scene, unit_id);
+    if (!active_unit) {
+        return score;
+    }
+    var faction = active_unit.data.faction;
+    GameBoard_1.GameBoard.GetUnits(scene).forEach(function (unit) {
+        if (unit.data.faction !== faction) {
+            score -= unit.status.hp;
+            score -= 5;
+        }
+        else {
+            score += 50;
+            score += unit.status.hp;
+        }
+    });
+    if (active_unit) {
+        var closest_1 = Infinity;
+        GameBoard_1.GameBoard.GetUnits(scene).forEach(function (unit) {
+            if (unit.data.faction !== faction) {
+                var distance = Math.random() / 4 + Math.abs(active_unit.pos.x - unit.pos.x) + Math.abs(active_unit.pos.y - unit.pos.y);
+                if (distance < closest_1) {
+                    closest_1 = distance;
+                }
+            }
+        });
+        if (closest_1 != Infinity) {
+            score -= closest_1;
+        }
+    }
+    return score;
+}
+function ToMoveAction(path, unit_id) {
+    var action = [];
+    while (path) {
+        action.unshift({
+            type: "MOVE",
+            data: {
+                entity_id: unit_id,
+                move: {
+                    to: {
+                        x: path.tile.pos.x,
+                        y: path.tile.pos.y,
+                    }
+                }
+            }
+        });
+        path = path.last;
+    }
+    return action;
+}
+function ToAction(tile, active_unit, ability_def) {
+    return [
+        {
+            type: "ABILITY",
+            data: {
+                source: active_unit,
+                target: tile,
+                ability: ability_def,
+            }
+        }
+    ];
+}
 
-},{"../pathfinding":27,"./action/AbilityTargetUI":31,"./action/abilities":34,"lodash":84}],29:[function(require,module,exports){
+},{"../board/GameBoard":12,"../pathfinding":26,"./action/abilities":29,"lodash":79}],28:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UnitQueue = void 0;
 var UnitQueue = (function () {
     function UnitQueue() {
         var _this = this;
@@ -1953,9 +2247,6 @@ var UnitQueue = (function () {
             unit: null,
         };
         this.m_current = this.m_root;
-        this.addUnits = function (units) {
-            units.forEach(_this.addUnit);
-        };
         this.addUnit = function (unit) {
             var parent = _this.m_root;
             while (parent.next && parent.next.unit.stats.speed >= unit.stats.speed) {
@@ -1992,251 +2283,9 @@ var UnitQueue = (function () {
 }());
 exports.UnitQueue = UnitQueue;
 
-},{}],30:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UpdateElements = void 0;
-var UpdateElements = (function () {
-    function UpdateElements() {
-    }
-    UpdateElements.AddEntity = function (elements, entity_id, entity) {
-        return elements.set(entity_id, entity);
-    };
-    UpdateElements.RemoveEntity = function (elements, entity_id) {
-        return elements.remove(entity_id);
-    };
-    UpdateElements.SetHP = function (elements, entity_id, hp) {
-        return elements.setIn([entity_id, 'status', 'hp'], hp);
-    };
-    UpdateElements.SetMP = function (elements, entity_id, mana) {
-        return elements.setIn([entity_id, 'status', 'mana'], mana);
-    };
-    UpdateElements.SetPosition = function (elements, entity_id, position) {
-        return elements.setIn([entity_id, 'pos'], position);
-    };
-    return UpdateElements;
-}());
-exports.UpdateElements = UpdateElements;
-
-},{}],31:[function(require,module,exports){
-"use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.AbilityTargetUI = void 0;
-var _ = require("lodash");
-var BoardActionUI_1 = require("./BoardActionUI");
-var AbilityTargetUI = (function (_super) {
-    __extends(AbilityTargetUI, _super);
-    function AbilityTargetUI(m_ability_def, m_active_unit, m_controller) {
-        var _this = _super.call(this, m_active_unit, m_controller) || this;
-        _this.m_ability_def = m_ability_def;
-        _this.m_active_unit = m_active_unit;
-        _this.m_controller = m_controller;
-        _this.getTileOptionsInRange = function (start, target_def) {
-            var max_range = target_def.range.max;
-            var min_range = target_def.range.min;
-            var options = [];
-            for (var offset_x = -max_range; offset_x <= max_range; offset_x++) {
-                var max_y = max_range - Math.abs(offset_x);
-                for (var offset_y = -max_y; offset_y <= max_y; offset_y++) {
-                    if (Math.abs(offset_x) + Math.abs(offset_y) < min_range) {
-                        continue;
-                    }
-                    var tile = _this.m_controller.getTile({ x: start.x + offset_x, y: start.y + offset_y });
-                    if (tile) {
-                        var unit = _this.m_controller.getUnitAtPosition(tile.pos);
-                        switch (_this.m_ability_def.target.target_type) {
-                            case "EMPTY":
-                                if (unit) {
-                                    continue;
-                                }
-                                break;
-                            case "ALLY":
-                                if (!unit || _this.m_active_unit.data.faction !== unit.data.faction) {
-                                    continue;
-                                }
-                                break;
-                            case "ENEMY":
-                                if (!unit || _this.m_active_unit.data.faction === unit.data.faction) {
-                                    continue;
-                                }
-                                break;
-                            case "ANY":
-                                break;
-                        }
-                        options.push({ tile: tile });
-                    }
-                }
-            }
-            return options;
-        };
-        _this.getAction = function (tile) {
-            var option = _this.getOptionFromTile(tile);
-            return _this.toAction(option);
-        };
-        _this.m_options = _this.getTileOptionsInRange(_this.m_active_unit.pos, _this.m_ability_def.target);
-        return _this;
-    }
-    AbilityTargetUI.prototype.toAction = function (option) {
-        return [
-            {
-                type: "ABILITY",
-                data: {
-                    source: this.m_active_unit,
-                    target: option.tile,
-                    ability: this.m_ability_def,
-                }
-            }
-        ];
-    };
-    AbilityTargetUI.prototype.getOptionFromTile = function (tile) {
-        var path = null;
-        _.forEach(this.m_options, function (option) {
-            if (option.tile === tile) {
-                path = option;
-                return false;
-            }
-            return true;
-        });
-        return path;
-    };
-    return AbilityTargetUI;
-}(BoardActionUI_1.BoardActionUI));
-exports.AbilityTargetUI = AbilityTargetUI;
-
-},{"./BoardActionUI":33,"lodash":84}],32:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ActionStack = void 0;
-var _ = require("lodash");
-var Movement_1 = require("./executors/action/Movement");
-var Damage_1 = require("./executors/action/Damage");
-var Killed_1 = require("./executors/action/Killed");
-var Ability_1 = require("./executors/action/Ability");
-var CreateUnit_1 = require("./executors/action/CreateUnit");
-var SummonUnit_1 = require("./executors/action/SummonUnit");
-var ActionStack = (function () {
-    function ActionStack(m_controller) {
-        var _this = this;
-        this.m_controller = m_controller;
-        this.m_stack_root = {
-            action: null,
-            next: null,
-        };
-        this.execute = function (elements) {
-            return new Promise(function (resolve) {
-                var next_action = _this.shift();
-                if (!next_action) {
-                    return resolve(null);
-                }
-                else {
-                    return resolve(_this.executeEvent(elements, next_action));
-                }
-            });
-        };
-        this.executeEvent = function (elements, action) {
-            var controller = _this.m_controller;
-            _this.m_controller.emit(action.type, action.data);
-            switch (action.type) {
-                case "MOVE":
-                    return Movement_1.ExecuteMove(action, elements, controller);
-                case "ABILITY":
-                    return Ability_1.ExecuteAbility(action, elements, controller);
-                case "DAMAGE":
-                    return Damage_1.ExecuteDamage(action, elements, controller);
-                case "UNIT_KILLED":
-                    return Killed_1.ExecuteKilled(action, elements, controller);
-                case "CREATE_UNIT":
-                    return CreateUnit_1.ExecuteCreateUnit(action, elements, controller);
-                case "SUMMON_UNIT":
-                    return SummonUnit_1.ExecuteSummonUnit(action, elements, controller);
-                default:
-                    return ExecuteDefault(action, elements, controller);
-            }
-        };
-        this.push = function (actions) {
-            actions = _.concat(actions);
-            _.forEach(actions, function (action) {
-                _this.tail.next = {
-                    action: action,
-                    next: null,
-                };
-            });
-        };
-        this.shift = function () {
-            var next = _this.m_stack_root.next;
-            if (next) {
-                _this.m_stack_root.next = next.next;
-                return next.action;
-            }
-            return null;
-        };
-    }
-    Object.defineProperty(ActionStack.prototype, "tail", {
-        get: function () {
-            var tail = this.m_stack_root;
-            while (tail.next) {
-                tail = tail.next;
-            }
-            return tail;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    return ActionStack;
-}());
-exports.ActionStack = ActionStack;
-function ExecuteDefault(action, elements, controller) {
-    return new Promise(function (resolve) {
-        controller.animateGameAction(action).then(function () {
-            resolve(elements);
-        });
-    });
-}
-
-},{"./executors/action/Ability":35,"./executors/action/CreateUnit":36,"./executors/action/Damage":37,"./executors/action/Killed":38,"./executors/action/Movement":39,"./executors/action/SummonUnit":40,"lodash":84}],33:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.BoardActionUI = void 0;
-var UNIT_COLLISION;
-(function (UNIT_COLLISION) {
-    UNIT_COLLISION[UNIT_COLLISION["NONE"] = 0] = "NONE";
-    UNIT_COLLISION[UNIT_COLLISION["ALL"] = 1] = "ALL";
-    UNIT_COLLISION[UNIT_COLLISION["ENEMY"] = 2] = "ENEMY";
-    UNIT_COLLISION[UNIT_COLLISION["ALLY"] = 3] = "ALLY";
-})(UNIT_COLLISION || (UNIT_COLLISION = {}));
-var BoardActionUI = (function () {
-    function BoardActionUI(m_active_unit, m_controller) {
-        this.m_active_unit = m_active_unit;
-        this.m_controller = m_controller;
-    }
-    Object.defineProperty(BoardActionUI.prototype, "options", {
-        get: function () {
-            return this.m_options;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    return BoardActionUI;
-}());
-exports.BoardActionUI = BoardActionUI;
-
-},{}],34:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.GetAbilityDef = void 0;
 var _ = require("lodash");
 var Loader_1 = require("../../../board/Loader");
 var TARGET_TYPE;
@@ -2258,163 +2307,145 @@ function GetAbilityDef(ability_name) {
 }
 exports.GetAbilityDef = GetAbilityDef;
 
-},{"../../../board/Loader":14,"lodash":84}],35:[function(require,module,exports){
+},{"../../../board/Loader":13,"lodash":79}],30:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ExecuteAbility = void 0;
 var _ = require("lodash");
-var UpdateElements_1 = require("../../../UpdateElements");
-function ExecuteAbility(action, elements, controller) {
-    return controller.animateGameAction(action).then(function () {
-        _.forEach(action.data.ability.effects, function (effect) {
-            var tiles = controller.getTilesInRange(action.data.target.pos, effect.range);
-            tiles.forEach(function (tile) {
-                var data = _.cloneDeep(effect.data);
-                data = _.defaults(data, { tile: tile, source: action.data.source });
-                var unit = controller.getUnitAtPosition(tile.pos);
-                if (unit) {
-                    controller.sendAction({
-                        type: effect.type,
-                        data: _.defaults(data, { entity_id: unit.id })
-                    });
-                }
-                else {
-                    controller.sendAction({
-                        type: effect.type,
-                        data: data
-                    });
-                }
-            });
+var GameBoard_1 = require("../../../../board/GameBoard");
+function ExecuteAbility(action, scene) {
+    var effects = action.data.ability.effects;
+    _.forEach(effects, function (effect) {
+        var tiles = GameBoard_1.GameBoard.GetTilesInRange(scene, action.data.target.pos, effect.range);
+        tiles.forEach(function (tile) {
+            var data = _.cloneDeep(effect.data);
+            data = _.defaults(data, { tile: tile, source: action.data.source });
+            var unit = GameBoard_1.GameBoard.GetUnitAtPosition(scene, tile.pos);
+            if (unit) {
+                scene = GameBoard_1.GameBoard.AddActions(scene, {
+                    type: effect.type,
+                    data: _.defaults(data, { entity_id: unit.id })
+                });
+            }
+            else {
+                scene = GameBoard_1.GameBoard.AddActions(scene, {
+                    type: effect.type,
+                    data: data
+                });
+            }
         });
-        var unit_id = action.data.source.id;
-        var mana = action.data.source.status.mana;
-        if (action.data.ability.cost > 0) {
-            mana -= action.data.ability.cost;
-            return UpdateElements_1.UpdateElements.SetMP(elements, unit_id, mana);
-        }
-        else {
-            mana += 2;
-            return UpdateElements_1.UpdateElements.SetMP(elements, unit_id, mana);
-        }
     });
+    var unit_id = action.data.source.id;
+    var mana = action.data.source.status.mana;
+    if (action.data.ability.cost > 0) {
+        mana -= action.data.ability.cost;
+    }
+    else {
+        mana += 2;
+    }
+    scene = GameBoard_1.GameBoard.SetMP(scene, unit_id, mana);
+    return scene;
 }
 exports.ExecuteAbility = ExecuteAbility;
 
-},{"../../../UpdateElements":30,"lodash":84}],36:[function(require,module,exports){
+},{"../../../../board/GameBoard":12,"lodash":79}],31:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ExecuteCreateUnit = void 0;
-var UpdateElements_1 = require("../../../UpdateElements");
-function ExecuteCreateUnit(action, elements, controller) {
+var GameBoard_1 = require("../../../../board/GameBoard");
+function ExecuteCreateUnit(action, scene) {
     var unit = action.data.unit;
-    var id = unit.id;
-    elements = UpdateElements_1.UpdateElements.AddEntity(elements, id, unit);
-    return new Promise(function (resolve) {
-        controller.sendAction({
-            type: "UNIT_CREATED",
-            data: {
-                unit: unit
-            }
-        });
-        resolve(elements);
+    scene = GameBoard_1.GameBoard.AddElement(scene, unit);
+    scene = GameBoard_1.GameBoard.AddActions(scene, {
+        type: "UNIT_CREATED",
+        data: {
+            unit: unit
+        }
     });
+    return scene;
 }
 exports.ExecuteCreateUnit = ExecuteCreateUnit;
 
-},{"../../../UpdateElements":30}],37:[function(require,module,exports){
+},{"../../../../board/GameBoard":12}],32:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ExecuteDamage = void 0;
-var UpdateElements_1 = require("../../../UpdateElements");
-function ExecuteDamage(action, elements, controller) {
-    return new Promise(function (resolve) {
-        var unit = controller.getUnit(action.data.entity_id);
-        if (!unit) {
-            return resolve(elements);
-        }
-        var starting_hp = unit.status.hp;
-        if (starting_hp === 0) {
-            return resolve(elements);
-        }
-        var new_hp = Math.max(starting_hp - action.data.amount, 0);
-        var difference = starting_hp - new_hp;
-        if (difference != 0) {
-            controller.sendAction({
-                type: "DAMAGE_DEALT",
-                data: {
-                    amount: difference,
-                    entity_id: unit.id,
-                }
-            });
-        }
-        if (new_hp === 0) {
-            controller.sendAction({
-                type: "UNIT_KILLED",
-                data: {
-                    entity_id: unit.id
-                }
-            });
-        }
-        var result = UpdateElements_1.UpdateElements.SetHP(elements, unit.id, new_hp);
-        resolve(result);
-    });
+var GameBoard_1 = require("../../../../board/GameBoard");
+function ExecuteDamage(action, scene) {
+    var unit = GameBoard_1.GameBoard.GetUnit(scene, action.data.entity_id);
+    if (!unit) {
+        return scene;
+    }
+    var starting_hp = unit.status.hp;
+    if (starting_hp === 0) {
+        return scene;
+    }
+    var new_hp = Math.max(starting_hp - action.data.amount, 0);
+    var difference = starting_hp - new_hp;
+    scene = GameBoard_1.GameBoard.SetHP(scene, unit.id, new_hp);
+    if (difference != 0) {
+        scene = GameBoard_1.GameBoard.AddActions(scene, {
+            type: "DAMAGE_DEALT",
+            data: {
+                amount: difference,
+                entity_id: unit.id,
+            }
+        });
+    }
+    if (new_hp === 0) {
+        scene = GameBoard_1.GameBoard.AddActions(scene, {
+            type: "UNIT_KILLED",
+            data: {
+                entity_id: unit.id
+            }
+        });
+    }
+    return scene;
 }
 exports.ExecuteDamage = ExecuteDamage;
 
-},{"../../../UpdateElements":30}],38:[function(require,module,exports){
+},{"../../../../board/GameBoard":12}],33:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ExecuteKilled = void 0;
-var UpdateElements_1 = require("../../../UpdateElements");
-function ExecuteKilled(action, elements, controller) {
-    return controller.animateGameAction(action).then(function () {
-        controller.removeEntity(action.data.entity_id);
-        return UpdateElements_1.UpdateElements.RemoveEntity(elements, action.data.entity_id);
-    });
+var Scene_1 = require("../../../../../engine/scene/Scene");
+function ExecuteKilled(action, scene) {
+    scene = Scene_1.Scene.RemoveElementById(scene, action.data.entity_id);
+    return scene;
 }
 exports.ExecuteKilled = ExecuteKilled;
 
-},{"../../../UpdateElements":30}],39:[function(require,module,exports){
+},{"../../../../../engine/scene/Scene":7}],34:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ExecuteMove = void 0;
-var UpdateElements_1 = require("../../../UpdateElements");
-function ExecuteMove(action, elements, controller) {
-    return controller.animateGameAction(action).then(function () {
-        return UpdateElements_1.UpdateElements.SetPosition(elements, action.data.entity_id, action.data.move.to);
-    });
+var GameBoard_1 = require("../../../../board/GameBoard");
+function ExecuteMove(action, scene) {
+    scene = GameBoard_1.GameBoard.SetElementPosition(scene, action.data.entity_id, action.data.move.to);
+    return scene;
 }
 exports.ExecuteMove = ExecuteMove;
 
-},{"../../../UpdateElements":30}],40:[function(require,module,exports){
+},{"../../../../board/GameBoard":12}],35:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ExecuteSummonUnit = void 0;
 var GameBoard_1 = require("../../../../board/GameBoard");
 var UnitLoader_1 = require("../../../../assets/UnitLoader");
-function ExecuteSummonUnit(action, elements, controller) {
-    return new Promise(function (resolve) {
-        var unit_data = UnitLoader_1.UnitLoader.GetUnitDefinition(action.data.unit_type);
-        var unit = GameBoard_1.CreateUnit(unit_data, action.data.source.data.faction);
-        unit.pos = {
-            x: action.data.tile.pos.x,
-            y: action.data.tile.pos.y,
-        };
-        controller.sendAction({
-            type: "CREATE_UNIT",
-            data: {
-                unit: unit,
-            }
-        });
-        resolve(elements);
+function ExecuteSummonUnit(action, scene) {
+    var unit_data = UnitLoader_1.UnitLoader.GetUnitDefinition(action.data.unit_type);
+    var unit = GameBoard_1.CreateUnit(unit_data, action.data.source.data.faction);
+    unit.pos = {
+        x: action.data.tile.pos.x,
+        y: action.data.tile.pos.y,
+    };
+    scene = GameBoard_1.GameBoard.AddActions(scene, {
+        type: "CREATE_UNIT",
+        data: {
+            unit: unit,
+        }
     });
+    return scene;
 }
 exports.ExecuteSummonUnit = ExecuteSummonUnit;
 
-},{"../../../../assets/UnitLoader":11,"../../../../board/GameBoard":13}],41:[function(require,module,exports){
+},{"../../../../assets/UnitLoader":11,"../../../../board/GameBoard":12}],36:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GoldDisplay = void 0;
 var PIXI = require("pixi.js");
 var GoldDisplay = (function () {
     function GoldDisplay(container, game_events) {
@@ -2434,10 +2465,9 @@ var GoldDisplay = (function () {
 }());
 exports.GoldDisplay = GoldDisplay;
 
-},{"pixi.js":88}],42:[function(require,module,exports){
+},{"pixi.js":83}],37:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RecruitableUnit = exports.RecruitableButton = exports.Tavern = void 0;
 var PIXI = require("pixi.js");
 var _ = require("lodash");
 var AssetManager_1 = require("../assets/AssetManager");
@@ -2488,7 +2518,27 @@ var Tavern = (function () {
             if (_this.m_player.chargeGold(3)) {
                 btn.onPurchase();
                 var unit_def = UnitLoader_1.UnitLoader.GetUnitDefinition(btn.type);
-                _this.m_player.addUnit(GameBoard_1.CreateUnit(unit_def, "PLAYER"));
+                var unit_1 = GameBoard_1.CreateUnit(unit_def, "PLAYER");
+                var free_space_1;
+                var attempts = 6000;
+                do {
+                    free_space_1 = true;
+                    unit_1.pos.x = 5 + Math.round(Math.random() * 7);
+                    unit_1.pos.y = 10 + Math.round(Math.random() * 3);
+                    _this.m_player.units.forEach(function (other) {
+                        if (unit_1.pos.x === other.pos.x && unit_1.pos.y === other.pos.y) {
+                            free_space_1 = false;
+                        }
+                        return free_space_1;
+                    });
+                    attempts--;
+                } while (!free_space_1 && attempts > 0);
+                if (attempts === 0) {
+                    _this.m_player.addGold(3);
+                    return;
+                }
+                _this.m_player.addUnit(unit_1);
+                _this.m_events.emit("UNIT_HIRED", { unit: unit_1 });
             }
         };
         this.render = function () {
@@ -2522,6 +2572,10 @@ var Tavern = (function () {
         };
         this.buyUnit = function (unit) {
         };
+        this.onTileDown = function (tile) {
+        };
+        this.destroy = function () {
+        };
         m_parent_container.addChild(this.m_container);
         this.m_container.scale.set(4);
         this.m_container.position.set(16, 16);
@@ -2538,7 +2592,7 @@ var Tavern = (function () {
         get: function () {
             return this.m_container;
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     return Tavern;
@@ -2630,7 +2684,7 @@ var RecruitableButton = (function () {
         get: function () {
             return this.m_container;
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     return RecruitableButton;
@@ -2644,17 +2698,16 @@ var RecruitableUnit = (function () {
         get: function () {
             return this.m_type;
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     return RecruitableUnit;
 }());
 exports.RecruitableUnit = RecruitableUnit;
 
-},{"../assets/AssetManager":10,"../assets/UnitLoader":11,"../board/GameBoard":13,"lodash":84,"pixi.js":88}],43:[function(require,module,exports){
+},{"../assets/AssetManager":10,"../assets/UnitLoader":11,"../board/GameBoard":12,"lodash":79,"pixi.js":83}],38:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DEBUG = void 0;
 var PIXI = require("pixi.js");
 var GameController_1 = require("./game/GameController");
 var render_1 = require("./engine/render/render");
@@ -2681,7 +2734,7 @@ AssetManager_1.default.init(function () {
     });
 });
 
-},{"./engine/render/render":3,"./game/GameController":8,"./game/assets/AssetManager":10,"./game/extras/plugins":22,"pixi.js":88}],44:[function(require,module,exports){
+},{"./engine/render/render":3,"./game/GameController":8,"./game/assets/AssetManager":10,"./game/extras/plugins":21,"pixi.js":83}],39:[function(require,module,exports){
 /*!
  * @pixi/accessibility - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -3332,7 +3385,7 @@ exports.AccessibilityManager = AccessibilityManager;
 exports.accessibleTarget = accessibleTarget;
 
 
-},{"@pixi/display":48,"@pixi/utils":77}],45:[function(require,module,exports){
+},{"@pixi/display":43,"@pixi/utils":72}],40:[function(require,module,exports){
 /*!
  * @pixi/app - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -3567,7 +3620,7 @@ Application.registerPlugin(ResizePlugin);
 exports.Application = Application;
 
 
-},{"@pixi/core":47,"@pixi/display":48}],46:[function(require,module,exports){
+},{"@pixi/core":42,"@pixi/display":43}],41:[function(require,module,exports){
 /*!
  * @pixi/constants - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -3917,7 +3970,7 @@ exports.TYPES = TYPES;
 exports.WRAP_MODES = WRAP_MODES;
 
 
-},{}],47:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 /*!
  * @pixi/core - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -16397,7 +16450,7 @@ exports.resources = index;
 exports.systems = systems;
 
 
-},{"@pixi/constants":46,"@pixi/display":48,"@pixi/math":59,"@pixi/runner":68,"@pixi/settings":69,"@pixi/ticker":76,"@pixi/utils":77}],48:[function(require,module,exports){
+},{"@pixi/constants":41,"@pixi/display":43,"@pixi/math":54,"@pixi/runner":63,"@pixi/settings":64,"@pixi/ticker":71,"@pixi/utils":72}],43:[function(require,module,exports){
 /*!
  * @pixi/display - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -18205,7 +18258,7 @@ exports.Container = Container;
 exports.DisplayObject = DisplayObject;
 
 
-},{"@pixi/math":59,"@pixi/settings":69,"@pixi/utils":77}],49:[function(require,module,exports){
+},{"@pixi/math":54,"@pixi/settings":64,"@pixi/utils":72}],44:[function(require,module,exports){
 /*!
  * @pixi/extract - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -18508,7 +18561,7 @@ Extract.arrayPostDivide = function arrayPostDivide (pixels, out)
 exports.Extract = Extract;
 
 
-},{"@pixi/core":47,"@pixi/math":59,"@pixi/utils":77}],50:[function(require,module,exports){
+},{"@pixi/core":42,"@pixi/math":54,"@pixi/utils":72}],45:[function(require,module,exports){
 /*!
  * @pixi/filter-alpha - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -18581,7 +18634,7 @@ var AlphaFilter = /*@__PURE__*/(function (Filter) {
 exports.AlphaFilter = AlphaFilter;
 
 
-},{"@pixi/core":47}],51:[function(require,module,exports){
+},{"@pixi/core":42}],46:[function(require,module,exports){
 /*!
  * @pixi/filter-blur - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -19017,7 +19070,7 @@ exports.BlurFilter = BlurFilter;
 exports.BlurFilterPass = BlurFilterPass;
 
 
-},{"@pixi/core":47,"@pixi/settings":69}],52:[function(require,module,exports){
+},{"@pixi/core":42,"@pixi/settings":64}],47:[function(require,module,exports){
 /*!
  * @pixi/filter-color-matrix - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -19624,7 +19677,7 @@ ColorMatrixFilter.prototype.grayscale = ColorMatrixFilter.prototype.greyscale;
 exports.ColorMatrixFilter = ColorMatrixFilter;
 
 
-},{"@pixi/core":47}],53:[function(require,module,exports){
+},{"@pixi/core":42}],48:[function(require,module,exports){
 /*!
  * @pixi/filter-displacement - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -19751,7 +19804,7 @@ var DisplacementFilter = /*@__PURE__*/(function (Filter) {
 exports.DisplacementFilter = DisplacementFilter;
 
 
-},{"@pixi/core":47,"@pixi/math":59}],54:[function(require,module,exports){
+},{"@pixi/core":42,"@pixi/math":54}],49:[function(require,module,exports){
 /*!
  * @pixi/filter-fxaa - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -19797,7 +19850,7 @@ var FXAAFilter = /*@__PURE__*/(function (Filter) {
 exports.FXAAFilter = FXAAFilter;
 
 
-},{"@pixi/core":47}],55:[function(require,module,exports){
+},{"@pixi/core":42}],50:[function(require,module,exports){
 /*!
  * @pixi/filter-noise - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -19885,7 +19938,7 @@ var NoiseFilter = /*@__PURE__*/(function (Filter) {
 exports.NoiseFilter = NoiseFilter;
 
 
-},{"@pixi/core":47}],56:[function(require,module,exports){
+},{"@pixi/core":42}],51:[function(require,module,exports){
 /*!
  * @pixi/graphics - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -23413,7 +23466,7 @@ exports.GraphicsGeometry = GraphicsGeometry;
 exports.LineStyle = LineStyle;
 
 
-},{"@pixi/constants":46,"@pixi/core":47,"@pixi/display":48,"@pixi/math":59,"@pixi/utils":77}],57:[function(require,module,exports){
+},{"@pixi/constants":41,"@pixi/core":42,"@pixi/display":43,"@pixi/math":54,"@pixi/utils":72}],52:[function(require,module,exports){
 /*!
  * @pixi/interaction - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -25891,7 +25944,7 @@ exports.InteractionTrackingData = InteractionTrackingData;
 exports.interactiveTarget = interactiveTarget;
 
 
-},{"@pixi/display":48,"@pixi/math":59,"@pixi/ticker":76,"@pixi/utils":77}],58:[function(require,module,exports){
+},{"@pixi/display":43,"@pixi/math":54,"@pixi/ticker":71,"@pixi/utils":72}],53:[function(require,module,exports){
 /*!
  * @pixi/loaders - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -26206,7 +26259,7 @@ exports.LoaderResource = LoaderResource;
 exports.TextureLoader = TextureLoader;
 
 
-},{"@pixi/core":47,"@pixi/utils":77,"resource-loader":94}],59:[function(require,module,exports){
+},{"@pixi/core":42,"@pixi/utils":72,"resource-loader":89}],54:[function(require,module,exports){
 /*!
  * @pixi/math - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -28328,7 +28381,7 @@ exports.SHAPES = SHAPES;
 exports.Transform = Transform;
 
 
-},{}],60:[function(require,module,exports){
+},{}],55:[function(require,module,exports){
 /*!
  * @pixi/mesh-extras - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -29098,7 +29151,7 @@ exports.SimplePlane = SimplePlane;
 exports.SimpleRope = SimpleRope;
 
 
-},{"@pixi/core":47,"@pixi/mesh":61}],61:[function(require,module,exports){
+},{"@pixi/core":42,"@pixi/mesh":56}],56:[function(require,module,exports){
 /*!
  * @pixi/mesh - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -29893,7 +29946,7 @@ exports.MeshGeometry = MeshGeometry;
 exports.MeshMaterial = MeshMaterial;
 
 
-},{"@pixi/constants":46,"@pixi/core":47,"@pixi/display":48,"@pixi/math":59,"@pixi/settings":69,"@pixi/utils":77}],62:[function(require,module,exports){
+},{"@pixi/constants":41,"@pixi/core":42,"@pixi/display":43,"@pixi/math":54,"@pixi/settings":64,"@pixi/utils":72}],57:[function(require,module,exports){
 /*!
  * @pixi/mixin-cache-as-bitmap - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -30328,7 +30381,7 @@ display.DisplayObject.prototype._cacheAsBitmapDestroy = function _cacheAsBitmapD
 };
 
 
-},{"@pixi/core":47,"@pixi/display":48,"@pixi/math":59,"@pixi/settings":69,"@pixi/sprite":72,"@pixi/utils":77}],63:[function(require,module,exports){
+},{"@pixi/core":42,"@pixi/display":43,"@pixi/math":54,"@pixi/settings":64,"@pixi/sprite":67,"@pixi/utils":72}],58:[function(require,module,exports){
 /*!
  * @pixi/mixin-get-child-by-name - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -30370,7 +30423,7 @@ display.Container.prototype.getChildByName = function getChildByName(name)
 };
 
 
-},{"@pixi/display":48}],64:[function(require,module,exports){
+},{"@pixi/display":43}],59:[function(require,module,exports){
 /*!
  * @pixi/mixin-get-global-position - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -30413,7 +30466,7 @@ display.DisplayObject.prototype.getGlobalPosition = function getGlobalPosition(p
 };
 
 
-},{"@pixi/display":48,"@pixi/math":59}],65:[function(require,module,exports){
+},{"@pixi/display":43,"@pixi/math":54}],60:[function(require,module,exports){
 /*!
  * @pixi/particles - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -31395,7 +31448,7 @@ exports.ParticleContainer = ParticleContainer;
 exports.ParticleRenderer = ParticleRenderer;
 
 
-},{"@pixi/constants":46,"@pixi/core":47,"@pixi/display":48,"@pixi/math":59,"@pixi/utils":77}],66:[function(require,module,exports){
+},{"@pixi/constants":41,"@pixi/core":42,"@pixi/display":43,"@pixi/math":54,"@pixi/utils":72}],61:[function(require,module,exports){
 (function (global){
 /*!
  * @pixi/polyfill - v5.1.6
@@ -31564,7 +31617,7 @@ if (!window.Int32Array)
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"es6-promise-polyfill":81,"object-assign":86}],67:[function(require,module,exports){
+},{"es6-promise-polyfill":76,"object-assign":81}],62:[function(require,module,exports){
 /*!
  * @pixi/prepare - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -32294,7 +32347,7 @@ exports.Prepare = Prepare;
 exports.TimeLimiter = TimeLimiter;
 
 
-},{"@pixi/core":47,"@pixi/display":48,"@pixi/graphics":56,"@pixi/settings":69,"@pixi/text":75,"@pixi/ticker":76}],68:[function(require,module,exports){
+},{"@pixi/core":42,"@pixi/display":43,"@pixi/graphics":51,"@pixi/settings":64,"@pixi/text":70,"@pixi/ticker":71}],63:[function(require,module,exports){
 /*!
  * @pixi/runner - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -32514,7 +32567,7 @@ Runner.prototype.run = Runner.prototype.emit;
 exports.Runner = Runner;
 
 
-},{}],69:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 /*!
  * @pixi/settings - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -32838,7 +32891,7 @@ exports.isMobile = isMobile;
 exports.settings = settings;
 
 
-},{"ismobilejs":83}],70:[function(require,module,exports){
+},{"ismobilejs":78}],65:[function(require,module,exports){
 /*!
  * @pixi/sprite-animated - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -33299,7 +33352,7 @@ var AnimatedSprite = /*@__PURE__*/(function (Sprite) {
 exports.AnimatedSprite = AnimatedSprite;
 
 
-},{"@pixi/core":47,"@pixi/sprite":72,"@pixi/ticker":76}],71:[function(require,module,exports){
+},{"@pixi/core":42,"@pixi/sprite":67,"@pixi/ticker":71}],66:[function(require,module,exports){
 /*!
  * @pixi/sprite-tiling - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -33809,7 +33862,7 @@ exports.TilingSprite = TilingSprite;
 exports.TilingSpriteRenderer = TilingSpriteRenderer;
 
 
-},{"@pixi/constants":46,"@pixi/core":47,"@pixi/math":59,"@pixi/sprite":72,"@pixi/utils":77}],72:[function(require,module,exports){
+},{"@pixi/constants":41,"@pixi/core":42,"@pixi/math":54,"@pixi/sprite":67,"@pixi/utils":72}],67:[function(require,module,exports){
 /*!
  * @pixi/sprite - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -34493,7 +34546,7 @@ var Sprite = /*@__PURE__*/(function (Container) {
 exports.Sprite = Sprite;
 
 
-},{"@pixi/constants":46,"@pixi/core":47,"@pixi/display":48,"@pixi/math":59,"@pixi/settings":69,"@pixi/utils":77}],73:[function(require,module,exports){
+},{"@pixi/constants":41,"@pixi/core":42,"@pixi/display":43,"@pixi/math":54,"@pixi/settings":64,"@pixi/utils":72}],68:[function(require,module,exports){
 /*!
  * @pixi/spritesheet - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -34914,7 +34967,7 @@ exports.Spritesheet = Spritesheet;
 exports.SpritesheetLoader = SpritesheetLoader;
 
 
-},{"@pixi/core":47,"@pixi/loaders":58,"@pixi/math":59,"@pixi/utils":77}],74:[function(require,module,exports){
+},{"@pixi/core":42,"@pixi/loaders":53,"@pixi/math":54,"@pixi/utils":72}],69:[function(require,module,exports){
 /*!
  * @pixi/text-bitmap - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -35755,7 +35808,7 @@ exports.BitmapFontLoader = BitmapFontLoader;
 exports.BitmapText = BitmapText;
 
 
-},{"@pixi/core":47,"@pixi/display":48,"@pixi/loaders":58,"@pixi/math":59,"@pixi/settings":69,"@pixi/sprite":72,"@pixi/utils":77}],75:[function(require,module,exports){
+},{"@pixi/core":42,"@pixi/display":43,"@pixi/loaders":53,"@pixi/math":54,"@pixi/settings":64,"@pixi/sprite":67,"@pixi/utils":72}],70:[function(require,module,exports){
 /*!
  * @pixi/text - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -38042,7 +38095,7 @@ exports.TextMetrics = TextMetrics;
 exports.TextStyle = TextStyle;
 
 
-},{"@pixi/core":47,"@pixi/math":59,"@pixi/settings":69,"@pixi/sprite":72,"@pixi/utils":77}],76:[function(require,module,exports){
+},{"@pixi/core":42,"@pixi/math":54,"@pixi/settings":64,"@pixi/sprite":67,"@pixi/utils":72}],71:[function(require,module,exports){
 /*!
  * @pixi/ticker - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -39005,7 +39058,7 @@ exports.TickerPlugin = TickerPlugin;
 exports.UPDATE_PRIORITY = UPDATE_PRIORITY;
 
 
-},{"@pixi/settings":69}],77:[function(require,module,exports){
+},{"@pixi/settings":64}],72:[function(require,module,exports){
 /*!
  * @pixi/utils - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -40032,7 +40085,7 @@ exports.trimCanvas = trimCanvas;
 exports.uid = uid;
 
 
-},{"@pixi/constants":46,"@pixi/settings":69,"earcut":80,"eventemitter3":78,"url":96}],78:[function(require,module,exports){
+},{"@pixi/constants":41,"@pixi/settings":64,"earcut":75,"eventemitter3":73,"url":91}],73:[function(require,module,exports){
 'use strict';
 
 var has = Object.prototype.hasOwnProperty
@@ -40370,7 +40423,7 @@ if ('undefined' !== typeof module) {
   module.exports = EventEmitter;
 }
 
-},{}],79:[function(require,module,exports){
+},{}],74:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -41340,7 +41393,7 @@ TWEEN.version = version;
 module.exports = TWEEN;
 
 }).call(this,require('_process'))
-},{"_process":89}],80:[function(require,module,exports){
+},{"_process":84}],75:[function(require,module,exports){
 'use strict';
 
 module.exports = earcut;
@@ -42021,7 +42074,7 @@ earcut.flatten = function (data) {
     return result;
 };
 
-},{}],81:[function(require,module,exports){
+},{}],76:[function(require,module,exports){
 (function (global,setImmediate){
 (function(global){
 
@@ -42371,7 +42424,7 @@ Promise.reject = function(reason){
 })(typeof window != 'undefined' ? window : typeof global != 'undefined' ? global : typeof self != 'undefined' ? self : this);
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("timers").setImmediate)
-},{"timers":95}],82:[function(require,module,exports){
+},{"timers":90}],77:[function(require,module,exports){
 /**
  * Copyright (c) 2014-present, Facebook, Inc.
  *
@@ -48237,9 +48290,9 @@ Promise.reject = function(reason){
 
 })));
 
-},{}],83:[function(require,module,exports){
+},{}],78:[function(require,module,exports){
 !function(e){var n=/iPhone/i,t=/iPod/i,r=/iPad/i,a=/\bAndroid(?:.+)Mobile\b/i,p=/Android/i,b=/\bAndroid(?:.+)SD4930UR\b/i,l=/\bAndroid(?:.+)(?:KF[A-Z]{2,4})\b/i,f=/Windows Phone/i,s=/\bWindows(?:.+)ARM\b/i,u=/BlackBerry/i,c=/BB10/i,h=/Opera Mini/i,v=/\b(CriOS|Chrome)(?:.+)Mobile/i,w=/Mobile(?:.+)Firefox\b/i;function m(e,i){return e.test(i)}function i(e){var i=e||("undefined"!=typeof navigator?navigator.userAgent:""),o=i.split("[FBAN");void 0!==o[1]&&(i=o[0]),void 0!==(o=i.split("Twitter"))[1]&&(i=o[0]);var d={apple:{phone:m(n,i)&&!m(f,i),ipod:m(t,i),tablet:!m(n,i)&&m(r,i)&&!m(f,i),device:(m(n,i)||m(t,i)||m(r,i))&&!m(f,i)},amazon:{phone:m(b,i),tablet:!m(b,i)&&m(l,i),device:m(b,i)||m(l,i)},android:{phone:!m(f,i)&&m(b,i)||!m(f,i)&&m(a,i),tablet:!m(f,i)&&!m(b,i)&&!m(a,i)&&(m(l,i)||m(p,i)),device:!m(f,i)&&(m(b,i)||m(l,i)||m(a,i)||m(p,i))||m(/\bokhttp\b/i,i)},windows:{phone:m(f,i),tablet:m(s,i),device:m(f,i)||m(s,i)},other:{blackberry:m(u,i),blackberry10:m(c,i),opera:m(h,i),firefox:m(w,i),chrome:m(v,i),device:m(u,i)||m(c,i)||m(h,i)||m(w,i)||m(v,i)}};return d.any=d.apple.device||d.android.device||d.windows.device||d.other.device,d.phone=d.apple.phone||d.android.phone||d.windows.phone,d.tablet=d.apple.tablet||d.android.tablet||d.windows.tablet,d}"undefined"!=typeof module&&module.exports&&"undefined"==typeof window?module.exports=i:"undefined"!=typeof module&&module.exports&&"undefined"!=typeof window?(module.exports=i(),module.exports.isMobile=i):"function"==typeof define&&define.amd?define([],e.isMobile=i()):e.isMobile=i()}(this);
-},{}],84:[function(require,module,exports){
+},{}],79:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -65355,7 +65408,7 @@ Promise.reject = function(reason){
 }.call(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],85:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -65522,7 +65575,7 @@ MiniSignal.MiniSignalBinding = MiniSignalBinding;
 exports['default'] = MiniSignal;
 module.exports = exports['default'];
 
-},{}],86:[function(require,module,exports){
+},{}],81:[function(require,module,exports){
 /*
 object-assign
 (c) Sindre Sorhus
@@ -65614,7 +65667,7 @@ module.exports = shouldUseNative() ? Object.assign : function (target, source) {
 	return to;
 };
 
-},{}],87:[function(require,module,exports){
+},{}],82:[function(require,module,exports){
 'use strict'
 
 module.exports = function parseURI (str, opts) {
@@ -65646,7 +65699,7 @@ module.exports = function parseURI (str, opts) {
   return uri
 }
 
-},{}],88:[function(require,module,exports){
+},{}],83:[function(require,module,exports){
 /*!
  * pixi.js - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -67080,7 +67133,7 @@ exports.filters = filters;
 exports.useDeprecated = useDeprecated;
 
 
-},{"@pixi/accessibility":44,"@pixi/app":45,"@pixi/constants":46,"@pixi/core":47,"@pixi/display":48,"@pixi/extract":49,"@pixi/filter-alpha":50,"@pixi/filter-blur":51,"@pixi/filter-color-matrix":52,"@pixi/filter-displacement":53,"@pixi/filter-fxaa":54,"@pixi/filter-noise":55,"@pixi/graphics":56,"@pixi/interaction":57,"@pixi/loaders":58,"@pixi/math":59,"@pixi/mesh":61,"@pixi/mesh-extras":60,"@pixi/mixin-cache-as-bitmap":62,"@pixi/mixin-get-child-by-name":63,"@pixi/mixin-get-global-position":64,"@pixi/particles":65,"@pixi/polyfill":66,"@pixi/prepare":67,"@pixi/runner":68,"@pixi/settings":69,"@pixi/sprite":72,"@pixi/sprite-animated":70,"@pixi/sprite-tiling":71,"@pixi/spritesheet":73,"@pixi/text":75,"@pixi/text-bitmap":74,"@pixi/ticker":76,"@pixi/utils":77}],89:[function(require,module,exports){
+},{"@pixi/accessibility":39,"@pixi/app":40,"@pixi/constants":41,"@pixi/core":42,"@pixi/display":43,"@pixi/extract":44,"@pixi/filter-alpha":45,"@pixi/filter-blur":46,"@pixi/filter-color-matrix":47,"@pixi/filter-displacement":48,"@pixi/filter-fxaa":49,"@pixi/filter-noise":50,"@pixi/graphics":51,"@pixi/interaction":52,"@pixi/loaders":53,"@pixi/math":54,"@pixi/mesh":56,"@pixi/mesh-extras":55,"@pixi/mixin-cache-as-bitmap":57,"@pixi/mixin-get-child-by-name":58,"@pixi/mixin-get-global-position":59,"@pixi/particles":60,"@pixi/polyfill":61,"@pixi/prepare":62,"@pixi/runner":63,"@pixi/settings":64,"@pixi/sprite":67,"@pixi/sprite-animated":65,"@pixi/sprite-tiling":66,"@pixi/spritesheet":68,"@pixi/text":70,"@pixi/text-bitmap":69,"@pixi/ticker":71,"@pixi/utils":72}],84:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -67266,7 +67319,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],90:[function(require,module,exports){
+},{}],85:[function(require,module,exports){
 (function (global){
 /*! https://mths.be/punycode v1.4.1 by @mathias */
 ;(function(root) {
@@ -67803,7 +67856,7 @@ process.umask = function() { return 0; };
 }(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],91:[function(require,module,exports){
+},{}],86:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -67889,7 +67942,7 @@ var isArray = Array.isArray || function (xs) {
   return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{}],92:[function(require,module,exports){
+},{}],87:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -67976,13 +68029,13 @@ var objectKeys = Object.keys || function (obj) {
   return res;
 };
 
-},{}],93:[function(require,module,exports){
+},{}],88:[function(require,module,exports){
 'use strict';
 
 exports.decode = exports.parse = require('./decode');
 exports.encode = exports.stringify = require('./encode');
 
-},{"./decode":91,"./encode":92}],94:[function(require,module,exports){
+},{"./decode":86,"./encode":87}],89:[function(require,module,exports){
 /*!
  * resource-loader - v3.0.1
  * https://github.com/pixijs/pixi-sound
@@ -70333,7 +70386,7 @@ exports.encodeBinary = encodeBinary;
 exports.middleware = index;
 
 
-},{"mini-signals":85,"parse-uri":87}],95:[function(require,module,exports){
+},{"mini-signals":80,"parse-uri":82}],90:[function(require,module,exports){
 (function (setImmediate,clearImmediate){
 var nextTick = require('process/browser.js').nextTick;
 var apply = Function.prototype.apply;
@@ -70412,7 +70465,7 @@ exports.clearImmediate = typeof clearImmediate === "function" ? clearImmediate :
   delete immediateIds[id];
 };
 }).call(this,require("timers").setImmediate,require("timers").clearImmediate)
-},{"process/browser.js":89,"timers":95}],96:[function(require,module,exports){
+},{"process/browser.js":84,"timers":90}],91:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -71146,7 +71199,7 @@ Url.prototype.parseHost = function() {
   if (host) this.hostname = host;
 };
 
-},{"./util":97,"punycode":90,"querystring":93}],97:[function(require,module,exports){
+},{"./util":92,"punycode":85,"querystring":88}],92:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -71164,4 +71217,4 @@ module.exports = {
   }
 };
 
-},{}]},{},[43]);
+},{}]},{},[38]);

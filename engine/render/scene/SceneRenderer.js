@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAsset = exports.SceneRenderer = void 0;
 var PIXI = require("pixi.js");
 var RenderEntity_1 = require("./RenderEntity");
 var event_1 = require("../../listener/event");
@@ -57,6 +56,7 @@ var SceneRenderer = (function () {
             _this.m_renderables = new linkedlist_1.LinkedList();
             _this.m_container.removeChildren();
             _this.m_screen_effects_container.removeChildren();
+            _this.m_event_manager.clear();
             _this.m_pixi.ticker.remove(_this.renderScene);
         };
         this.m_container = new PIXI.Container();
@@ -66,21 +66,21 @@ var SceneRenderer = (function () {
         get: function () {
             return this.m_pixi;
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     Object.defineProperty(SceneRenderer.prototype, "stage", {
         get: function () {
             return this.m_container;
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     Object.defineProperty(SceneRenderer.prototype, "effects_container", {
         get: function () {
             return this.m_screen_effects_container;
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     return SceneRenderer;
@@ -91,12 +91,14 @@ function getAsset(entity) {
         return {
             type: "SPRITE",
             depth_offset: -8,
+            scale: 1,
             name: Tile_1.GetTileName(entity.data.tile_type),
         };
     }
     else if (Unit_1.isUnit(entity)) {
         return {
             type: "ANIMATED_SPRITE",
+            scale: (entity.data.unit_level - 1) * 0.25 + 1,
             depth_offset: 2,
             name: entity.data.unit_type + '_idle',
         };

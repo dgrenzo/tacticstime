@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BaseMenu = void 0;
 var PIXI = require("pixi.js");
 var Button_1 = require("../Button");
 var BaseMenu = (function () {
@@ -19,7 +18,7 @@ var BaseMenu = (function () {
         get: function () {
             return this.m_container;
         },
-        enumerable: false,
+        enumerable: true,
         configurable: true
     });
     return BaseMenu;

@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BoardEditor = void 0;
 var PIXI = require("pixi.js");
 var tile_palette_1 = require("./interface/tile_palette");
+var GameBoard_1 = require("../board/GameBoard");
 var BoardEditor = (function () {
     function BoardEditor(m_board, m_renderer) {
         var _this = this;
@@ -12,7 +12,7 @@ var BoardEditor = (function () {
         var m_palette = new tile_palette_1.TilePalette();
         var painting = false;
         var paintTile = function (pos, type) {
-            var tile = _this.m_board.getTileAtPos(pos);
+            var tile = GameBoard_1.GameBoard.GetTileAtPosiiton(_this.m_board.scene, pos);
             if (!tile) {
                 return;
             }

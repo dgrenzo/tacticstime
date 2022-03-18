@@ -31,7 +31,7 @@ interface ITurnOption {
 
 export class EnemyTurn {
 
-  public static async FindBestMove(base_scene : IImmutableScene, unit_id) {
+  public static async FindBestMove(base_scene : IImmutableScene, unit_id) : Promise<IImmutableScene> {
 
     const LAG_TIME = 20;
     let lag_timeout = Date.now() + LAG_TIME;

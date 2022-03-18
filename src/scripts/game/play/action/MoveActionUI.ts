@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import { GameBoard } from '../../board/GameBoard';
 import { ITile } from '../../board/Tile';
 import { IUnit } from '../../board/Unit';
-import { IPathTile } from '../../pathfinding';
+import { IPathTile } from '../../pathfinding/Pathfinding';
 import { BoardActionUI } from "./BoardActionUI";
 import { IMoveActionData, IMoveAction } from './executors/action/Movement';
 

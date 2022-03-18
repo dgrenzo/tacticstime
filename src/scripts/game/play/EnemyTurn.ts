@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import { GameBoard, IBoardPos } from '../board/GameBoard';
-import { GetMoveOptions, IPathTile } from '../pathfinding';
+import { GetMoveOptions, IPathTile } from '../pathfinding/Pathfinding';
 import { IUnit } from '../board/Unit';
 import { ITile } from '../board/Tile';
 import { GetAbilityDef, IAbilityDef } from './action/abilities';

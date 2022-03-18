@@ -20,8 +20,6 @@ let TIER_ONE : UNIT_TYPE[] = [
  "basic_axe",
 ]
 
-type TAVERN_EVENT = "UNIT_HIRED" | "LEAVE_TAVERN" | "UNIT_SOLD" | "TAVERN_REFRESHED";
-
 function GetRandomRecruit() : UNIT_TYPE {
   let index = Math.floor(Math.random() * TIER_ONE.length) % TIER_ONE.length;
   return TIER_ONE[index];

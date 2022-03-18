@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import { IBoardPos } from '../../board/GameBoard';
-import { IPathTile } from '../../pathfinding';
+import { IPathTile } from '../../pathfinding/Pathfinding';
 import { ITargetDef } from './abilities';
 import { ITile } from '../../board/Tile';
 import { IAbilityAction } from './executors/action/Ability';

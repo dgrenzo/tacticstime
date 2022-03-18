@@ -97,37 +97,132 @@ export class GameBoard extends Scene {
       if (!action) {
         return scene;
       }
-      scene = GameBoard.ShiftFirstAction(scene);
-      scene = GameBoard.ExecuteAction(scene, action);
+      scene = GameBoard.ExecuteNextAction(scene);
 
       if (event_watcher) {
-        console.log(action);
+        console.log(action.type, action.data);
         event_watcher.emit(action.type, { action, scene });
       }
+
     } while (true);
   }
 
-  public static ExecuteAction(scene : IImmutableScene, action : IGameAction) : IImmutableScene {
-    if (!action) {
-      return scene;
+  public static ExecuteActionListeners(scene: IImmutableScene) : IImmutableScene {
+    const action = GameBoard.GetNextAction(scene);
+    // const listeners = GameBoard.GetListeners(scene);
+
+    // const action_listeners = listeners.get(action.type);
+
+    // function ActionListener(scene : IImmutableScene) {
+    //   const action = GameBoard.GetNextAction(scene);
+
+    //   const listener_config = divine_shield_config;
+
+    //   if (action.type !== listener_config.trigger.action)
+    //   {
+    //     return scene;
+    //   }
+
+    //   function parseWhere(element_raw : string, assign = null) {
+    //     const parts = element_raw.split('.');
+    //     const base = parts.shift();
+
+    //     let data = null;
+    //     switch (base) {
+    //       case "ACTION" : data = action.data; break;
+    //       case "AURA_CONFIG" : data = listener_config.config; break;
+    //     }
+    //     parts.forEach((path, index) => {
+    //       if (assign !== null && index === parts.length - 1) {
+    //         data[path] = assign
+    //       }
+    //       data = data[path];
+    //     });
+
+    //     return data;
+    //  }
+
+    //   let pass = true;
+    //   listener_config.trigger.where.forEach(where_condition => {
+
+    //     const from = where_condition[0];
+    //     const comparison = where_condition[1];
+    //     const to = where_condition[2];
+
+    //     switch (comparison) {
+    //       case "EQUALS" :
+
+    //         let from_value = parseWhere(from);
+    //         let to_value = parseWhere(to);
+
+    //         const satisfied = from_value === to_value;
+    //         console.log( from_value + ' === ' + to_value + '  ' + satisfied)
+
+    //         pass = pass && satisfied;
+    //         break; 
+    //     }
+    //   });
+
+    //   if (!pass) {
+    //     return scene;
+    //   }
+
+    //   const effects = listener_config.effects;
+
+    //   effects.forEach(effect => {
+    //     switch (effect.type) {
+    //       case "SET_VALUE" : 
+    //         parseWhere(effect.data.value_src, effect.data.value);
+    //         break;
+    //     }
+    //   })
+    //   console.log('pass all');
+
+    //   scene = GameBoard.UpdateAction(scene, 0, action)
+
+    //   return scene;
+    // }
+
+    // scene = ActionListener(scene);
+
+
+
+
+    return scene;
+  }
+
+  public static ExecuteNextAction(scene : IImmutableScene) : IImmutableScene {
+    if (!GameBoard.GetNextAction(scene)) {
+      return scene; 
     }
+
+    scene = GameBoard.ExecuteActionListeners(scene);
+
+    const action = GameBoard.GetNextAction(scene);
     
     switch (action.type) {
       case "MOVE" :
-        return ExecuteMove(action as IMoveAction, scene);
+        scene = ExecuteMove(action as IMoveAction, scene);
+        break;
       case "ABILITY" : 
-        return ExecuteAbility(action as IAbilityAction, scene);
+        scene = ExecuteAbility(action as IAbilityAction, scene);
+        break;
       case "DAMAGE" : 
-        return ExecuteDamage(action as IDamageAction, scene);
+        scene = ExecuteDamage(action as IDamageAction, scene);
+        break;
       case "UNIT_KILLED" :
-        return ExecuteKilled(action as IGameAction, scene);
+        scene = ExecuteKilled(action as IGameAction, scene);
+        break;
       case "CREATE_UNIT" :
-        return ExecuteCreateUnit(action as ICreateUnitAction, scene);
+        scene = ExecuteCreateUnit(action as ICreateUnitAction, scene);
+        break;
       case "SUMMON_UNIT" :
-        return ExecuteSummonUnit(action as ISummonUnitAction, scene);
-      default :
-        return scene;
+        scene = ExecuteSummonUnit(action as ISummonUnitAction, scene);
+        break;
     }
+
+    scene = GameBoard.ShiftFirstAction(scene);
+    return scene;
   }
 
   public static GetTilesInRange(scene : IImmutableScene, pos : IBoardPos, range : IRangeDef) {
@@ -179,6 +274,14 @@ export class GameBoard extends Scene {
     const result = elements.setIn([entity_id, 'status', 'mana' ], mana);
 
     return Scene.SetElements(scene, result);
+  }
+
+  public static UpdateAction(scene : IImmutableScene, index, action : IGameAction) : IImmutableScene {
+    let actions = Scene.GetActions(scene);
+    actions = actions.remove(index);
+    actions = actions.insert(index, action);
+
+    return GameBoard.SetActions(scene, actions);
   }
 
   public static AddActions(scene : IImmutableScene, game_actions : IGameAction | IGameAction[]) : IImmutableScene {

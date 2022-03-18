@@ -79,9 +79,9 @@ export class EnemyTurn {
       }
     });
 
-    console.log('best') 
-    console.log(best.move_action);
-    console.log(best.ability_action);
+    // console.log('best') 
+    // console.log(best.move_action);
+    // console.log(best.ability_action);
 
     let scene = base_scene;
     scene = GameBoard.AddActions(scene, best.move_action);

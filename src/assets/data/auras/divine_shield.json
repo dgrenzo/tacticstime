@@ -1,24 +1,21 @@
 {
   "unique" : true,
+  "config" : {
+    "BEARER_ID" : 256
+  },
   "trigger" : {
-    "event" : "DEAL_DAMAGE",
-    "target" : "bearer"
+    "action" : "DAMAGE",
+    "where" : [
+      ["ACTION.source.id", "EQUALS", "AURA_CONFIG.BEARER_ID"]
+    ]
   },
   "effects" : 
   [
     {
-      "type" : "modify_event",
+      "type" : "SET_VALUE",
       "data" : {
-        "variable" : "amount",
-        "operation" : "multiply",
-        "amount" : 0,
-        "final" : true
-      }
-    },
-    {
-      "type" : "dispell",
-      "data" : {
-        "target" : "this"
+        "value_src" : "ACTION.amount",
+        "value" : 5
       }
     }
   ]

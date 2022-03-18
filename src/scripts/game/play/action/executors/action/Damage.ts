@@ -1,6 +1,6 @@
 import { IImmutableScene } from "../../../../../engine/scene/Scene";
-import { UpdateElements } from "../../../UpdateElements";
-import { GameBoard, IActionData, IGameAction } from "../../../../board/GameBoard";
+import { GameBoard, IActionData, IBoardPos, IGameAction } from "../../../../board/GameBoard";
+import { IUnit } from "../../../../board/Unit";
 
 export interface IDamageAction extends IGameAction {
   type : "DAMAGE",
@@ -9,6 +9,7 @@ export interface IDamageAction extends IGameAction {
 
 export interface IDamageActionData extends IActionData {
   amount : number,
+  target : IUnit,
 }
 
 export interface IDamageDealtAction extends IGameAction {
@@ -35,11 +36,12 @@ export function ExecuteDamage(action : IDamageAction, scene : IImmutableScene):I
 
   scene = GameBoard.SetHP(scene, unit.id, new_hp);
 
-  if (difference != 0) {
+  if (difference > 0) {
     scene = GameBoard.AddActions(scene, {
       type : "DAMAGE_DEALT",
       data : {
         amount : difference,
+        target : unit,
         entity_id : unit.id,
       }
     } as IDamageDealtAction);

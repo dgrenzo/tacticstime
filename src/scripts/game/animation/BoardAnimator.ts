@@ -59,8 +59,6 @@ export class BoardAnimator {
     let next_action = this.m_action_list.shift();
 
     while (next_action) {
-      console.log('animating');
-      console.log(next_action);
       await this.animateGameAction(next_action.action, next_action.scene);
       next_action = this.m_action_list.shift();
     }
@@ -104,7 +102,7 @@ export class BoardAnimator {
           let effect = this.createEffect(action, resolve);
     
           if (effect) {
-            let action_target = elements.get(action.data.entity_id);
+            let action_target = action.data.target ?? elements.get(action.data.entity_id);
             effect.setPosition(action_target.pos);
           }
           setTimeout(resolve, 100);

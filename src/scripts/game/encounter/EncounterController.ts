@@ -36,6 +36,8 @@ interface EncounterEvents extends IEncounterControllerEvent, ITilePointerEvents 
 
 export class EncounterController { 
 
+  private m_container : PIXI.Container;
+
   private m_board : GameBoard;
 
   private m_renderer : SceneRenderer;
@@ -111,10 +113,15 @@ export class EncounterController {
 
 
   private onSetupComplete = () => {
-    this.m_config.pixi_app.stage.addChild(this.m_renderer.stage);
-    this.m_config.pixi_app.stage.addChild(this.m_renderer.effects_container);
-    this.m_config.pixi_app.stage.addChild(this.m_interface_container);
+    this.m_container = new PIXI.Container();    
+    this.m_container.position.set(0, -100);
 
+    this.m_container.addChild(this.m_renderer.stage);
+    this.m_container.addChild(this.m_renderer.effects_container);
+    this.m_container.addChild(this.m_interface_container);
+
+    this.m_config.pixi_app.stage.addChild(this.m_container);
+    
     // let highlighter = new TileHighlighter(this.m_renderer, this.m_board_controller);
     // this.m_config.pixi_app.ticker.add(highlighter.update);
 
@@ -196,9 +203,7 @@ export class EncounterController {
   }
 
   public destroy = () => {
-    this.m_config.pixi_app.stage.removeChild(this.m_renderer.stage);
-    this.m_config.pixi_app.stage.removeChild(this.m_renderer.effects_container);
-    this.m_config.pixi_app.stage.removeChild(this.m_interface_container);
+    this.m_config.pixi_app.stage.removeChild(this.m_container);
     this.m_renderer.reset();
   }
 

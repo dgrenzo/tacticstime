@@ -11,6 +11,7 @@ import { UNIT_TYPE } from './types/units';
 import { GoldDisplay } from './play/interface/GoldDisplay';
 import { ReplayMenu } from './interface/menus/ReplayMenu';
 import { IUnit } from './board/Unit';
+import { AuraLoader } from './assets/AuraLoader';
 
 export type GameConfig = {
   pixi_app : PIXI.Application,
@@ -48,14 +49,17 @@ export class GameController {
     m_config.pixi_app.ticker.add(this.update);
 
     this.m_config.pixi_app.renderer.on('resize', this.onResize);
+    
+    this.init();
+  }
+
+  private async init() {
+
+    await AuraLoader.LoadAuraDefinitions();
+    await UnitLoader.LoadUnitDefinitions();
+
     new GoldDisplay(this.m_config.pixi_app.stage, this.m_events);
 
-    UnitLoader.LoadUnitDefinitions().then(() => {
-      this.m_player_party = new PlayerParty(this.m_events);
-      this.startNextTavern();
-    });
-
-    
     this.m_events.on("LEAVE_TAVERN", () => {
       this.startNextEncounter();
     });
@@ -64,8 +68,11 @@ export class GameController {
       const unit : IUnit = data.unit;
       this.m_encounter.addUnit(unit);
       this.m_encounter.executeTurn();
-    })
+    });
 
+    
+    this.m_player_party = new PlayerParty(this.m_events);
+    this.startNextTavern();
   }
 
   private update = (deltaTime : number) => {
@@ -105,7 +112,7 @@ export class GameController {
 
   private startNextEncounter = () => {
     let types : UNIT_TYPE[] = ["lizard", "mooseman", "rhino"]
-    let amount = 1; //Math.round(Math.random()*5) + 3;
+    let amount = Math.round(Math.random()*5) + 3;
     for (let i = 0; i < amount; i ++) {
       let enemy = CreateUnit(UnitLoader.GetUnitDefinition(types[Math.floor(Math.random() * 3)]), "ENEMY");
       enemy.pos.x = 7 + i;

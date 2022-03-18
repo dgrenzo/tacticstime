@@ -164,7 +164,7 @@ export class EncounterController {
       return;
     }
 
-    scene = EnemyTurn.FindBestMove(scene, unit.id);
+    scene = await EnemyTurn.FindBestMove(scene, unit.id).then(scene => { return scene });
 
     await this.executeTurn(scene);
 

@@ -31,13 +31,20 @@ interface ITurnOption {
 
 export class EnemyTurn {
 
-  public static FindBestMove(base_scene, unit_id) {
+  public static async FindBestMove(base_scene : IImmutableScene, unit_id) {
+
+    const LAG_TIME = 20;
+    let lag_timeout = Date.now() + LAG_TIME;
+
     const unit = GameBoard.GetUnit(base_scene, unit_id);
 
     let move_options = GetMoveOptions(unit, base_scene)
     
     let ai_options : ITurnOption[] = [];
-    _.forEach(move_options, option => {
+
+
+    for (let i = 0; i < move_options.length; i ++) {
+      const option = move_options[i];
 
       const move_action = ToMoveAction(option, unit.id);
       let move_scene = base_scene;
@@ -47,16 +54,18 @@ export class EnemyTurn {
 
       const active_unit = GameBoard.GetUnit(move_scene, unit_id);
 
-      _.forEach(active_unit.abilities, (ability_name) => {
+      for (let n = 0; n < active_unit.abilities.length; n ++) {
+        const ability_name = active_unit.abilities[n];
+
         let ability_def = GetAbilityDef(ability_name);
         if (active_unit.status.mana < ability_def.cost) {
-          return;
+          continue;
         }
 
         const ability_options = GetAbilityOptions(move_scene, active_unit, ability_def);
 
-        _.forEach(ability_options, ability_option => {
-          let ability_action = ToAction(ability_option.tile, unit, ability_def);
+        for (let p = 0; p < ability_options.length; p ++) {
+          let ability_action = ToAction(ability_options[p].tile, unit, ability_def);
 
           let ability_scene = move_scene;
           ability_scene = GameBoard.AddActions(ability_scene, ability_action);
@@ -67,11 +76,16 @@ export class EnemyTurn {
             move_action,
             ability_action,
           };
-            
-          return ai_options.push(opt)
-        })
-      });
-    });
+          
+          if(Date.now() > lag_timeout) {
+            await new Promise(resolve => { requestAnimationFrame(resolve) });
+            lag_timeout = Date.now() + LAG_TIME;
+          }
+
+          ai_options.push(opt)
+        }
+      }
+    }
     let best : ITurnOption = null;
     _.forEach(ai_options, option => {
       if (best === null || option.score > best.score) {

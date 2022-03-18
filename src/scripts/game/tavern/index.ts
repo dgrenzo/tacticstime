@@ -2,12 +2,13 @@ import * as PIXI from 'pixi.js'
 import * as _ from 'lodash'
 
 import { UNIT_TYPE } from "../types/units";
-import { EventManager } from "../../engine/listener/event";
 import { PlayerParty } from '../party';
 import AssetManager from '../assets/AssetManager';
 import { CreateUnit } from '../board/GameBoard';
 import { UnitLoader } from '../assets/UnitLoader';
 import { ITile } from '../board/Tile';
+import { TypedEventEmitter } from '../../engine/listener/TypedEventEmitter';
+import { IGameControllerEvents } from '../GameController';
 
 
 let TIER_ONE : UNIT_TYPE[] = [
@@ -33,7 +34,7 @@ export class Tavern {
   private m_available_slots = 5;
   private m_available_recruits : RecruitableButton[] = [];
 
-  constructor (m_parent_container : PIXI.Container, private m_events : PIXI.utils.EventEmitter) {
+  constructor (m_parent_container : PIXI.Container, private m_events : TypedEventEmitter<IGameControllerEvents>) {
     m_parent_container.addChild(this.m_container);
     this.m_container.scale.set(4);
     this.m_container.position.set(16, 16);

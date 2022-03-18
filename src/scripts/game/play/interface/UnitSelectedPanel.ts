@@ -3,8 +3,8 @@ import * as PIXI from 'pixi.js';
 
 import { GameController } from "../../GameController";
 import { IUnit } from '../../board/Unit';
-import { EventManager } from '../../../engine/listener/event';
 import { GetAbilityDef, IAbilityDef } from '../action/abilities';
+import { TypedEventEmitter } from '../../../engine/listener/TypedEventEmitter';
 
 export interface IUnitSelectedPanelEvent {
   MOVE_SELECTED : any,
@@ -14,7 +14,7 @@ export interface IUnitSelectedPanelEvent {
 export class UnitSelectedPanel {
 
   private m_container : PIXI.Container = new PIXI.Container();
-  private m_event_manager : EventManager<IUnitSelectedPanelEvent> = new EventManager();
+  private m_events : TypedEventEmitter<IUnitSelectedPanelEvent> = new TypedEventEmitter();
 
   constructor (private m_controller : GameController) {
     this.m_container.position.set(10, 500);
@@ -35,7 +35,7 @@ export class UnitSelectedPanel {
   }
 
   public onAbilitySelected = (cb : (def : IAbilityDef )=>void ) => {
-    this.m_event_manager.add("ABILITY_SELECTED", cb);
+    this.m_events.on("ABILITY_SELECTED", cb);
   }
 
   public showAbilities = (abiliy_list : string[]) => {
@@ -48,7 +48,7 @@ export class UnitSelectedPanel {
       
       btn.on('pointerdown', (evt : PIXI.interaction.InteractionEvent) => {
         evt.stopPropagation();
-        this.m_event_manager.emit("ABILITY_SELECTED", ability_def);
+        this.m_events.emit("ABILITY_SELECTED", ability_def);
       });
 
       btn.position.set(0, 80 + index * 80);

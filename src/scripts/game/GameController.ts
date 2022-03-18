@@ -12,6 +12,7 @@ import { GoldDisplay } from './play/interface/GoldDisplay';
 import { ReplayMenu } from './interface/menus/ReplayMenu';
 import { IUnit } from './board/Unit';
 import { AuraLoader } from './assets/AuraLoader';
+import { TypedEventEmitter } from '../engine/listener/TypedEventEmitter';
 
 export type GameConfig = {
   pixi_app : PIXI.Application,
@@ -36,11 +37,16 @@ export type PlaySignal = "TILE_SELECTED";
 export type RenderSignal = "SET_PLUGIN";
 // export type GameSignal = GameEvent | PlaySignal | RenderSignal | "TILE_CLICKED";
 
-
+export interface IGameControllerEvents {
+  LEAVE_TAVERN : null,
+  UNIT_HIRED : { unit : IUnit },
+  UPDATE : number,
+  RESIZE : { width : number, height : number }
+}
 
 export class GameController {
 
-  private m_events = new PIXI.utils.EventEmitter();
+  private m_events = new TypedEventEmitter<IGameControllerEvents>();
   private m_player_party : PlayerParty;
   private m_encounter : EncounterController;
 
@@ -60,7 +66,7 @@ export class GameController {
 
     new GoldDisplay(this.m_config.pixi_app.stage, this.m_events);
 
-    this.m_events.on("LEAVE_TAVERN", () => {
+    this.m_events.on('LEAVE_TAVERN', () => {
       this.startNextEncounter();
     });
     
@@ -76,7 +82,7 @@ export class GameController {
   }
 
   private update = (deltaTime : number) => {
-    this.m_events.emit("UPDATE", { deltaTime });
+    this.m_events.emit("UPDATE", deltaTime);
   }
 
   private onResize = () => {
@@ -122,7 +128,7 @@ export class GameController {
     }
 
     this.m_encounter.startGame();
-    this.m_encounter.on('END', (encounter) => {
+    this.m_encounter.events.on('END', (encounter) => {
        this.m_player_party.addGold(6);
 
       let replay : ReplayMenu;

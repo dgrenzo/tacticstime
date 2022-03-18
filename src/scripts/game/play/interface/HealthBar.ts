@@ -1,56 +1,75 @@
 import * as PIXI from 'pixi.js';
 import { SceneRenderer } from '../../../engine/render/scene/SceneRenderer';
-import { GameBoard } from '../../board/GameBoard';
+import { BoardAnimator } from '../../animation/BoardAnimator';
+import { GameBoard, IActionResult, IGameAction } from '../../board/GameBoard';
+import { IDamageDealtAction } from '../action/executors/action/Damage';
+import { IMoveAction } from '../action/executors/action/Movement';
 
 
 export class HealthBar {
   private m_container : PIXI.Container;
+  private m_hp_graphic : PIXI.Graphics;
 
-  constructor (unit_id : number, board : GameBoard, renderer : SceneRenderer) {
+  constructor (private m_unit_id : number, animator : BoardAnimator, private m_renderer : SceneRenderer) {
 
-    // this.m_container = new PIXI.Container();
+    this.m_container = new PIXI.Container();
 
-    // this.m_container.addChild(new PIXI.Graphics().beginFill(0x333333).drawRect(4, 4, 12, 4).endFill());
-    // this.m_container.addChild(new PIXI.Graphics().beginFill(0x291f2e).drawRect(5, 5, 10, 2).endFill());
+    this.m_container.addChild(new PIXI.Graphics().beginFill(0x333333).drawRect(4, 4, 12, 4).endFill());
+    this.m_container.addChild(new PIXI.Graphics().beginFill(0x291f2e).drawRect(5, 5, 10, 2).endFill());
 
-    // let hp = new PIXI.Graphics().beginFill(0x00CC00).drawRect(5, 5, 10, 2).endFill();
-    // this.m_container.addChild(hp);
+    this.m_hp_graphic = new PIXI.Graphics();
+    this.m_hp_graphic.beginFill(0x00CC00).drawRect(5, 5, 10, 2).endFill();
+    this.m_container.addChild(this.m_hp_graphic);
 
+    this.m_container.visible = false;
 
-    // let unit = controller.getUnit(unit_id);
-    // let screen_pos = renderer.getScreenPosition(unit.pos);
-    // this.m_container.position.set(screen_pos.x - 1, screen_pos.y - 10);
-    // this.m_container.visible = false;
-    // controller.on("MOVE", (action : IMoveAction) => {
-    //   const data = action.data;
-    //   if (data.entity_id === unit_id) {
-    //     let screen_pos = renderer.getScreenPosition(data.move.to);
-    //     this.m_container.position.set(screen_pos.x - 1, screen_pos.y - 10);
-    //   }
-    // });
+    const events = animator.events;
 
-    // controller.on("DAMAGE_DEALT", (action : IDamageDealtAction) => {
-    //   const data = action.data;
-    //   if (data.entity_id === unit_id) {
-    //     this.m_container.visible = true;
-    //     let unit = controller.getUnit(unit_id);
-    //     let bar_width = Math.floor( unit.status.hp / unit.stats.hp * 10 );
+    events.on("MOVE", this.onMoveAction, this);
+    events.on("DAMAGE_DEALT", this.onDamageDealtAction, this);
+    events.on("UNIT_KILLED", this.onUnitKilledAction, this);
+  }
 
-    //     let color = 0x00CC00;
-    //     if (bar_width <= 3) {
-    //       color = 0xCC0000;
-    //     } else if (bar_width <= 6) {
-    //       color = 0xCCCC00;
-    //     }
+  onDamageDealtAction(result : IActionResult<IDamageDealtAction>) {
+    const unit_id = this.m_unit_id;
+    const container = this.m_container;
+    const hp_graphic = this.m_hp_graphic;
+    const data = result.action.data;
 
-    //     hp.clear().beginFill(color).drawRect(5, 5, bar_width, 2).endFill();
-    //   }
-    // })
-    // controller.on("UNIT_KILLED", (action : IDamageAction) => {
-    //   if (action.data.entity_id === unit_id) {
-    //     this.m_container.visible = false;
-    //   }
-    // })
+    if (data.entity_id === unit_id) {
+      container.visible = true;
+      const unit = GameBoard.GetUnit(result.scene, unit_id);
+      const bar_width = Math.floor( unit.status.hp / unit.stats.hp * 10 );
+
+      let color = 0x00CC00;
+      if (bar_width <= 3) {
+        color = 0xCC0000;
+      } else if (bar_width <= 6) {
+        color = 0xCCCC00;
+      }
+
+      hp_graphic.clear().beginFill(color).drawRect(5, 5, bar_width, 2).endFill();
+    }
+  }
+
+  onMoveAction(result : IActionResult<IMoveAction>) {
+    const unit_id = this.m_unit_id;
+    const renderer = this.m_renderer;
+
+    if (result.action.data.entity_id === unit_id) {
+      let screen_pos = renderer.getScreenPosition(result.action.data.move.to);
+      this.m_container.position.set(screen_pos.x - 1, screen_pos.y - 10);
+    }
+  }
+
+  onUnitKilledAction(result : IActionResult<IGameAction>) {
+    const unit_id = this.m_unit_id;
+    const container = this.m_container;
+
+    const data = result.action.data;
+    if (data.entity_id === unit_id) {
+      container.visible = false;
+    }
   }
 
   public get sprite() : PIXI.Container {

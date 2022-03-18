@@ -1,4 +1,5 @@
 import { LinkedList } from "../../engine/list/linkedlist";
+import { TypedEventEmitter } from "../../engine/listener/TypedEventEmitter";
 import { RenderEntity } from "../../engine/render/scene/RenderEntity";
 import { getAsset, SceneRenderer } from "../../engine/render/scene/SceneRenderer";
 import { IImmutableScene } from "../../engine/scene/Scene";
@@ -17,6 +18,7 @@ const ANIMATABLE_ACTIONS : (keyof IGameEvent)[] = [
 
 export class BoardAnimator {
 
+  private m_events = new TypedEventEmitter<IGameEvent>();
   private m_render_elements : Map<number, RenderEntity> = new Map();
   private m_action_list : LinkedList<IActionResult> = new LinkedList();
 
@@ -25,7 +27,7 @@ export class BoardAnimator {
   
   constructor(protected m_renderer : SceneRenderer, private m_board : GameBoard) {
     ANIMATABLE_ACTIONS.forEach(event => {
-      this.m_board.on(event, this.onAnimatableAction);
+      this.m_board.events.on(event, this.onAnimatableAction);
     });
   }
 
@@ -35,6 +37,10 @@ export class BoardAnimator {
 
   private getRenderElement = (entity_id : number) : RenderEntity => {
     return this.m_render_elements.get(entity_id);
+  }
+
+  public get events () {
+    return this.m_events;
   }
 
   private onAnimatableAction = (action_result : IActionResult) => {
@@ -59,6 +65,7 @@ export class BoardAnimator {
     let next_action = this.m_action_list.shift();
 
     while (next_action) {
+      this.events.emit(next_action.action.type, next_action);
       await this.animateGameAction(next_action.action, next_action.scene);
       next_action = this.m_action_list.shift();
     }

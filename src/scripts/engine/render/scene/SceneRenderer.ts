@@ -1,13 +1,13 @@
 import * as PIXI from 'pixi.js';
 import { RenderEntity, RenderEntityID } from "./RenderEntity";
 import { Scene } from '../../scene/Scene';
-import { EventManager } from '../../listener/event';
 import { isTile, GetTileName } from '../../../game/board/Tile';
 import { isUnit } from '../../../game/board/Unit';
 import { IEntity, IAssetInfo } from '../../scene/Entity';
 import { RENDER_PLUGIN } from '../../../game/extras/plugins';
 import { LinkedList } from '../../list/linkedlist';
 import { Vector2 } from '../../types';
+import { TypedEventEmitter } from '../../listener/TypedEventEmitter';
 
 export interface ISceneRendererEvent {
   POINTER_UP : Vector2
@@ -28,7 +28,7 @@ export abstract class SceneRenderer {
   public abstract readonly HALF_TILE_WIDTH : number;
   public abstract readonly HALF_TILE_HEIGHT : number;
 
-  protected m_event_manager = new EventManager<ISceneRendererEvent>();
+  protected m_events = new TypedEventEmitter<ISceneRendererEvent>();
 
   constructor(protected m_pixi : PIXI.Application) {
     this.m_container = new PIXI.Container();
@@ -56,12 +56,12 @@ export abstract class SceneRenderer {
     this.m_pixi.ticker.add(this.renderScene)
   }
 
-  public on = <Key extends keyof ISceneRendererEvent>(event_name : Key, cb : (data:ISceneRendererEvent[Key]) => void) => {
-    this.m_event_manager.add(event_name, cb);
+  public on = <Key extends keyof ISceneRendererEvent>(event_name : Key, cb : (data:ISceneRendererEvent[Key]) => void, context ?: any) => {
+    this.m_events.on(event_name, cb, context);
   }
   
-  public off = <Key extends keyof ISceneRendererEvent>(event_name : Key, cb : (data:ISceneRendererEvent[Key]) => void) => {
-    this.m_event_manager.remove(event_name, cb);
+  public off = <Key extends keyof ISceneRendererEvent>(event_name : Key, cb : (data:ISceneRendererEvent[Key]) => void, context ?: any) => {
+    this.m_events.off(event_name, cb, context);
   }
 
   private renderScene = () => {
@@ -101,7 +101,7 @@ export abstract class SceneRenderer {
     this.m_renderables = new LinkedList();
     this.m_container.removeChildren();
     this.m_screen_effects_container.removeChildren();
-    this.m_event_manager.clear();
+    this.m_events.removeAllListeners();
     this.m_pixi.ticker.remove(this.renderScene)
   }
   public abstract getProjection(pos : Vector2) : Vector2;

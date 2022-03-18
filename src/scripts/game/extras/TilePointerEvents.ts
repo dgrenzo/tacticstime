@@ -1,8 +1,8 @@
 import { SceneRenderer } from "../../engine/render/scene/SceneRenderer";
 import { Vector2 } from "../../engine/types";
-import { EventManager } from "../../engine/listener/event";
 import { ITile } from "../board/Tile";
 import { GameBoard } from "../board/GameBoard";
+import { TypedEventEmitter } from "../../engine/listener/TypedEventEmitter";
 
 interface ITileEventData {
   pos : Vector2,
@@ -17,7 +17,7 @@ export interface ITilePointerEvents {
 
 export default class TilePointerEvents {
 
-  constructor (private m_renderer : SceneRenderer, private m_board : GameBoard, private m_events:EventManager<ITilePointerEvents>) {
+  constructor (private m_renderer : SceneRenderer, private m_board : GameBoard, private m_events:TypedEventEmitter<ITilePointerEvents>) {
     this.m_renderer.on('POINTER_MOVE', this.onPointerMove);
     this.m_renderer.on('POINTER_DOWN', this.onPointerDown);
     this.m_renderer.on('POINTER_UP', this.onPointerUp);

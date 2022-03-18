@@ -12,7 +12,7 @@ import { ExecuteDamage, IDamageAction, IDamageDealtAction } from '../play/action
 import { ExecuteKilled } from '../play/action/executors/action/Killed';
 import { ExecuteCreateUnit, ICreateUnitAction, IUnitCreatedAction } from '../play/action/executors/action/CreateUnit';
 import { ExecuteSummonUnit, ISummonUnitAction } from '../play/action/executors/action/SummonUnit';
-import { EventManager } from '../../engine/listener/event';
+import { TypedEventEmitter } from '../../engine/listener/TypedEventEmitter';
 
 
 export interface IActionData {
@@ -58,25 +58,14 @@ export interface IBoardPos {
 
 export class GameBoard extends Scene {
 
-  private m_event_manager = new EventManager<IGameEvent>();
+  private m_events = new TypedEventEmitter<IGameEvent>();
+
   constructor() {
     super();
   }
 
-  public on = <Key extends keyof IGameEvent>(event_name : Key, cb : (action_result:IGameEvent[Key]) => void) => {
-    this.m_event_manager.add(event_name, cb);
-  }
-
-  public off = <Key extends keyof IGameEvent>(event_name : Key, cb : (action_result:IGameEvent[Key]) => void) => {
-    this.m_event_manager.remove(event_name, cb);
-  }
-
-  public emit = <Key extends keyof IGameEvent>(event_name : Key, action_result ?: IGameEvent[Key]) => {
-    return this.m_event_manager.emit(event_name, action_result);
-  }
-
   public get events () {
-    return this.m_event_manager;
+    return this.m_events;
   }
 
 
@@ -90,7 +79,7 @@ export class GameBoard extends Scene {
     });
   }
 
-  public static ExecuteActionStack (scene : IImmutableScene, event_watcher ?: EventManager<IGameEvent>) {
+  public static ExecuteActionStack (scene : IImmutableScene, event_watcher ?: TypedEventEmitter<IGameEvent>) {
     do {
       const action = GameBoard.GetNextAction(scene);
       

@@ -4,7 +4,7 @@ import { CreateUnit, GameBoard, IActionData, IGameAction } from "../../../../boa
 import { ITile } from "../../../../board/Tile";
 import { ICreateUnitAction } from "./CreateUnit";
 import { UnitLoader } from "../../../../assets/UnitLoader";
-import { UNIT_TYPE } from "../../../../types/units";
+import { UNIT_TYPE } from "../../../../assets/AssetList";
 
 
 export interface ISummonUnitAction extends IGameAction {

@@ -2,7 +2,7 @@ import * as PIXI from 'pixi.js';
 import * as _ from 'lodash';
 import { IBoardConfig, IBoardPos } from './GameBoard';
 import { UnitLoader, IUnitDef } from '../assets/UnitLoader';
-import { UNIT_TYPE } from '../types/units';
+import { UNIT_TYPE } from '../assets/AssetList';
 
 interface IBoardFile {
   version : string,

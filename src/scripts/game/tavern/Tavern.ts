@@ -1,7 +1,6 @@
 import * as PIXI from 'pixi.js'
 import * as _ from 'lodash'
 
-import { UNIT_TYPE } from "../types/units";
 import { PlayerParty } from '../party';
 import AssetManager from '../assets/AssetManager';
 import { CreateUnit } from '../board/GameBoard';
@@ -9,6 +8,7 @@ import { UnitLoader } from '../assets/UnitLoader';
 import { ITile } from '../board/Tile';
 import { TypedEventEmitter } from '../../engine/listener/TypedEventEmitter';
 import { IGameControllerEvents } from '../GameController';
+import { UNIT_TYPE } from '../assets/AssetList';
 
 
 let TIER_ONE : UNIT_TYPE[] = [

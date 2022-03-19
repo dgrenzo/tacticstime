@@ -1,7 +1,6 @@
 import * as _ from 'lodash';
 import { Map } from 'immutable';
 import { LoadJSON } from '../board/Loader';
-import { IAuraDef } from '../play/action/auras/GameAura';
 import { DATA_ASSET_MAP, UNITS, UNIT_TYPE } from './AssetList';
 
 
@@ -10,7 +9,7 @@ export interface IUnitDef {
   display : {
     sprite : string,
   },
-  auras : IAuraDef[],
+  auras : string[],
   abilities : string[],
   stats : {
     speed : number,

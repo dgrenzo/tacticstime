@@ -27,7 +27,7 @@ export class GameEffect implements IEntity {
     }
   }
 
-  public get entity_type() : string {
+  public get element_type() : string {
     return "EFFECT";
   }
 

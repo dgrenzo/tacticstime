@@ -14,6 +14,6 @@ export interface IMoveActionData extends IActionData {
 }
 
 export function ExecuteMove(action : IMoveAction, scene : IImmutableScene):IImmutableScene {
-  scene = GameBoard.SetElementPosition(scene, action.data.entity_id, action.data.move.to);
+  scene = GameBoard.SetEntityPosition(scene, action.data.entity_id, action.data.move.to);
   return scene;
 }

@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import { List } from 'immutable';
 import { ITile, TILE_DEF, isTile } from './Tile';
 import { IImmutableScene, Scene } from '../../engine/scene/Scene';
-import { IEntity } from '../../engine/scene/Entity';
+import { IEntity, isEntity } from '../../engine/scene/Entity';
 import { IUnit, isUnit } from './Unit';
 import { IRangeDef } from '../play/action/abilities';
 import { IUnitDef } from '../assets/UnitLoader';
@@ -13,6 +13,7 @@ import { ExecuteKilled } from '../play/action/executors/action/Killed';
 import { ExecuteCreateUnit, ICreateUnitAction, IUnitCreatedAction } from '../play/action/executors/action/CreateUnit';
 import { ExecuteSummonUnit, ISummonUnitAction } from '../play/action/executors/action/SummonUnit';
 import { TypedEventEmitter } from '../../engine/listener/TypedEventEmitter';
+import { GameAura, IAuraConfig, IAuraElement } from '../play/action/auras/GameAura';
 
 
 export interface IActionData {
@@ -97,82 +98,42 @@ export class GameBoard extends Scene {
   }
 
   public static ExecuteActionListeners(scene: IImmutableScene) : IImmutableScene {
-    const action = GameBoard.GetNextAction(scene);
-    // const listeners = GameBoard.GetListeners(scene);
 
-    // const action_listeners = listeners.get(action.type);
+    const sent_ids : number[] = [];
+    let finished = false;
+    do {
+      const action = GameBoard.GetNextAction(scene);
+      const action_listeners = GameBoard.GetListeners(scene).get(action.type);
 
-    // function ActionListener(scene : IImmutableScene) {
-    //   const action = GameBoard.GetNextAction(scene);
+      if (!action_listeners) {
+        break;
+      }
 
-    //   const listener_config = divine_shield_config;
+      let index = 0;
+      let next : IAuraElement;
+      let sent = false;
+      do {
+        next = action_listeners.get(index, null);
+        const listener_id : number = next.id;
+        if (sent_ids.indexOf(listener_id) > -1) {
+          index ++;
+        } else {
 
-    //   if (action.type !== listener_config.trigger.action)
-    //   {
-    //     return scene;
-    //   }
+          scene = GameAura.ExecuteAuraListener(scene, next.config);
+          sent = true;
 
-    //   function parseWhere(element_raw : string, assign = null) {
-    //     const parts = element_raw.split('.');
-    //     const base = parts.shift();
+          sent_ids.push(listener_id);
+        }
+        if (index >= action_listeners.count() -1) {
+          finished = true;
+        }
 
-    //     let data = null;
-    //     switch (base) {
-    //       case "ACTION" : data = action.data; break;
-    //       case "AURA_CONFIG" : data = listener_config.config; break;
-    //     }
-    //     parts.forEach((path, index) => {
-    //       if (assign !== null && index === parts.length - 1) {
-    //         data[path] = assign
-    //       }
-    //       data = data[path];
-    //     });
+      } while(!finished && !sent);
 
-    //     return data;
-    //  }
 
-    //   let pass = true;
-    //   listener_config.trigger.where.forEach(where_condition => {
 
-    //     const from = where_condition[0];
-    //     const comparison = where_condition[1];
-    //     const to = where_condition[2];
+    } while (!finished);
 
-    //     switch (comparison) {
-    //       case "EQUALS" :
-
-    //         let from_value = parseWhere(from);
-    //         let to_value = parseWhere(to);
-
-    //         const satisfied = from_value === to_value;
-    //         console.log( from_value + ' === ' + to_value + '  ' + satisfied)
-
-    //         pass = pass && satisfied;
-    //         break; 
-    //     }
-    //   });
-
-    //   if (!pass) {
-    //     return scene;
-    //   }
-
-    //   const effects = listener_config.effects;
-
-    //   effects.forEach(effect => {
-    //     switch (effect.type) {
-    //       case "SET_VALUE" : 
-    //         parseWhere(effect.data.value_src, effect.data.value);
-    //         break;
-    //     }
-    //   })
-    //   console.log('pass all');
-
-    //   scene = GameBoard.UpdateAction(scene, 0, action)
-
-    //   return scene;
-    // }
-
-    // scene = ActionListener(scene);
 
 
 
@@ -223,7 +184,7 @@ export class GameBoard extends Scene {
   }
 
   public static GetTiles(scene : IImmutableScene) {
-    return Scene.GetElements(scene).filter( element => {
+    return Scene.GetElements(scene).filter(element => {
       return isTile(element);
     }).toList() as List<ITile>;
   }
@@ -238,15 +199,16 @@ export class GameBoard extends Scene {
     return Scene.SetActions(scene, actions.shift());
   }
 
-  public static SetElementPosition(scene : IImmutableScene, entity_id : number, pos : IBoardPos) : IImmutableScene {
+  public static SetEntityPosition(scene : IImmutableScene, entity_id : number, pos : IBoardPos) : IImmutableScene {
     const elements = Scene.GetElements(scene);
     const result = elements.setIn([entity_id, 'pos'], pos);
     return Scene.SetElements(scene, result);
   }
 
-  public static GetElementsAt(scene : IImmutableScene, pos : IBoardPos) : List<IEntity> {
+  public static GetEntitiesAt(scene : IImmutableScene, pos : IBoardPos) : List<IEntity> {
     const elements = Scene.GetElements(scene);
-    return elements.filter( entity => {
+    const entities = elements.filter(isEntity);
+    return entities.filter( entity => {
       return pos && entity.pos.x === pos.x && entity.pos.y === pos.y
      }).toList();
   }
@@ -285,7 +247,7 @@ export class GameBoard extends Scene {
 
   public static GetUnitAtPosition = (scene : IImmutableScene, pos : IBoardPos) : IUnit => {
     let unit : IUnit = null;
-    GameBoard.GetElementsAt(scene, pos).forEach( element => {
+    GameBoard.GetEntitiesAt(scene, pos).forEach( element => {
       if (isUnit(element)) {
         unit = element;
         return false;
@@ -297,7 +259,7 @@ export class GameBoard extends Scene {
 
   public static GetTileAtPosiiton = (scene : IImmutableScene, pos : IBoardPos) : ITile => {
     let tile : ITile = null;
-    GameBoard.GetElementsAt(scene, pos).forEach(element => {
+    GameBoard.GetEntitiesAt(scene, pos).forEach(element => {
       if (isTile(element)) {
         tile = element;
         return false;
@@ -325,7 +287,7 @@ let _ID : number = 0;
 export function CreateEntity() : IEntity {
   return {
     id : _ID ++,
-    entity_type : "ENTITY",
+    element_type : "ENTITY",
     pos : {
       x : 0,
       y : 0,
@@ -335,7 +297,7 @@ export function CreateEntity() : IEntity {
 export function CreateEffect() : IEntity {
   return {
     id : _ID ++,
-    entity_type : "EFFECT",
+    element_type : "EFFECT",
     pos : {
       x : 0,
       y : 0,
@@ -343,32 +305,47 @@ export function CreateEffect() : IEntity {
   }
 }
 
-export function CreateUnit(def : IUnitDef, faction ?: string) : IUnit {
-  return {
+export function CreateAura(config : IAuraConfig) : IAuraElement {
+  const aura = {
+    element_type : "AURA",
     id : _ID ++,
-    entity_type : "UNIT",
-    pos : {
-      x : -1,
-      y : -1,
-    },
-    data : {
-      unit_level : 1,
-      unit_type : def.display.sprite,
-      faction,
-    },
-    stats : _.cloneDeep(def.stats),
-    status : {
-      mana : 0,
-      hp : def.stats.hp,
-    },
-    abilities : _.concat(_.cloneDeep(def.abilities), "wait"),
-  }
+    config : _.cloneDeep(config) 
+  };
+
+  aura.config.config = {};
+
+  return aura;
 }
+
+export function CreateUnit(def : IUnitDef, faction ?: string) : IUnit {
+  const entity = CreateEntity() as IUnit;
+  
+  entity.element_type = "UNIT";
+
+  entity.data = {
+    unit_level : 1,
+    unit_type : def.display.sprite,
+    faction,
+  };
+
+  entity.base_stats = _.cloneDeep(def.stats);
+  entity.stats = _.cloneDeep(def.stats);
+  entity.status = {
+    mana : 0,
+    hp : def.stats.hp,
+  };
+
+  entity.auras = _.cloneDeep(def.auras);
+  entity.abilities = _.concat(_.cloneDeep(def.abilities), "wait");
+
+  return entity;
+}
+
 
 function CreateTile(pos : IBoardPos, type : TILE_DEF) : ITile {
   return {
     id : _ID ++,
-    entity_type : "TILE",
+    element_type : "TILE",
     pos : pos,
     data : {
       tile_type : type,

@@ -2,6 +2,7 @@ import { IElement, IEntity } from "./Entity";
 
 import { Map, List } from 'immutable';
 import { IGameAction } from "../../game/board/GameBoard";
+import { IAuraElement } from "../../game/play/action/auras/GameAura";
 
 export type IEventDef = {
   uid: number,
@@ -11,8 +12,8 @@ export type IEventDef = {
 
 export type IImmutableScene = Map<string, any>;
 
-export type IElementMap = Map<number, IEntity>;
-export type IEventMap = Map<string, List<IElement>>;
+export type IElementMap = Map<number, IElement>;
+export type IEventMap = Map<string, List<IAuraElement>>;
 export type IActionList = List<IGameAction>;
 
 const KEY_ENTITIES = "ENTITIES";
@@ -31,22 +32,6 @@ export class Scene {
     this.actions = List();
   }
 
-  public addEventListener<T extends IElement>(event_name: string, event : T) : T {
-    if (!this.listeners.get(event_name)) {
-      this.listeners = this.listeners.set(event_name, List());
-    }
-
-    const list = this.listeners.get(event_name);
-    
-    this.listeners = this.listeners.setIn(event_name, list.push(event));
-
-    return event;
-  }
-
-  public removeEventListener<T extends IElement>(event_name: string, event : T) {
-
-  }
-
   public static GetElements(scene : IImmutableScene) : IElementMap {
     return scene.get(KEY_ENTITIES);
   }
@@ -63,6 +48,18 @@ export class Scene {
     return scene.set(KEY_LISTENERS, listeners)
   }
 
+  public static AddListener(scene : IImmutableScene, event_name : string, aura : IAuraElement) {
+    let listeners = Scene.GetListeners(scene);
+
+    let event_listeners = listeners.get(event_name, List());
+
+    event_listeners = event_listeners.push(aura);
+
+    listeners = listeners.set(event_name, event_listeners);
+
+    return Scene.SetListeners(scene, listeners);
+  }
+
   public static GetActions(scene : IImmutableScene) : IActionList {
     return scene.get(KEY_ACTIONS);
   }
@@ -71,7 +68,7 @@ export class Scene {
     return scene.set(KEY_ACTIONS, actions)
   }
 
-  public static AddElement<T extends IEntity>(scene : IImmutableScene, element : T) {
+  public static AddElement<T extends IElement>(scene : IImmutableScene, element : T) {
     const elements = Scene.GetElements(scene);
     return Scene.SetElements(scene, elements.set(element.id, element));
   }
@@ -118,7 +115,7 @@ export class Scene {
     this.m_immutable_scene = this.m_immutable_scene.set(KEY_ENTITIES, val);
   }
 
-  public getElement = (id : number) : IEntity => {
+  public getElement = (id : number) : IElement => {
     return this.elements.get(id);
   }
 }

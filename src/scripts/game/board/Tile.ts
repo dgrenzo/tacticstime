@@ -1,4 +1,4 @@
-import { IEntity } from "../../engine/scene/Entity";
+import { IElement, IEntity } from "../../engine/scene/Entity";
 
 export enum TILE_DEF {
   GRASS_EMPTY = 10,
@@ -25,14 +25,14 @@ export enum TILE_DEF {
 }
 
 export interface ITile extends IEntity {
-  entity_type : "TILE",
+  element_type : "TILE",
   data : {
     tile_type : TILE_DEF,
   }
 }
 
-export function isTile(entity : IEntity) : entity is ITile {
-  return entity.entity_type === "TILE";
+export function isTile(entity : IElement) : entity is ITile {
+  return entity.element_type === "TILE";
 }
 
 export const GetTileName = (def : TILE_DEF) => {

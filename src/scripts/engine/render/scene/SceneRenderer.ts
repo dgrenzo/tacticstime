@@ -3,7 +3,7 @@ import { RenderEntity, RenderEntityID } from "./RenderEntity";
 import { Scene } from '../../scene/Scene';
 import { isTile, GetTileName } from '../../../game/board/Tile';
 import { isUnit } from '../../../game/board/Unit';
-import { IEntity, IAssetInfo } from '../../scene/Entity';
+import { IEntity, IAssetInfo, isEntity } from '../../scene/Entity';
 import { RENDER_PLUGIN } from '../../../game/extras/plugins';
 import { LinkedList } from '../../list/linkedlist';
 import { Vector2 } from '../../types';
@@ -50,6 +50,9 @@ export abstract class SceneRenderer {
   public initializeScene = (scene : Scene) => {
     this.reset();
     scene.elements.forEach(element => {
+      if (!isEntity(element)) {
+        return;
+      }
       let renderable = this.addEntity(element);
       renderable.renderAsset(getAsset(element));
     })

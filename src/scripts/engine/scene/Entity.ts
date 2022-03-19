@@ -1,11 +1,15 @@
 import { Vector2 } from "../types";
 
+export function isEntity(element : IElement | any) : element is IEntity {
+  return element.pos;
+}
+
 export interface IElement {
+  element_type : string,
   id ?: number,
 }
 
 export interface IEntity extends IElement {
-  entity_type : string,
   pos : Vector2
 }
 

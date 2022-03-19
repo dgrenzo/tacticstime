@@ -6,7 +6,7 @@
     "strike"
   ],
   "auras" : [
-    "cannibalize"
+    "damage_boost"
   ],
   "stats" : {
     "speed": 3,

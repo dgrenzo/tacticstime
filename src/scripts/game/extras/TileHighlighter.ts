@@ -22,12 +22,12 @@ export default class TileHighlighter {
 
   public update = () => {
 
-    let targets = GameBoard.GetElementsAt(this.m_board.scene, this.m_last_pos)
+    let targets = GameBoard.GetEntitiesAt(this.m_board.scene, this.m_last_pos)
       targets.forEach((entity:IEntity) => {
         // this.m_renderer.getRenderable(entity.id).offsetY = 0;
       })
         
-    targets = GameBoard.GetElementsAt(this.m_board.scene, this.m_current_pos)
+    targets = GameBoard.GetEntitiesAt(this.m_board.scene, this.m_current_pos)
       targets.forEach((entity:IEntity) => {
         // this.m_renderer.getRenderable(entity.id).offsetY = -2;
       })

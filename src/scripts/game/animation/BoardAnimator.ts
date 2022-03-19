@@ -112,7 +112,8 @@ export class BoardAnimator {
             let action_target = action.data.target ?? elements.get(action.data.entity_id);
             effect.setPosition(action_target.pos);
           }
-          setTimeout(resolve, 100);
+          resolve();
+          // setTimeout(resolve, 100);
         })
         
         break;

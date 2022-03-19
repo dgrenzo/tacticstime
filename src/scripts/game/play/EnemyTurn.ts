@@ -8,6 +8,8 @@ import { IBoardOption } from './action/AbilityTargetUI';
 import { IMoveAction } from './action/executors/action/Movement';
 import { IImmutableScene } from '../../engine/scene/Scene';
 import { IAbilityAction } from './action/executors/action/Ability';
+import { GameAura } from './action/auras/GameAura';
+import { AuraLoader } from '../assets/AuraLoader';
 
 enum TURN_STATE {
   BEFORE_MOVE = 0,
@@ -78,6 +80,7 @@ export class EnemyTurn {
           };
           
           if(Date.now() > lag_timeout) {
+            console.log('waiting because of lag ' + lag_timeout);
             await new Promise(resolve => { requestAnimationFrame(resolve) });
             lag_timeout = Date.now() + LAG_TIME;
           }
@@ -157,6 +160,20 @@ function GetAbilityOptions(scene : IImmutableScene, active_unit : IUnit, ability
   return options;
 }
 
+function ScoreUnit(unit : IUnit) {
+  let score = 0;
+  score += 5;
+  score += unit.status.hp;
+
+  if (unit.auras) {
+    for (let i = 0; i < unit.auras.length; i ++) {
+      const aura_name = unit.auras[i];
+      score += AuraLoader.GetAuraDefinition(aura_name).value;
+    }
+  }
+  return score;
+}
+
 function ScoreBoard (scene : IImmutableScene, unit_id : number) {
   let score = Math.random() / 4;
 
@@ -169,13 +186,8 @@ function ScoreBoard (scene : IImmutableScene, unit_id : number) {
   const faction = active_unit.data.faction;
 
   GameBoard.GetUnits(scene).forEach( unit => {
-    if (unit.data.faction !== faction) {
-      score -= unit.status.hp;
-      score -= 5;
-    } else {
-      score += 50;
-      score += unit.status.hp;
-    }
+    let unit_score = ScoreUnit(unit);
+    score += unit_score * (unit.data.faction === active_unit.data.faction ? 1 : -1);
   });
 
   if (active_unit) {

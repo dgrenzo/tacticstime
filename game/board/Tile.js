@@ -25,7 +25,7 @@ var TILE_DEF;
     TILE_DEF[TILE_DEF["WATER_EMPTY"] = 60] = "WATER_EMPTY";
 })(TILE_DEF = exports.TILE_DEF || (exports.TILE_DEF = {}));
 function isTile(entity) {
-    return entity.entity_type === "TILE";
+    return entity.element_type === "TILE";
 }
 exports.isTile = isTile;
 exports.GetTileName = function (def) {

@@ -13,10 +13,10 @@ var TileHighlighter = (function () {
             };
         };
         this.update = function () {
-            var targets = GameBoard_1.GameBoard.GetElementsAt(_this.m_board.scene, _this.m_last_pos);
+            var targets = GameBoard_1.GameBoard.GetEntitiesAt(_this.m_board.scene, _this.m_last_pos);
             targets.forEach(function (entity) {
             });
-            targets = GameBoard_1.GameBoard.GetElementsAt(_this.m_board.scene, _this.m_current_pos);
+            targets = GameBoard_1.GameBoard.GetEntitiesAt(_this.m_board.scene, _this.m_current_pos);
             targets.forEach(function (entity) {
             });
             _this.m_last_pos = _this.m_current_pos;

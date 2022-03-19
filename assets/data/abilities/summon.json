@@ -12,7 +12,7 @@
     {
       "type" : "SUMMON_UNIT",
       "data" : {
-        "unit_type" : "lizard"
+        "unit_type" : ["CONST", "lizard"]
       },
       "range" : {
         "min" : 0,

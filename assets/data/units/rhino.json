@@ -2,6 +2,9 @@
   "display" : {
     "sprite" : "rhino"
   },
+  "auras" : [
+    "deathrattle_summon"
+  ],
   "abilities" : [
     "strike"
   ],

@@ -2,14 +2,14 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var _ = require("lodash");
 var PIXI = require("pixi.js");
-var event_1 = require("../../../engine/listener/event");
 var abilities_1 = require("../action/abilities");
+var TypedEventEmitter_1 = require("../../../engine/listener/TypedEventEmitter");
 var UnitSelectedPanel = (function () {
     function UnitSelectedPanel(m_controller) {
         var _this = this;
         this.m_controller = m_controller;
         this.m_container = new PIXI.Container();
-        this.m_event_manager = new event_1.EventManager();
+        this.m_events = new TypedEventEmitter_1.TypedEventEmitter();
         this.showUnitPanel = function (unit) {
             _this.m_container.removeChildren();
             _this.m_container.visible = true;
@@ -22,7 +22,7 @@ var UnitSelectedPanel = (function () {
             _this.m_container.visible = false;
         };
         this.onAbilitySelected = function (cb) {
-            _this.m_event_manager.add("ABILITY_SELECTED", cb);
+            _this.m_events.on("ABILITY_SELECTED", cb);
         };
         this.showAbilities = function (abiliy_list) {
             _.forEach(abiliy_list, function (name, index) {
@@ -32,7 +32,7 @@ var UnitSelectedPanel = (function () {
                 btn.interactive = btn.buttonMode = true;
                 btn.on('pointerdown', function (evt) {
                     evt.stopPropagation();
-                    _this.m_event_manager.emit("ABILITY_SELECTED", ability_def);
+                    _this.m_events.emit("ABILITY_SELECTED", ability_def);
                 });
                 btn.position.set(0, 80 + index * 80);
                 var label = new PIXI.Text(ability_def.name, { fill: 0xFFFFFF });

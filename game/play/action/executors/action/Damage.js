@@ -13,11 +13,12 @@ function ExecuteDamage(action, scene) {
     var new_hp = Math.max(starting_hp - action.data.amount, 0);
     var difference = starting_hp - new_hp;
     scene = GameBoard_1.GameBoard.SetHP(scene, unit.id, new_hp);
-    if (difference != 0) {
+    if (difference > 0) {
         scene = GameBoard_1.GameBoard.AddActions(scene, {
             type: "DAMAGE_DEALT",
             data: {
                 amount: difference,
+                target: unit,
                 entity_id: unit.id,
             }
         });
@@ -26,7 +27,8 @@ function ExecuteDamage(action, scene) {
         scene = GameBoard_1.GameBoard.AddActions(scene, {
             type: "UNIT_KILLED",
             data: {
-                entity_id: unit.id
+                entity_id: unit.id,
+                source: unit
             }
         });
     }

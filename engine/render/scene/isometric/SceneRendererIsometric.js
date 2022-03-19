@@ -65,16 +65,16 @@ var SceneRendererIsometric = (function (_super) {
         _this.m_screen_effects_container.position.set(500, 50);
         _this.m_screen_effects_container.scale.set(4);
         pixi.renderer.plugins.interaction.on('pointermove', function (evt) {
-            _this.m_event_manager.emit("POINTER_MOVE", _this.screenToTilePos(evt.data.global));
+            _this.m_events.emit("POINTER_MOVE", _this.screenToTilePos(evt.data.global));
         });
         pixi.renderer.plugins.interaction.on('pointerdown', function (evt) {
             if (evt.stopped) {
                 return;
             }
-            _this.m_event_manager.emit("POINTER_DOWN", _this.screenToTilePos(evt.data.global));
+            _this.m_events.emit("POINTER_DOWN", _this.screenToTilePos(evt.data.global));
         });
         pixi.renderer.plugins.interaction.on('pointerup', function (evt) {
-            _this.m_event_manager.emit("POINTER_UP", _this.screenToTilePos(evt.data.global));
+            _this.m_events.emit("POINTER_UP", _this.screenToTilePos(evt.data.global));
         });
         return _this;
     }

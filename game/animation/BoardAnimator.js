@@ -37,6 +37,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var linkedlist_1 = require("../../engine/list/linkedlist");
+var TypedEventEmitter_1 = require("../../engine/listener/TypedEventEmitter");
 var SceneRenderer_1 = require("../../engine/render/scene/SceneRenderer");
 var GameBoard_1 = require("../board/GameBoard");
 var EffectsManager_1 = require("../effects/EffectsManager");
@@ -52,6 +53,7 @@ var BoardAnimator = (function () {
         var _this = this;
         this.m_renderer = m_renderer;
         this.m_board = m_board;
+        this.m_events = new TypedEventEmitter_1.TypedEventEmitter();
         this.m_render_elements = new Map();
         this.m_action_list = new linkedlist_1.LinkedList();
         this.m_busy_promise = null;
@@ -83,8 +85,7 @@ var BoardAnimator = (function () {
                         _a.label = 1;
                     case 1:
                         if (!next_action) return [3, 3];
-                        console.log('animating');
-                        console.log(next_action);
+                        this.events.emit(next_action.action.type, next_action);
                         return [4, this.animateGameAction(next_action.action, next_action.scene)];
                     case 2:
                         _a.sent();
@@ -101,9 +102,16 @@ var BoardAnimator = (function () {
             return EffectsManager_1.default.RenderEffect(ability, cb);
         };
         ANIMATABLE_ACTIONS.forEach(function (event) {
-            _this.m_board.on(event, _this.onAnimatableAction);
+            _this.m_board.events.on(event, _this.onAnimatableAction);
         });
     }
+    Object.defineProperty(BoardAnimator.prototype, "events", {
+        get: function () {
+            return this.m_events;
+        },
+        enumerable: true,
+        configurable: true
+    });
     BoardAnimator.prototype.hasQueuedAnimations = function () {
         return !this.m_action_list.isEmpty();
     };
@@ -141,9 +149,10 @@ var BoardAnimator = (function () {
                         return [3, 7];
                     case 5: return [2, this.animateAbility(action, scene)];
                     case 6: return [2, new Promise(function (resolve) {
+                            var _a;
                             var effect = _this.createEffect(action, resolve);
                             if (effect) {
-                                var action_target = elements.get(action.data.entity_id);
+                                var action_target = (_a = action.data.target) !== null && _a !== void 0 ? _a : elements.get(action.data.entity_id);
                                 effect.setPosition(action_target.pos);
                             }
                             setTimeout(resolve, 100);

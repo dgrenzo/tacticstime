@@ -27,7 +27,7 @@ var GameEffect = (function () {
         enumerable: true,
         configurable: true
     });
-    Object.defineProperty(GameEffect.prototype, "entity_type", {
+    Object.defineProperty(GameEffect.prototype, "element_type", {
         get: function () {
             return "EFFECT";
         },

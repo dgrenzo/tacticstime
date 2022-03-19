@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function isUnit(entity) {
-    return entity.entity_type === "UNIT";
+    return entity.element_type === "UNIT";
 }
 exports.isUnit = isUnit;

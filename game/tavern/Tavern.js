@@ -6,8 +6,6 @@ var AssetManager_1 = require("../assets/AssetManager");
 var GameBoard_1 = require("../board/GameBoard");
 var UnitLoader_1 = require("../assets/UnitLoader");
 var TIER_ONE = [
-    "guard",
-    "knight_green",
     "dwarf",
     "oldman",
     "basic_bow",

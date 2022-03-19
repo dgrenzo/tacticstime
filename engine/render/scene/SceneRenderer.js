@@ -2,28 +2,32 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
 var RenderEntity_1 = require("./RenderEntity");
-var event_1 = require("../../listener/event");
 var Tile_1 = require("../../../game/board/Tile");
 var Unit_1 = require("../../../game/board/Unit");
+var Entity_1 = require("../../scene/Entity");
 var linkedlist_1 = require("../../list/linkedlist");
+var TypedEventEmitter_1 = require("../../listener/TypedEventEmitter");
 var SceneRenderer = (function () {
     function SceneRenderer(m_pixi) {
         var _this = this;
         this.m_pixi = m_pixi;
-        this.m_event_manager = new event_1.EventManager();
+        this.m_events = new TypedEventEmitter_1.TypedEventEmitter();
         this.initializeScene = function (scene) {
             _this.reset();
             scene.elements.forEach(function (element) {
+                if (!Entity_1.isEntity(element)) {
+                    return;
+                }
                 var renderable = _this.addEntity(element);
                 renderable.renderAsset(getAsset(element));
             });
             _this.m_pixi.ticker.add(_this.renderScene);
         };
-        this.on = function (event_name, cb) {
-            _this.m_event_manager.add(event_name, cb);
+        this.on = function (event_name, cb, context) {
+            _this.m_events.on(event_name, cb, context);
         };
-        this.off = function (event_name, cb) {
-            _this.m_event_manager.remove(event_name, cb);
+        this.off = function (event_name, cb, context) {
+            _this.m_events.off(event_name, cb, context);
         };
         this.renderScene = function () {
             _this.m_container.render(_this.m_pixi.renderer);
@@ -56,7 +60,7 @@ var SceneRenderer = (function () {
             _this.m_renderables = new linkedlist_1.LinkedList();
             _this.m_container.removeChildren();
             _this.m_screen_effects_container.removeChildren();
-            _this.m_event_manager.clear();
+            _this.m_events.removeAllListeners();
             _this.m_pixi.ticker.remove(_this.renderScene);
         };
         this.m_container = new PIXI.Container();

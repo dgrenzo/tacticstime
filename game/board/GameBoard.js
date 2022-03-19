@@ -16,6 +16,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var _ = require("lodash");
 var Tile_1 = require("./Tile");
 var Scene_1 = require("../../engine/scene/Scene");
+var Entity_1 = require("../../engine/scene/Entity");
 var Unit_1 = require("./Unit");
 var Movement_1 = require("../play/action/executors/action/Movement");
 var Ability_1 = require("../play/action/executors/action/Ability");
@@ -23,26 +24,18 @@ var Damage_1 = require("../play/action/executors/action/Damage");
 var Killed_1 = require("../play/action/executors/action/Killed");
 var CreateUnit_1 = require("../play/action/executors/action/CreateUnit");
 var SummonUnit_1 = require("../play/action/executors/action/SummonUnit");
-var event_1 = require("../../engine/listener/event");
+var TypedEventEmitter_1 = require("../../engine/listener/TypedEventEmitter");
+var GameAura_1 = require("../play/action/auras/GameAura");
 var GameBoard = (function (_super) {
     __extends(GameBoard, _super);
     function GameBoard() {
         var _this = _super.call(this) || this;
-        _this.m_event_manager = new event_1.EventManager();
-        _this.on = function (event_name, cb) {
-            _this.m_event_manager.add(event_name, cb);
-        };
-        _this.off = function (event_name, cb) {
-            _this.m_event_manager.remove(event_name, cb);
-        };
-        _this.emit = function (event_name, action_result) {
-            return _this.m_event_manager.emit(event_name, action_result);
-        };
+        _this.m_events = new TypedEventEmitter_1.TypedEventEmitter();
         return _this;
     }
     Object.defineProperty(GameBoard.prototype, "events", {
         get: function () {
-            return this.m_event_manager;
+            return this.m_events;
         },
         enumerable: true,
         configurable: true
@@ -63,34 +56,71 @@ var GameBoard = (function (_super) {
             if (!action) {
                 return scene;
             }
-            scene = GameBoard.ShiftFirstAction(scene);
-            scene = GameBoard.ExecuteAction(scene, action);
+            scene = GameBoard.ExecuteNextAction(scene);
             if (event_watcher) {
-                console.log(action);
+                console.log(action.type, action.data);
                 event_watcher.emit(action.type, { action: action, scene: scene });
             }
         } while (true);
     };
-    GameBoard.ExecuteAction = function (scene, action) {
-        if (!action) {
+    GameBoard.ExecuteActionListeners = function (scene) {
+        var sent_ids = [];
+        var finished = false;
+        do {
+            var action = GameBoard.GetNextAction(scene);
+            var action_listeners = GameBoard.GetListeners(scene).get(action.type);
+            if (!action_listeners) {
+                break;
+            }
+            var index = 0;
+            var next = void 0;
+            var sent = false;
+            do {
+                next = action_listeners.get(index, null);
+                var listener_id = next.id;
+                if (sent_ids.indexOf(listener_id) > -1) {
+                    index++;
+                }
+                else {
+                    scene = GameAura_1.GameAura.ExecuteAuraListener(scene, next.config);
+                    sent = true;
+                    sent_ids.push(listener_id);
+                }
+                if (index >= action_listeners.count() - 1) {
+                    finished = true;
+                }
+            } while (!finished && !sent);
+        } while (!finished);
+        return scene;
+    };
+    GameBoard.ExecuteNextAction = function (scene) {
+        if (!GameBoard.GetNextAction(scene)) {
             return scene;
         }
+        scene = GameBoard.ExecuteActionListeners(scene);
+        var action = GameBoard.GetNextAction(scene);
         switch (action.type) {
             case "MOVE":
-                return Movement_1.ExecuteMove(action, scene);
+                scene = Movement_1.ExecuteMove(action, scene);
+                break;
             case "ABILITY":
-                return Ability_1.ExecuteAbility(action, scene);
+                scene = Ability_1.ExecuteAbility(action, scene);
+                break;
             case "DAMAGE":
-                return Damage_1.ExecuteDamage(action, scene);
+                scene = Damage_1.ExecuteDamage(action, scene);
+                break;
             case "UNIT_KILLED":
-                return Killed_1.ExecuteKilled(action, scene);
+                scene = Killed_1.ExecuteKilled(action, scene);
+                break;
             case "CREATE_UNIT":
-                return CreateUnit_1.ExecuteCreateUnit(action, scene);
+                scene = CreateUnit_1.ExecuteCreateUnit(action, scene);
+                break;
             case "SUMMON_UNIT":
-                return SummonUnit_1.ExecuteSummonUnit(action, scene);
-            default:
-                return scene;
+                scene = SummonUnit_1.ExecuteSummonUnit(action, scene);
+                break;
         }
+        scene = GameBoard.ShiftFirstAction(scene);
+        return scene;
     };
     GameBoard.GetTilesInRange = function (scene, pos, range) {
         var tiles = GameBoard.GetTiles(scene);
@@ -112,14 +142,15 @@ var GameBoard = (function (_super) {
         var actions = Scene_1.Scene.GetActions(scene);
         return Scene_1.Scene.SetActions(scene, actions.shift());
     };
-    GameBoard.SetElementPosition = function (scene, entity_id, pos) {
+    GameBoard.SetEntityPosition = function (scene, entity_id, pos) {
         var elements = Scene_1.Scene.GetElements(scene);
         var result = elements.setIn([entity_id, 'pos'], pos);
         return Scene_1.Scene.SetElements(scene, result);
     };
-    GameBoard.GetElementsAt = function (scene, pos) {
+    GameBoard.GetEntitiesAt = function (scene, pos) {
         var elements = Scene_1.Scene.GetElements(scene);
-        return elements.filter(function (entity) {
+        var entities = elements.filter(Entity_1.isEntity);
+        return entities.filter(function (entity) {
             return pos && entity.pos.x === pos.x && entity.pos.y === pos.y;
         }).toList();
     };
@@ -133,6 +164,12 @@ var GameBoard = (function (_super) {
         var result = elements.setIn([entity_id, 'status', 'mana'], mana);
         return Scene_1.Scene.SetElements(scene, result);
     };
+    GameBoard.UpdateAction = function (scene, index, action) {
+        var actions = Scene_1.Scene.GetActions(scene);
+        actions = actions.remove(index);
+        actions = actions.insert(index, action);
+        return GameBoard.SetActions(scene, actions);
+    };
     GameBoard.AddActions = function (scene, game_actions) {
         game_actions = _.concat(game_actions);
         var actions = Scene_1.Scene.GetActions(scene);
@@ -141,7 +178,7 @@ var GameBoard = (function (_super) {
     };
     GameBoard.GetUnitAtPosition = function (scene, pos) {
         var unit = null;
-        GameBoard.GetElementsAt(scene, pos).forEach(function (element) {
+        GameBoard.GetEntitiesAt(scene, pos).forEach(function (element) {
             if (Unit_1.isUnit(element)) {
                 unit = element;
                 return false;
@@ -152,7 +189,7 @@ var GameBoard = (function (_super) {
     };
     GameBoard.GetTileAtPosiiton = function (scene, pos) {
         var tile = null;
-        GameBoard.GetElementsAt(scene, pos).forEach(function (element) {
+        GameBoard.GetEntitiesAt(scene, pos).forEach(function (element) {
             if (Tile_1.isTile(element)) {
                 tile = element;
                 return false;
@@ -178,7 +215,7 @@ var _ID = 0;
 function CreateEntity() {
     return {
         id: _ID++,
-        entity_type: "ENTITY",
+        element_type: "ENTITY",
         pos: {
             x: 0,
             y: 0,
@@ -189,7 +226,7 @@ exports.CreateEntity = CreateEntity;
 function CreateEffect() {
     return {
         id: _ID++,
-        entity_type: "EFFECT",
+        element_type: "EFFECT",
         pos: {
             x: 0,
             y: 0,
@@ -197,32 +234,39 @@ function CreateEffect() {
     };
 }
 exports.CreateEffect = CreateEffect;
-function CreateUnit(def, faction) {
-    return {
+function CreateAura(config) {
+    var aura = {
+        element_type: "AURA",
         id: _ID++,
-        entity_type: "UNIT",
-        pos: {
-            x: -1,
-            y: -1,
-        },
-        data: {
-            unit_level: 1,
-            unit_type: def.display.sprite,
-            faction: faction,
-        },
-        stats: _.cloneDeep(def.stats),
-        status: {
-            mana: 0,
-            hp: def.stats.hp,
-        },
-        abilities: _.concat(_.cloneDeep(def.abilities), "wait"),
+        config: _.cloneDeep(config)
     };
+    aura.config.config = {};
+    return aura;
+}
+exports.CreateAura = CreateAura;
+function CreateUnit(def, faction) {
+    var entity = CreateEntity();
+    entity.element_type = "UNIT";
+    entity.data = {
+        unit_level: 1,
+        unit_type: def.display.sprite,
+        faction: faction,
+    };
+    entity.base_stats = _.cloneDeep(def.stats);
+    entity.stats = _.cloneDeep(def.stats);
+    entity.status = {
+        mana: 0,
+        hp: def.stats.hp,
+    };
+    entity.auras = _.cloneDeep(def.auras);
+    entity.abilities = _.concat(_.cloneDeep(def.abilities), "wait");
+    return entity;
 }
 exports.CreateUnit = CreateUnit;
 function CreateTile(pos, type) {
     return {
         id: _ID++,
-        entity_type: "TILE",
+        element_type: "TILE",
         pos: pos,
         data: {
             tile_type: type,

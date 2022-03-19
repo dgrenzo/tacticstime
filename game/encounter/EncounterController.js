@@ -38,13 +38,14 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
 var UnitQueue_1 = require("../play/UnitQueue");
-var event_1 = require("../../engine/listener/event");
 var Loader_1 = require("../board/Loader");
 var render_1 = require("../../engine/render/render");
 var EffectsManager_1 = require("../effects/EffectsManager");
 var EnemyTurn_1 = require("../play/EnemyTurn");
 var BoardAnimator_1 = require("../animation/BoardAnimator");
+var HealthBar_1 = require("../play/interface/HealthBar");
 var GameBoard_1 = require("../board/GameBoard");
+var TypedEventEmitter_1 = require("../../engine/listener/TypedEventEmitter");
 var EncounterState;
 (function (EncounterState) {
     EncounterState[EncounterState["INIT"] = 0] = "INIT";
@@ -58,7 +59,7 @@ var EncounterController = (function () {
     function EncounterController(m_config) {
         var _this = this;
         this.m_config = m_config;
-        this.m_event_manager = new event_1.EventManager();
+        this.m_events = new TypedEventEmitter_1.TypedEventEmitter();
         this.m_interface_container = new PIXI.Container();
         this.loadMap = function (path) {
             return Loader_1.LoadBoard(path).then(function (board_data) {
@@ -85,29 +86,35 @@ var EncounterController = (function () {
             units.forEach(_this.addUnit);
         };
         this.setupListeners = function () {
-            _this.m_board.on("CREATE_UNIT", function (result) {
+            var events = _this.m_board.events;
+            events.on("CREATE_UNIT", function (result) {
                 var data = result.action.data;
                 _this.m_unit_queue.addUnit(data.unit);
             });
-            _this.m_board.on("UNIT_KILLED", function (result) {
+            events.on("UNIT_KILLED", function (result) {
                 var data = result.action.data;
                 _this.m_unit_queue.removeUnit(data.entity_id);
             });
-            _this.m_board.on("UNIT_CREATED", function (result) {
+            events.on("UNIT_CREATED", function (result) {
                 var data = result.action.data;
+                var health_bar = new HealthBar_1.HealthBar(data.unit.id, _this.m_animator, _this.m_renderer);
+                _this.m_renderer.effects_container.addChild(health_bar.sprite);
             });
         };
         this.onSetupComplete = function () {
-            _this.m_config.pixi_app.stage.addChild(_this.m_renderer.stage);
-            _this.m_config.pixi_app.stage.addChild(_this.m_renderer.effects_container);
-            _this.m_config.pixi_app.stage.addChild(_this.m_interface_container);
+            _this.m_container = new PIXI.Container();
+            _this.m_container.position.set(-100, -100);
+            _this.m_container.addChild(_this.m_renderer.stage);
+            _this.m_container.addChild(_this.m_renderer.effects_container);
+            _this.m_container.addChild(_this.m_interface_container);
+            _this.m_config.pixi_app.stage.addChild(_this.m_container);
             EffectsManager_1.default.init(_this.m_renderer);
         };
         this.startGame = function () { return __awaiter(_this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        this.emit("START", this);
+                        this.events.emit("START", this);
                         return [4, this.executeTurn()];
                     case 1:
                         _a.sent();
@@ -124,7 +131,7 @@ var EncounterController = (function () {
                 switch (_a.label) {
                     case 0:
                         if (this.checkVictory()) {
-                            this.emit("END", this);
+                            this.events.emit("END", this);
                             return [2];
                         }
                         id = this.m_unit_queue.getNextQueued();
@@ -134,9 +141,11 @@ var EncounterController = (function () {
                             console.log('no units');
                             return [2];
                         }
-                        scene = EnemyTurn_1.EnemyTurn.FindBestMove(scene, unit.id);
-                        return [4, this.executeTurn(scene)];
+                        return [4, EnemyTurn_1.EnemyTurn.FindBestMove(scene, unit.id).then(function (scene) { return scene; })];
                     case 1:
+                        scene = _a.sent();
+                        return [4, this.executeTurn(scene)];
+                    case 2:
                         _a.sent();
                         this.onTurnComplete();
                         return [2];
@@ -156,19 +165,8 @@ var EncounterController = (function () {
             }
             return false;
         };
-        this.on = function (event_name, cb) {
-            _this.m_event_manager.add(event_name, cb);
-        };
-        this.off = function (event_name, cb) {
-            _this.m_event_manager.remove(event_name, cb);
-        };
-        this.emit = function (event_name, data) {
-            _this.m_event_manager.emit(event_name, data);
-        };
         this.destroy = function () {
-            _this.m_config.pixi_app.stage.removeChild(_this.m_renderer.stage);
-            _this.m_config.pixi_app.stage.removeChild(_this.m_renderer.effects_container);
-            _this.m_config.pixi_app.stage.removeChild(_this.m_interface_container);
+            _this.m_config.pixi_app.stage.removeChild(_this.m_container);
             _this.m_renderer.reset();
         };
         this.onTurnComplete = function () {
@@ -204,6 +202,13 @@ var EncounterController = (function () {
     EncounterController.prototype.addInterfaceElement = function (element) {
         this.m_interface_container.addChild(element);
     };
+    Object.defineProperty(EncounterController.prototype, "events", {
+        get: function () {
+            return this.m_events;
+        },
+        enumerable: true,
+        configurable: true
+    });
     return EncounterController;
 }());
 exports.EncounterController = EncounterController;

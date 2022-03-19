@@ -15,16 +15,6 @@ var Scene = (function () {
         this.elements = immutable_1.Map();
         this.actions = immutable_1.List();
     }
-    Scene.prototype.addEventListener = function (event_name, event) {
-        if (!this.listeners.get(event_name)) {
-            this.listeners = this.listeners.set(event_name, immutable_1.List());
-        }
-        var list = this.listeners.get(event_name);
-        this.listeners = this.listeners.setIn(event_name, list.push(event));
-        return event;
-    };
-    Scene.prototype.removeEventListener = function (event_name, event) {
-    };
     Scene.GetElements = function (scene) {
         return scene.get(KEY_ENTITIES);
     };
@@ -36,6 +26,13 @@ var Scene = (function () {
     };
     Scene.SetListeners = function (scene, listeners) {
         return scene.set(KEY_LISTENERS, listeners);
+    };
+    Scene.AddListener = function (scene, event_name, aura) {
+        var listeners = Scene.GetListeners(scene);
+        var event_listeners = listeners.get(event_name, immutable_1.List());
+        event_listeners = event_listeners.push(aura);
+        listeners = listeners.set(event_name, event_listeners);
+        return Scene.SetListeners(scene, listeners);
     };
     Scene.GetActions = function (scene) {
         return scene.get(KEY_ACTIONS);

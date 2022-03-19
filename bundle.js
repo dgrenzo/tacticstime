@@ -108,80 +108,40 @@ exports.LinkedList = LinkedList;
 
 },{}],2:[function(require,module,exports){
 "use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
-var Signal = (function () {
-    function Signal() {
-        this.listener_root = null;
+var PIXI = require("pixi.js");
+var TypedEventEmitter = (function (_super) {
+    __extends(TypedEventEmitter, _super);
+    function TypedEventEmitter() {
+        return _super !== null && _super.apply(this, arguments) || this;
     }
-    Signal.prototype.emit = function (data) {
-        var listener = this.listener_root;
-        while (listener) {
-            listener.fn(data);
-            listener = listener.next;
-        }
+    TypedEventEmitter.prototype.emit = function (signal_type, data) {
+        return _super.prototype.emit.call(this, signal_type, data);
     };
-    Signal.prototype.add = function (cb) {
-        var current_root = this.listener_root;
-        this.listener_root = {
-            fn: cb,
-            next: current_root,
-        };
+    TypedEventEmitter.prototype.on = function (signal_name, cb, context) {
+        return _super.prototype.on.call(this, signal_name, cb, context);
     };
-    Signal.prototype.remove = function (cb) {
-        if (cb === this.listener_root.fn) {
-            this.listener_root = this.listener_root.next;
-            return;
-        }
-        var current = this.listener_root;
-        var prev = null;
-        while (current) {
-            if (current.fn === cb) {
-                if (prev) {
-                    prev.next = current.next;
-                }
-                return;
-            }
-            prev = current;
-            current = current.next;
-        }
+    TypedEventEmitter.prototype.off = function (signal_name, cb, context) {
+        return _super.prototype.off.call(this, signal_name, cb, context);
     };
-    return Signal;
-}());
-exports.Signal = Signal;
-var EventManager = (function () {
-    function EventManager() {
-        this.m_signalMap = new Map();
-    }
-    EventManager.prototype.emit = function (signal_type, data) {
-        if (this.m_signalMap.has(signal_type)) {
-            this.m_signalMap.get(signal_type).emit(data);
-        }
-    };
-    EventManager.prototype.createSignal = function (signal_name) {
-        this.m_signalMap.set(signal_name, new Signal());
-    };
-    EventManager.prototype.add = function (signal_name, cb) {
-        if (!this.m_signalMap.get(signal_name)) {
-            this.createSignal(signal_name);
-        }
-        this.m_signalMap.get(signal_name).add(cb);
-    };
-    EventManager.prototype.remove = function (signal_name, cb) {
-        if (!this.m_signalMap.get(signal_name)) {
-            return;
-        }
-        else {
-            this.m_signalMap.get(signal_name).remove(cb);
-        }
-    };
-    EventManager.prototype.clear = function () {
-        this.m_signalMap.clear();
-    };
-    return EventManager;
-}());
-exports.EventManager = EventManager;
+    return TypedEventEmitter;
+}(PIXI.utils.EventEmitter));
+exports.TypedEventEmitter = TypedEventEmitter;
 
-},{}],3:[function(require,module,exports){
+},{"pixi.js":89}],3:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var SceneRendererIsometric_1 = require("./scene/isometric/SceneRendererIsometric");
@@ -297,33 +257,37 @@ var RenderEntity = (function () {
 }());
 exports.RenderEntity = RenderEntity;
 
-},{"../../../game/assets/AssetManager":10,"pixi.js":83}],5:[function(require,module,exports){
+},{"../../../game/assets/AssetManager":12,"pixi.js":89}],5:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
 var RenderEntity_1 = require("./RenderEntity");
-var event_1 = require("../../listener/event");
 var Tile_1 = require("../../../game/board/Tile");
 var Unit_1 = require("../../../game/board/Unit");
+var Entity_1 = require("../../scene/Entity");
 var linkedlist_1 = require("../../list/linkedlist");
+var TypedEventEmitter_1 = require("../../listener/TypedEventEmitter");
 var SceneRenderer = (function () {
     function SceneRenderer(m_pixi) {
         var _this = this;
         this.m_pixi = m_pixi;
-        this.m_event_manager = new event_1.EventManager();
+        this.m_events = new TypedEventEmitter_1.TypedEventEmitter();
         this.initializeScene = function (scene) {
             _this.reset();
             scene.elements.forEach(function (element) {
+                if (!Entity_1.isEntity(element)) {
+                    return;
+                }
                 var renderable = _this.addEntity(element);
                 renderable.renderAsset(getAsset(element));
             });
             _this.m_pixi.ticker.add(_this.renderScene);
         };
-        this.on = function (event_name, cb) {
-            _this.m_event_manager.add(event_name, cb);
+        this.on = function (event_name, cb, context) {
+            _this.m_events.on(event_name, cb, context);
         };
-        this.off = function (event_name, cb) {
-            _this.m_event_manager.remove(event_name, cb);
+        this.off = function (event_name, cb, context) {
+            _this.m_events.off(event_name, cb, context);
         };
         this.renderScene = function () {
             _this.m_container.render(_this.m_pixi.renderer);
@@ -356,7 +320,7 @@ var SceneRenderer = (function () {
             _this.m_renderables = new linkedlist_1.LinkedList();
             _this.m_container.removeChildren();
             _this.m_screen_effects_container.removeChildren();
-            _this.m_event_manager.clear();
+            _this.m_events.removeAllListeners();
             _this.m_pixi.ticker.remove(_this.renderScene);
         };
         this.m_container = new PIXI.Container();
@@ -410,7 +374,7 @@ function CreateRenderable(entity) {
     return new RenderEntity_1.RenderEntity();
 }
 
-},{"../../../game/board/Tile":14,"../../../game/board/Unit":15,"../../list/linkedlist":1,"../../listener/event":2,"./RenderEntity":4,"pixi.js":83}],6:[function(require,module,exports){
+},{"../../../game/board/Tile":17,"../../../game/board/Unit":18,"../../list/linkedlist":1,"../../listener/TypedEventEmitter":2,"../../scene/Entity":7,"./RenderEntity":4,"pixi.js":89}],6:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -478,16 +442,16 @@ var SceneRendererIsometric = (function (_super) {
         _this.m_screen_effects_container.position.set(500, 50);
         _this.m_screen_effects_container.scale.set(4);
         pixi.renderer.plugins.interaction.on('pointermove', function (evt) {
-            _this.m_event_manager.emit("POINTER_MOVE", _this.screenToTilePos(evt.data.global));
+            _this.m_events.emit("POINTER_MOVE", _this.screenToTilePos(evt.data.global));
         });
         pixi.renderer.plugins.interaction.on('pointerdown', function (evt) {
             if (evt.stopped) {
                 return;
             }
-            _this.m_event_manager.emit("POINTER_DOWN", _this.screenToTilePos(evt.data.global));
+            _this.m_events.emit("POINTER_DOWN", _this.screenToTilePos(evt.data.global));
         });
         pixi.renderer.plugins.interaction.on('pointerup', function (evt) {
-            _this.m_event_manager.emit("POINTER_UP", _this.screenToTilePos(evt.data.global));
+            _this.m_events.emit("POINTER_UP", _this.screenToTilePos(evt.data.global));
         });
         return _this;
     }
@@ -495,7 +459,15 @@ var SceneRendererIsometric = (function (_super) {
 }(SceneRenderer_1.SceneRenderer));
 exports.SceneRendererIsometric = SceneRendererIsometric;
 
-},{"../SceneRenderer":5,"pixi.js":83}],7:[function(require,module,exports){
+},{"../SceneRenderer":5,"pixi.js":89}],7:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+function isEntity(element) {
+    return element.pos;
+}
+exports.isEntity = isEntity;
+
+},{}],8:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var immutable_1 = require("immutable");
@@ -513,16 +485,6 @@ var Scene = (function () {
         this.elements = immutable_1.Map();
         this.actions = immutable_1.List();
     }
-    Scene.prototype.addEventListener = function (event_name, event) {
-        if (!this.listeners.get(event_name)) {
-            this.listeners = this.listeners.set(event_name, immutable_1.List());
-        }
-        var list = this.listeners.get(event_name);
-        this.listeners = this.listeners.setIn(event_name, list.push(event));
-        return event;
-    };
-    Scene.prototype.removeEventListener = function (event_name, event) {
-    };
     Scene.GetElements = function (scene) {
         return scene.get(KEY_ENTITIES);
     };
@@ -534,6 +496,13 @@ var Scene = (function () {
     };
     Scene.SetListeners = function (scene, listeners) {
         return scene.set(KEY_LISTENERS, listeners);
+    };
+    Scene.AddListener = function (scene, event_name, aura) {
+        var listeners = Scene.GetListeners(scene);
+        var event_listeners = listeners.get(event_name, immutable_1.List());
+        event_listeners = event_listeners.push(aura);
+        listeners = listeners.set(event_name, event_listeners);
+        return Scene.SetListeners(scene, listeners);
     };
     Scene.GetActions = function (scene) {
         return scene.get(KEY_ACTIONS);
@@ -597,17 +566,54 @@ var Scene = (function () {
 }());
 exports.Scene = Scene;
 
-},{"immutable":77}],8:[function(require,module,exports){
+},{"immutable":83}],9:[function(require,module,exports){
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-var PIXI = require("pixi.js");
 var GameBoard_1 = require("./board/GameBoard");
 var UnitLoader_1 = require("./assets/UnitLoader");
 var EncounterController_1 = require("./encounter/EncounterController");
-var tavern_1 = require("./tavern");
+var Tavern_1 = require("./tavern/Tavern");
 var party_1 = require("./party");
 var GoldDisplay_1 = require("./play/interface/GoldDisplay");
 var ReplayMenu_1 = require("./interface/menus/ReplayMenu");
+var AuraLoader_1 = require("./assets/AuraLoader");
+var TypedEventEmitter_1 = require("../engine/listener/TypedEventEmitter");
 var GameState;
 (function (GameState) {
     GameState[GameState["SETUP"] = 0] = "SETUP";
@@ -618,9 +624,9 @@ var GameController = (function () {
     function GameController(m_config) {
         var _this = this;
         this.m_config = m_config;
-        this.m_events = new PIXI.utils.EventEmitter();
+        this.m_events = new TypedEventEmitter_1.TypedEventEmitter();
         this.update = function (deltaTime) {
-            _this.m_events.emit("UPDATE", { deltaTime: deltaTime });
+            _this.m_events.emit("UPDATE", deltaTime);
         };
         this.onResize = function () {
             _this.m_events.emit("RESIZE", {
@@ -631,7 +637,7 @@ var GameController = (function () {
         this.startNextTavern = function () {
             _this.m_encounter = new EncounterController_1.EncounterController(_this.m_config);
             _this.m_encounter.loadMap('assets/data/boards/coast.json').then(function () {
-                var tavern = new tavern_1.Tavern(_this.m_config.pixi_app.stage, _this.m_events);
+                var tavern = new Tavern_1.Tavern(_this.m_config.pixi_app.stage, _this.m_events);
                 tavern.setPlayer(_this.m_player_party);
                 tavern.positionContainer({
                     width: _this.m_config.pixi_app.renderer.width,
@@ -643,7 +649,7 @@ var GameController = (function () {
         };
         this.startNextEncounter = function () {
             var types = ["lizard", "mooseman", "rhino"];
-            var amount = 1;
+            var amount = Math.round(Math.random() * 5) + 3;
             for (var i = 0; i < amount; i++) {
                 var enemy = GameBoard_1.CreateUnit(UnitLoader_1.UnitLoader.GetUnitDefinition(types[Math.floor(Math.random() * 3)]), "ENEMY");
                 enemy.pos.x = 7 + i;
@@ -651,7 +657,7 @@ var GameController = (function () {
                 _this.m_encounter.addUnit(enemy);
             }
             _this.m_encounter.startGame();
-            _this.m_encounter.on('END', function (encounter) {
+            _this.m_encounter.events.on('END', function (encounter) {
                 _this.m_player_party.addGold(6);
                 var replay;
                 var onEnd = function () {
@@ -665,25 +671,40 @@ var GameController = (function () {
         };
         m_config.pixi_app.ticker.add(this.update);
         this.m_config.pixi_app.renderer.on('resize', this.onResize);
-        new GoldDisplay_1.GoldDisplay(this.m_config.pixi_app.stage, this.m_events);
-        UnitLoader_1.UnitLoader.LoadUnitDefinitions().then(function () {
-            _this.m_player_party = new party_1.PlayerParty(_this.m_events);
-            _this.startNextTavern();
-        });
-        this.m_events.on("LEAVE_TAVERN", function () {
-            _this.startNextEncounter();
-        });
-        this.m_events.on('UNIT_HIRED', function (data) {
-            var unit = data.unit;
-            _this.m_encounter.addUnit(unit);
-            _this.m_encounter.executeTurn();
-        });
+        this.init();
     }
+    GameController.prototype.init = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var _this = this;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4, AuraLoader_1.AuraLoader.LoadAuraDefinitions()];
+                    case 1:
+                        _a.sent();
+                        return [4, UnitLoader_1.UnitLoader.LoadUnitDefinitions()];
+                    case 2:
+                        _a.sent();
+                        new GoldDisplay_1.GoldDisplay(this.m_config.pixi_app.stage, this.m_events);
+                        this.m_events.on('LEAVE_TAVERN', function () {
+                            _this.startNextEncounter();
+                        });
+                        this.m_events.on('UNIT_HIRED', function (data) {
+                            var unit = data.unit;
+                            _this.m_encounter.addUnit(unit);
+                            _this.m_encounter.executeTurn();
+                        });
+                        this.m_player_party = new party_1.PlayerParty(this.m_events);
+                        this.startNextTavern();
+                        return [2];
+                }
+            });
+        });
+    };
     return GameController;
 }());
 exports.GameController = GameController;
 
-},{"./assets/UnitLoader":11,"./board/GameBoard":12,"./encounter/EncounterController":20,"./interface/menus/ReplayMenu":24,"./party":25,"./play/interface/GoldDisplay":36,"./tavern":37,"pixi.js":83}],9:[function(require,module,exports){
+},{"../engine/listener/TypedEventEmitter":2,"./assets/AuraLoader":13,"./assets/UnitLoader":14,"./board/GameBoard":15,"./encounter/EncounterController":23,"./interface/menus/ReplayMenu":27,"./party":28,"./play/interface/GoldDisplay":41,"./tavern/Tavern":43}],10:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -723,6 +744,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var linkedlist_1 = require("../../engine/list/linkedlist");
+var TypedEventEmitter_1 = require("../../engine/listener/TypedEventEmitter");
 var SceneRenderer_1 = require("../../engine/render/scene/SceneRenderer");
 var GameBoard_1 = require("../board/GameBoard");
 var EffectsManager_1 = require("../effects/EffectsManager");
@@ -738,6 +760,7 @@ var BoardAnimator = (function () {
         var _this = this;
         this.m_renderer = m_renderer;
         this.m_board = m_board;
+        this.m_events = new TypedEventEmitter_1.TypedEventEmitter();
         this.m_render_elements = new Map();
         this.m_action_list = new linkedlist_1.LinkedList();
         this.m_busy_promise = null;
@@ -769,8 +792,7 @@ var BoardAnimator = (function () {
                         _a.label = 1;
                     case 1:
                         if (!next_action) return [3, 3];
-                        console.log('animating');
-                        console.log(next_action);
+                        this.events.emit(next_action.action.type, next_action);
                         return [4, this.animateGameAction(next_action.action, next_action.scene)];
                     case 2:
                         _a.sent();
@@ -787,9 +809,16 @@ var BoardAnimator = (function () {
             return EffectsManager_1.default.RenderEffect(ability, cb);
         };
         ANIMATABLE_ACTIONS.forEach(function (event) {
-            _this.m_board.on(event, _this.onAnimatableAction);
+            _this.m_board.events.on(event, _this.onAnimatableAction);
         });
     }
+    Object.defineProperty(BoardAnimator.prototype, "events", {
+        get: function () {
+            return this.m_events;
+        },
+        enumerable: true,
+        configurable: true
+    });
     BoardAnimator.prototype.hasQueuedAnimations = function () {
         return !this.m_action_list.isEmpty();
     };
@@ -827,9 +856,10 @@ var BoardAnimator = (function () {
                         return [3, 7];
                     case 5: return [2, this.animateAbility(action, scene)];
                     case 6: return [2, new Promise(function (resolve) {
+                            var _a;
                             var effect = _this.createEffect(action, resolve);
                             if (effect) {
-                                var action_target = elements.get(action.data.entity_id);
+                                var action_target = (_a = action.data.target) !== null && _a !== void 0 ? _a : elements.get(action.data.entity_id);
                                 effect.setPosition(action_target.pos);
                             }
                             setTimeout(resolve, 100);
@@ -882,7 +912,36 @@ var BoardAnimator = (function () {
 }());
 exports.BoardAnimator = BoardAnimator;
 
-},{"../../engine/list/linkedlist":1,"../../engine/render/scene/SceneRenderer":5,"../board/GameBoard":12,"../effects/EffectsManager":17}],10:[function(require,module,exports){
+},{"../../engine/list/linkedlist":1,"../../engine/listener/TypedEventEmitter":2,"../../engine/render/scene/SceneRenderer":5,"../board/GameBoard":15,"../effects/EffectsManager":20}],11:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.UNITS = ['basic_axe', 'basic_bow', 'dwarf', 'guard', 'knight_green', 'lizard', 'monk', 'mooseman', 'oldman', 'rhino', 'troll'];
+var UNIT_ASSETS = {
+    basic_axe: 'assets/data/units/basic_axe.json',
+    basic_bow: 'assets/data/units/basic_bow.json',
+    dwarf: 'assets/data/units/dwarf.json',
+    guard: 'assets/data/units/guard.json',
+    knight_green: 'assets/data/units/knight_green.json',
+    lizard: 'assets/data/units/lizard.json',
+    monk: 'assets/data/units/monk.json',
+    mooseman: 'assets/data/units/mooseman.json',
+    oldman: 'assets/data/units/oldman.json',
+    rhino: 'assets/data/units/rhino.json',
+    troll: 'assets/data/units/troll.json'
+};
+exports.AURAS = ['cannibalize', 'damage_boost', 'deathrattle_summon', 'holy_strength'];
+var AURA_ASSETS = {
+    cannibalize: 'assets/data/auras/cannibalize.json',
+    damage_boost: 'assets/data/auras/damage_boost.json',
+    deathrattle_summon: 'assets/data/auras/deathrattle_summon.json',
+    holy_strength: 'assets/data/auras/holy_strength.json'
+};
+exports.DATA_ASSET_MAP = {
+    units: UNIT_ASSETS,
+    auras: AURA_ASSETS,
+};
+
+},{}],12:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
@@ -953,37 +1012,64 @@ var AssetManager = (function () {
 }());
 exports.default = AssetManager;
 
-},{"lodash":79,"pixi.js":83}],11:[function(require,module,exports){
+},{"lodash":85,"pixi.js":89}],13:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var _ = require("lodash");
+var immutable_1 = require("immutable");
+var AssetList_1 = require("./AssetList");
+var Loader_1 = require("../board/Loader");
+var AuraLoader = (function () {
+    function AuraLoader() {
+    }
+    AuraLoader.GetAuraDefinition = function (aura_name) {
+        if (!isAura(aura_name)) {
+            return null;
+        }
+        return AuraLoader.s_aura_defs.get(aura_name);
+    };
+    AuraLoader.LoadAuraDefinitions = function () {
+        AuraLoader.s_aura_defs = immutable_1.Map();
+        var promises = [];
+        Object.keys(AssetList_1.DATA_ASSET_MAP.auras).forEach(function (aura_type) {
+            var asset_path = AssetList_1.DATA_ASSET_MAP.auras[aura_type];
+            promises.push(Loader_1.LoadJSON(asset_path)
+                .then(function (aura_data) {
+                if (aura_data.value === undefined) {
+                    aura_data.value = 10;
+                }
+                AuraLoader.s_aura_defs = AuraLoader.s_aura_defs.set(aura_type, aura_data);
+            }));
+        });
+        return Promise.all(promises);
+    };
+    return AuraLoader;
+}());
+exports.AuraLoader = AuraLoader;
+function isAura(aura) {
+    return AssetList_1.AURAS.includes(aura);
+}
+
+},{"../board/Loader":16,"./AssetList":11,"immutable":83}],14:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var immutable_1 = require("immutable");
 var Loader_1 = require("../board/Loader");
-var unit_list = [
-    "dwarf",
-    "lizard",
-    "monk",
-    "mooseman",
-    "oldman",
-    "rhino",
-    "troll",
-    "guard",
-    "knight_green",
-    "basic_bow",
-    "basic_axe",
-];
+var AssetList_1 = require("./AssetList");
 var UnitLoader = (function () {
     function UnitLoader() {
     }
     UnitLoader.GetUnitDefinition = function (unit_type) {
+        if (!isUnitType(unit_type)) {
+            return null;
+        }
         return UnitLoader.s_unit_defs.get(unit_type);
     };
     UnitLoader.LoadUnitDefinitions = function () {
         UnitLoader.s_unit_defs = immutable_1.Map();
         var promises = [];
-        _.forEach(unit_list, function (unit_type) {
-            var def_url = GetDefURL(unit_type);
-            promises.push(Loader_1.LoadJSON(def_url)
+        Object.keys(AssetList_1.DATA_ASSET_MAP.units).forEach(function (unit_type) {
+            var asset_path = AssetList_1.DATA_ASSET_MAP.units[unit_type];
+            promises.push(Loader_1.LoadJSON(asset_path)
                 .then(function (unit_data) {
                 UnitLoader.s_unit_defs = UnitLoader.s_unit_defs.set(unit_type, unit_data);
             }));
@@ -993,11 +1079,11 @@ var UnitLoader = (function () {
     return UnitLoader;
 }());
 exports.UnitLoader = UnitLoader;
-function GetDefURL(unit_type) {
-    return "assets/data/units/" + unit_type + ".json";
+function isUnitType(unit_name) {
+    return AssetList_1.UNITS.includes(unit_name);
 }
 
-},{"../board/Loader":13,"immutable":77,"lodash":79}],12:[function(require,module,exports){
+},{"../board/Loader":16,"./AssetList":11,"immutable":83}],15:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1016,6 +1102,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var _ = require("lodash");
 var Tile_1 = require("./Tile");
 var Scene_1 = require("../../engine/scene/Scene");
+var Entity_1 = require("../../engine/scene/Entity");
 var Unit_1 = require("./Unit");
 var Movement_1 = require("../play/action/executors/action/Movement");
 var Ability_1 = require("../play/action/executors/action/Ability");
@@ -1023,26 +1110,18 @@ var Damage_1 = require("../play/action/executors/action/Damage");
 var Killed_1 = require("../play/action/executors/action/Killed");
 var CreateUnit_1 = require("../play/action/executors/action/CreateUnit");
 var SummonUnit_1 = require("../play/action/executors/action/SummonUnit");
-var event_1 = require("../../engine/listener/event");
+var TypedEventEmitter_1 = require("../../engine/listener/TypedEventEmitter");
+var GameAura_1 = require("../play/action/auras/GameAura");
 var GameBoard = (function (_super) {
     __extends(GameBoard, _super);
     function GameBoard() {
         var _this = _super.call(this) || this;
-        _this.m_event_manager = new event_1.EventManager();
-        _this.on = function (event_name, cb) {
-            _this.m_event_manager.add(event_name, cb);
-        };
-        _this.off = function (event_name, cb) {
-            _this.m_event_manager.remove(event_name, cb);
-        };
-        _this.emit = function (event_name, action_result) {
-            return _this.m_event_manager.emit(event_name, action_result);
-        };
+        _this.m_events = new TypedEventEmitter_1.TypedEventEmitter();
         return _this;
     }
     Object.defineProperty(GameBoard.prototype, "events", {
         get: function () {
-            return this.m_event_manager;
+            return this.m_events;
         },
         enumerable: true,
         configurable: true
@@ -1063,34 +1142,71 @@ var GameBoard = (function (_super) {
             if (!action) {
                 return scene;
             }
-            scene = GameBoard.ShiftFirstAction(scene);
-            scene = GameBoard.ExecuteAction(scene, action);
+            scene = GameBoard.ExecuteNextAction(scene);
             if (event_watcher) {
-                console.log(action);
+                console.log(action.type, action.data);
                 event_watcher.emit(action.type, { action: action, scene: scene });
             }
         } while (true);
     };
-    GameBoard.ExecuteAction = function (scene, action) {
-        if (!action) {
+    GameBoard.ExecuteActionListeners = function (scene) {
+        var sent_ids = [];
+        var finished = false;
+        do {
+            var action = GameBoard.GetNextAction(scene);
+            var action_listeners = GameBoard.GetListeners(scene).get(action.type);
+            if (!action_listeners) {
+                break;
+            }
+            var index = 0;
+            var next = void 0;
+            var sent = false;
+            do {
+                next = action_listeners.get(index, null);
+                var listener_id = next.id;
+                if (sent_ids.indexOf(listener_id) > -1) {
+                    index++;
+                }
+                else {
+                    scene = GameAura_1.GameAura.ExecuteAuraListener(scene, next.config);
+                    sent = true;
+                    sent_ids.push(listener_id);
+                }
+                if (index >= action_listeners.count() - 1) {
+                    finished = true;
+                }
+            } while (!finished && !sent);
+        } while (!finished);
+        return scene;
+    };
+    GameBoard.ExecuteNextAction = function (scene) {
+        if (!GameBoard.GetNextAction(scene)) {
             return scene;
         }
+        scene = GameBoard.ExecuteActionListeners(scene);
+        var action = GameBoard.GetNextAction(scene);
         switch (action.type) {
             case "MOVE":
-                return Movement_1.ExecuteMove(action, scene);
+                scene = Movement_1.ExecuteMove(action, scene);
+                break;
             case "ABILITY":
-                return Ability_1.ExecuteAbility(action, scene);
+                scene = Ability_1.ExecuteAbility(action, scene);
+                break;
             case "DAMAGE":
-                return Damage_1.ExecuteDamage(action, scene);
+                scene = Damage_1.ExecuteDamage(action, scene);
+                break;
             case "UNIT_KILLED":
-                return Killed_1.ExecuteKilled(action, scene);
+                scene = Killed_1.ExecuteKilled(action, scene);
+                break;
             case "CREATE_UNIT":
-                return CreateUnit_1.ExecuteCreateUnit(action, scene);
+                scene = CreateUnit_1.ExecuteCreateUnit(action, scene);
+                break;
             case "SUMMON_UNIT":
-                return SummonUnit_1.ExecuteSummonUnit(action, scene);
-            default:
-                return scene;
+                scene = SummonUnit_1.ExecuteSummonUnit(action, scene);
+                break;
         }
+        scene = GameBoard.ShiftFirstAction(scene);
+        return scene;
     };
     GameBoard.GetTilesInRange = function (scene, pos, range) {
         var tiles = GameBoard.GetTiles(scene);
@@ -1112,14 +1228,15 @@ var GameBoard = (function (_super) {
         var actions = Scene_1.Scene.GetActions(scene);
         return Scene_1.Scene.SetActions(scene, actions.shift());
     };
-    GameBoard.SetElementPosition = function (scene, entity_id, pos) {
+    GameBoard.SetEntityPosition = function (scene, entity_id, pos) {
         var elements = Scene_1.Scene.GetElements(scene);
         var result = elements.setIn([entity_id, 'pos'], pos);
         return Scene_1.Scene.SetElements(scene, result);
     };
-    GameBoard.GetElementsAt = function (scene, pos) {
+    GameBoard.GetEntitiesAt = function (scene, pos) {
         var elements = Scene_1.Scene.GetElements(scene);
-        return elements.filter(function (entity) {
+        var entities = elements.filter(Entity_1.isEntity);
+        return entities.filter(function (entity) {
             return pos && entity.pos.x === pos.x && entity.pos.y === pos.y;
         }).toList();
     };
@@ -1133,6 +1250,12 @@ var GameBoard = (function (_super) {
         var result = elements.setIn([entity_id, 'status', 'mana'], mana);
         return Scene_1.Scene.SetElements(scene, result);
     };
+    GameBoard.UpdateAction = function (scene, index, action) {
+        var actions = Scene_1.Scene.GetActions(scene);
+        actions = actions.remove(index);
+        actions = actions.insert(index, action);
+        return GameBoard.SetActions(scene, actions);
+    };
     GameBoard.AddActions = function (scene, game_actions) {
         game_actions = _.concat(game_actions);
         var actions = Scene_1.Scene.GetActions(scene);
@@ -1141,7 +1264,7 @@ var GameBoard = (function (_super) {
     };
     GameBoard.GetUnitAtPosition = function (scene, pos) {
         var unit = null;
-        GameBoard.GetElementsAt(scene, pos).forEach(function (element) {
+        GameBoard.GetEntitiesAt(scene, pos).forEach(function (element) {
             if (Unit_1.isUnit(element)) {
                 unit = element;
                 return false;
@@ -1152,7 +1275,7 @@ var GameBoard = (function (_super) {
     };
     GameBoard.GetTileAtPosiiton = function (scene, pos) {
         var tile = null;
-        GameBoard.GetElementsAt(scene, pos).forEach(function (element) {
+        GameBoard.GetEntitiesAt(scene, pos).forEach(function (element) {
             if (Tile_1.isTile(element)) {
                 tile = element;
                 return false;
@@ -1178,7 +1301,7 @@ var _ID = 0;
 function CreateEntity() {
     return {
         id: _ID++,
-        entity_type: "ENTITY",
+        element_type: "ENTITY",
         pos: {
             x: 0,
             y: 0,
@@ -1189,7 +1312,7 @@ exports.CreateEntity = CreateEntity;
 function CreateEffect() {
     return {
         id: _ID++,
-        entity_type: "EFFECT",
+        element_type: "EFFECT",
         pos: {
             x: 0,
             y: 0,
@@ -1197,32 +1320,39 @@ function CreateEffect() {
     };
 }
 exports.CreateEffect = CreateEffect;
-function CreateUnit(def, faction) {
-    return {
+function CreateAura(config) {
+    var aura = {
+        element_type: "AURA",
         id: _ID++,
-        entity_type: "UNIT",
-        pos: {
-            x: -1,
-            y: -1,
-        },
-        data: {
-            unit_level: 1,
-            unit_type: def.display.sprite,
-            faction: faction,
-        },
-        stats: _.cloneDeep(def.stats),
-        status: {
-            mana: 0,
-            hp: def.stats.hp,
-        },
-        abilities: _.concat(_.cloneDeep(def.abilities), "wait"),
+        config: _.cloneDeep(config)
     };
+    aura.config.config = {};
+    return aura;
+}
+exports.CreateAura = CreateAura;
+function CreateUnit(def, faction) {
+    var entity = CreateEntity();
+    entity.element_type = "UNIT";
+    entity.data = {
+        unit_level: 1,
+        unit_type: def.display.sprite,
+        faction: faction,
+    };
+    entity.base_stats = _.cloneDeep(def.stats);
+    entity.stats = _.cloneDeep(def.stats);
+    entity.status = {
+        mana: 0,
+        hp: def.stats.hp,
+    };
+    entity.auras = _.cloneDeep(def.auras);
+    entity.abilities = _.concat(_.cloneDeep(def.abilities), "wait");
+    return entity;
 }
 exports.CreateUnit = CreateUnit;
 function CreateTile(pos, type) {
     return {
         id: _ID++,
-        entity_type: "TILE",
+        element_type: "TILE",
         pos: pos,
         data: {
             tile_type: type,
@@ -1230,7 +1360,7 @@ function CreateTile(pos, type) {
     };
 }
 
-},{"../../engine/listener/event":2,"../../engine/scene/Scene":7,"../play/action/executors/action/Ability":30,"../play/action/executors/action/CreateUnit":31,"../play/action/executors/action/Damage":32,"../play/action/executors/action/Killed":33,"../play/action/executors/action/Movement":34,"../play/action/executors/action/SummonUnit":35,"./Tile":14,"./Unit":15,"lodash":79}],13:[function(require,module,exports){
+},{"../../engine/listener/TypedEventEmitter":2,"../../engine/scene/Entity":7,"../../engine/scene/Scene":8,"../play/action/auras/GameAura":34,"../play/action/executors/action/Ability":35,"../play/action/executors/action/CreateUnit":36,"../play/action/executors/action/Damage":37,"../play/action/executors/action/Killed":38,"../play/action/executors/action/Movement":39,"../play/action/executors/action/SummonUnit":40,"./Tile":17,"./Unit":18,"lodash":85}],16:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
@@ -1319,7 +1449,7 @@ function LoadFromURLParam() {
 }
 exports.LoadFromURLParam = LoadFromURLParam;
 
-},{"../assets/UnitLoader":11,"lodash":79,"pixi.js":83}],14:[function(require,module,exports){
+},{"../assets/UnitLoader":14,"lodash":85,"pixi.js":89}],17:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var TILE_DEF;
@@ -1347,7 +1477,7 @@ var TILE_DEF;
     TILE_DEF[TILE_DEF["WATER_EMPTY"] = 60] = "WATER_EMPTY";
 })(TILE_DEF = exports.TILE_DEF || (exports.TILE_DEF = {}));
 function isTile(entity) {
-    return entity.entity_type === "TILE";
+    return entity.element_type === "TILE";
 }
 exports.isTile = isTile;
 exports.GetTileName = function (def) {
@@ -1362,15 +1492,15 @@ var getType = function (type) {
     return ["empty", "mtn", "tree", "hut"][type];
 };
 
-},{}],15:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function isUnit(entity) {
-    return entity.entity_type === "UNIT";
+    return entity.element_type === "UNIT";
 }
 exports.isUnit = isUnit;
 
-},{}],16:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1420,7 +1550,7 @@ var DamageNumberEffect = (function (_super) {
 }(GameEffect_1.GameEffect));
 exports.DamageNumberEffect = DamageNumberEffect;
 
-},{"./GameEffect":18,"@tweenjs/tween.js":74}],17:[function(require,module,exports){
+},{"./GameEffect":21,"@tweenjs/tween.js":80}],20:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var TWEEN = require("@tweenjs/tween.js");
@@ -1452,7 +1582,7 @@ var EffectsManager = (function () {
 }());
 exports.default = EffectsManager;
 
-},{"./DamageNumberEffect":16,"./ProjectileEffect":19,"@tweenjs/tween.js":74}],18:[function(require,module,exports){
+},{"./DamageNumberEffect":19,"./ProjectileEffect":22,"@tweenjs/tween.js":80}],21:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var GameEffect = (function () {
@@ -1482,7 +1612,7 @@ var GameEffect = (function () {
         enumerable: true,
         configurable: true
     });
-    Object.defineProperty(GameEffect.prototype, "entity_type", {
+    Object.defineProperty(GameEffect.prototype, "element_type", {
         get: function () {
             return "EFFECT";
         },
@@ -1495,7 +1625,7 @@ var GameEffect = (function () {
 }());
 exports.GameEffect = GameEffect;
 
-},{}],19:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1558,7 +1688,7 @@ var ProjectileEffect = (function (_super) {
 }(GameEffect_1.GameEffect));
 exports.ProjectileEffect = ProjectileEffect;
 
-},{"./GameEffect":18,"@tweenjs/tween.js":74}],20:[function(require,module,exports){
+},{"./GameEffect":21,"@tweenjs/tween.js":80}],23:[function(require,module,exports){
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -1599,13 +1729,14 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
 var UnitQueue_1 = require("../play/UnitQueue");
-var event_1 = require("../../engine/listener/event");
 var Loader_1 = require("../board/Loader");
 var render_1 = require("../../engine/render/render");
 var EffectsManager_1 = require("../effects/EffectsManager");
 var EnemyTurn_1 = require("../play/EnemyTurn");
 var BoardAnimator_1 = require("../animation/BoardAnimator");
+var HealthBar_1 = require("../play/interface/HealthBar");
 var GameBoard_1 = require("../board/GameBoard");
+var TypedEventEmitter_1 = require("../../engine/listener/TypedEventEmitter");
 var EncounterState;
 (function (EncounterState) {
     EncounterState[EncounterState["INIT"] = 0] = "INIT";
@@ -1619,7 +1750,7 @@ var EncounterController = (function () {
     function EncounterController(m_config) {
         var _this = this;
         this.m_config = m_config;
-        this.m_event_manager = new event_1.EventManager();
+        this.m_events = new TypedEventEmitter_1.TypedEventEmitter();
         this.m_interface_container = new PIXI.Container();
         this.loadMap = function (path) {
             return Loader_1.LoadBoard(path).then(function (board_data) {
@@ -1646,29 +1777,35 @@ var EncounterController = (function () {
             units.forEach(_this.addUnit);
         };
         this.setupListeners = function () {
-            _this.m_board.on("CREATE_UNIT", function (result) {
+            var events = _this.m_board.events;
+            events.on("CREATE_UNIT", function (result) {
                 var data = result.action.data;
                 _this.m_unit_queue.addUnit(data.unit);
             });
-            _this.m_board.on("UNIT_KILLED", function (result) {
+            events.on("UNIT_KILLED", function (result) {
                 var data = result.action.data;
                 _this.m_unit_queue.removeUnit(data.entity_id);
             });
-            _this.m_board.on("UNIT_CREATED", function (result) {
+            events.on("UNIT_CREATED", function (result) {
                 var data = result.action.data;
+                var health_bar = new HealthBar_1.HealthBar(data.unit.id, _this.m_animator, _this.m_renderer);
+                _this.m_renderer.effects_container.addChild(health_bar.sprite);
             });
         };
         this.onSetupComplete = function () {
-            _this.m_config.pixi_app.stage.addChild(_this.m_renderer.stage);
-            _this.m_config.pixi_app.stage.addChild(_this.m_renderer.effects_container);
-            _this.m_config.pixi_app.stage.addChild(_this.m_interface_container);
+            _this.m_container = new PIXI.Container();
+            _this.m_container.position.set(-100, -100);
+            _this.m_container.addChild(_this.m_renderer.stage);
+            _this.m_container.addChild(_this.m_renderer.effects_container);
+            _this.m_container.addChild(_this.m_interface_container);
+            _this.m_config.pixi_app.stage.addChild(_this.m_container);
             EffectsManager_1.default.init(_this.m_renderer);
         };
         this.startGame = function () { return __awaiter(_this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        this.emit("START", this);
+                        this.events.emit("START", this);
                         return [4, this.executeTurn()];
                     case 1:
                         _a.sent();
@@ -1685,7 +1822,7 @@ var EncounterController = (function () {
                 switch (_a.label) {
                     case 0:
                         if (this.checkVictory()) {
-                            this.emit("END", this);
+                            this.events.emit("END", this);
                             return [2];
                         }
                         id = this.m_unit_queue.getNextQueued();
@@ -1695,9 +1832,11 @@ var EncounterController = (function () {
                             console.log('no units');
                             return [2];
                         }
-                        scene = EnemyTurn_1.EnemyTurn.FindBestMove(scene, unit.id);
-                        return [4, this.executeTurn(scene)];
+                        return [4, EnemyTurn_1.EnemyTurn.FindBestMove(scene, unit.id).then(function (scene) { return scene; })];
                     case 1:
+                        scene = _a.sent();
+                        return [4, this.executeTurn(scene)];
+                    case 2:
                         _a.sent();
                         this.onTurnComplete();
                         return [2];
@@ -1717,19 +1856,8 @@ var EncounterController = (function () {
             }
             return false;
         };
-        this.on = function (event_name, cb) {
-            _this.m_event_manager.add(event_name, cb);
-        };
-        this.off = function (event_name, cb) {
-            _this.m_event_manager.remove(event_name, cb);
-        };
-        this.emit = function (event_name, data) {
-            _this.m_event_manager.emit(event_name, data);
-        };
         this.destroy = function () {
-            _this.m_config.pixi_app.stage.removeChild(_this.m_renderer.stage);
-            _this.m_config.pixi_app.stage.removeChild(_this.m_renderer.effects_container);
-            _this.m_config.pixi_app.stage.removeChild(_this.m_interface_container);
+            _this.m_config.pixi_app.stage.removeChild(_this.m_container);
             _this.m_renderer.reset();
         };
         this.onTurnComplete = function () {
@@ -1765,11 +1893,18 @@ var EncounterController = (function () {
     EncounterController.prototype.addInterfaceElement = function (element) {
         this.m_interface_container.addChild(element);
     };
+    Object.defineProperty(EncounterController.prototype, "events", {
+        get: function () {
+            return this.m_events;
+        },
+        enumerable: true,
+        configurable: true
+    });
     return EncounterController;
 }());
 exports.EncounterController = EncounterController;
 
-},{"../../engine/listener/event":2,"../../engine/render/render":3,"../animation/BoardAnimator":9,"../board/GameBoard":12,"../board/Loader":13,"../effects/EffectsManager":17,"../play/EnemyTurn":27,"../play/UnitQueue":28,"pixi.js":83}],21:[function(require,module,exports){
+},{"../../engine/listener/TypedEventEmitter":2,"../../engine/render/render":3,"../animation/BoardAnimator":10,"../board/GameBoard":15,"../board/Loader":16,"../effects/EffectsManager":20,"../play/EnemyTurn":30,"../play/UnitQueue":31,"../play/interface/HealthBar":42,"pixi.js":89}],24:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
@@ -1783,7 +1918,7 @@ function InitRenderPlugins() {
 }
 exports.InitRenderPlugins = InitRenderPlugins;
 
-},{"pixi.js":83}],22:[function(require,module,exports){
+},{"pixi.js":89}],25:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
@@ -1817,7 +1952,7 @@ var Button = (function () {
 }());
 exports.Button = Button;
 
-},{"pixi.js":83}],23:[function(require,module,exports){
+},{"pixi.js":89}],26:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
@@ -1845,7 +1980,7 @@ var BaseMenu = (function () {
 }());
 exports.BaseMenu = BaseMenu;
 
-},{"../Button":22,"pixi.js":83}],24:[function(require,module,exports){
+},{"../Button":25,"pixi.js":89}],27:[function(require,module,exports){
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
@@ -1877,7 +2012,7 @@ var ReplayMenu = (function (_super) {
 }(BaseMenu_1.BaseMenu));
 exports.ReplayMenu = ReplayMenu;
 
-},{"./BaseMenu":23}],25:[function(require,module,exports){
+},{"./BaseMenu":26}],28:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var immutable_1 = require("immutable");
@@ -1922,7 +2057,7 @@ var PlayerParty = (function () {
 }());
 exports.PlayerParty = PlayerParty;
 
-},{"immutable":77}],26:[function(require,module,exports){
+},{"immutable":83}],29:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _ = require("lodash");
@@ -2062,13 +2197,50 @@ function GetTileCost(tile) {
     return 1;
 }
 
-},{"../board/GameBoard":12,"../board/Tile":14,"lodash":79}],27:[function(require,module,exports){
+},{"../board/GameBoard":15,"../board/Tile":17,"lodash":85}],30:[function(require,module,exports){
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 var _ = require("lodash");
 var GameBoard_1 = require("../board/GameBoard");
-var pathfinding_1 = require("../pathfinding");
+var Pathfinding_1 = require("../pathfinding/Pathfinding");
 var abilities_1 = require("./action/abilities");
+var AuraLoader_1 = require("../assets/AuraLoader");
 var TURN_STATE;
 (function (TURN_STATE) {
     TURN_STATE[TURN_STATE["BEFORE_MOVE"] = 0] = "BEFORE_MOVE";
@@ -2081,48 +2253,82 @@ var EnemyTurn = (function () {
     function EnemyTurn() {
     }
     EnemyTurn.FindBestMove = function (base_scene, unit_id) {
-        var unit = GameBoard_1.GameBoard.GetUnit(base_scene, unit_id);
-        var move_options = pathfinding_1.GetMoveOptions(unit, base_scene);
-        var ai_options = [];
-        _.forEach(move_options, function (option) {
-            var move_action = ToMoveAction(option, unit.id);
-            var move_scene = base_scene;
-            move_scene = GameBoard_1.GameBoard.AddActions(move_scene, move_action);
-            move_scene = GameBoard_1.GameBoard.ExecuteActionStack(move_scene);
-            var active_unit = GameBoard_1.GameBoard.GetUnit(move_scene, unit_id);
-            _.forEach(active_unit.abilities, function (ability_name) {
-                var ability_def = abilities_1.GetAbilityDef(ability_name);
-                if (active_unit.status.mana < ability_def.cost) {
-                    return;
+        return __awaiter(this, void 0, void 0, function () {
+            var LAG_TIME, lag_timeout, unit, move_options, ai_options, i, option, move_action, move_scene, active_unit, n, ability_name, ability_def, ability_options, p, ability_action, ability_scene, opt, best, scene;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        LAG_TIME = 20;
+                        lag_timeout = Date.now() + LAG_TIME;
+                        unit = GameBoard_1.GameBoard.GetUnit(base_scene, unit_id);
+                        move_options = Pathfinding_1.GetMoveOptions(unit, base_scene);
+                        ai_options = [];
+                        i = 0;
+                        _a.label = 1;
+                    case 1:
+                        if (!(i < move_options.length)) return [3, 9];
+                        option = move_options[i];
+                        move_action = ToMoveAction(option, unit.id);
+                        move_scene = base_scene;
+                        move_scene = GameBoard_1.GameBoard.AddActions(move_scene, move_action);
+                        move_scene = GameBoard_1.GameBoard.ExecuteActionStack(move_scene);
+                        active_unit = GameBoard_1.GameBoard.GetUnit(move_scene, unit_id);
+                        n = 0;
+                        _a.label = 2;
+                    case 2:
+                        if (!(n < active_unit.abilities.length)) return [3, 8];
+                        ability_name = active_unit.abilities[n];
+                        ability_def = abilities_1.GetAbilityDef(ability_name);
+                        if (active_unit.status.mana < ability_def.cost) {
+                            return [3, 7];
+                        }
+                        ability_options = GetAbilityOptions(move_scene, active_unit, ability_def);
+                        p = 0;
+                        _a.label = 3;
+                    case 3:
+                        if (!(p < ability_options.length)) return [3, 7];
+                        ability_action = ToAction(ability_options[p].tile, unit, ability_def);
+                        ability_scene = move_scene;
+                        ability_scene = GameBoard_1.GameBoard.AddActions(ability_scene, ability_action);
+                        ability_scene = GameBoard_1.GameBoard.ExecuteActionStack(ability_scene);
+                        opt = {
+                            score: ScoreBoard(ability_scene, active_unit.id),
+                            move_action: move_action,
+                            ability_action: ability_action,
+                        };
+                        if (!(Date.now() > lag_timeout)) return [3, 5];
+                        console.log('waiting because of lag ' + lag_timeout);
+                        return [4, new Promise(function (resolve) { requestAnimationFrame(resolve); })];
+                    case 4:
+                        _a.sent();
+                        lag_timeout = Date.now() + LAG_TIME;
+                        _a.label = 5;
+                    case 5:
+                        ai_options.push(opt);
+                        _a.label = 6;
+                    case 6:
+                        p++;
+                        return [3, 3];
+                    case 7:
+                        n++;
+                        return [3, 2];
+                    case 8:
+                        i++;
+                        return [3, 1];
+                    case 9:
+                        best = null;
+                        _.forEach(ai_options, function (option) {
+                            if (best === null || option.score > best.score) {
+                                best = option;
+                            }
+                        });
+                        scene = base_scene;
+                        scene = GameBoard_1.GameBoard.AddActions(scene, best.move_action);
+                        scene = GameBoard_1.GameBoard.AddActions(scene, best.ability_action);
+                        return [2, scene];
                 }
-                var ability_options = GetAbilityOptions(move_scene, active_unit, ability_def);
-                _.forEach(ability_options, function (ability_option) {
-                    var ability_action = ToAction(ability_option.tile, unit, ability_def);
-                    var ability_scene = move_scene;
-                    ability_scene = GameBoard_1.GameBoard.AddActions(ability_scene, ability_action);
-                    ability_scene = GameBoard_1.GameBoard.ExecuteActionStack(ability_scene);
-                    var opt = {
-                        score: ScoreBoard(ability_scene, active_unit.id),
-                        move_action: move_action,
-                        ability_action: ability_action,
-                    };
-                    return ai_options.push(opt);
-                });
             });
         });
-        var best = null;
-        _.forEach(ai_options, function (option) {
-            if (best === null || option.score > best.score) {
-                best = option;
-            }
-        });
-        console.log('best');
-        console.log(best.move_action);
-        console.log(best.ability_action);
-        var scene = base_scene;
-        scene = GameBoard_1.GameBoard.AddActions(scene, best.move_action);
-        scene = GameBoard_1.GameBoard.AddActions(scene, best.ability_action);
-        return scene;
     };
     return EnemyTurn;
 }());
@@ -2171,6 +2377,18 @@ function GetAbilityOptions(scene, active_unit, ability_def) {
     }
     return options;
 }
+function ScoreUnit(unit) {
+    var score = 0;
+    score += 5;
+    score += unit.status.hp;
+    if (unit.auras) {
+        for (var i = 0; i < unit.auras.length; i++) {
+            var aura_name = unit.auras[i];
+            score += AuraLoader_1.AuraLoader.GetAuraDefinition(aura_name).value;
+        }
+    }
+    return score;
+}
 function ScoreBoard(scene, unit_id) {
     var score = Math.random() / 4;
     var active_unit = GameBoard_1.GameBoard.GetUnit(scene, unit_id);
@@ -2179,14 +2397,8 @@ function ScoreBoard(scene, unit_id) {
     }
     var faction = active_unit.data.faction;
     GameBoard_1.GameBoard.GetUnits(scene).forEach(function (unit) {
-        if (unit.data.faction !== faction) {
-            score -= unit.status.hp;
-            score -= 5;
-        }
-        else {
-            score += 50;
-            score += unit.status.hp;
-        }
+        var unit_score = ScoreUnit(unit);
+        score += unit_score * (unit.data.faction === active_unit.data.faction ? 1 : -1);
     });
     if (active_unit) {
         var closest_1 = Infinity;
@@ -2236,7 +2448,7 @@ function ToAction(tile, active_unit, ability_def) {
     ];
 }
 
-},{"../board/GameBoard":12,"../pathfinding":26,"./action/abilities":29,"lodash":79}],28:[function(require,module,exports){
+},{"../assets/AuraLoader":13,"../board/GameBoard":15,"../pathfinding/Pathfinding":29,"./action/abilities":33,"lodash":85}],31:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var UnitQueue = (function () {
@@ -2283,7 +2495,82 @@ var UnitQueue = (function () {
 }());
 exports.UnitQueue = UnitQueue;
 
-},{}],29:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var _ = require("lodash");
+var GameBoard_1 = require("../../board/GameBoard");
+var ActionEffect = (function () {
+    function ActionEffect() {
+    }
+    ActionEffect.GetFromPath = function (scene, context, path) {
+        var unit = context.unit, action = context.action, aura = context.aura;
+        var data = null;
+        switch (path[0]) {
+            case "CONST": return path[1];
+            case "ACTION":
+                data = action.data;
+                break;
+            case "AURA_CONFIG":
+                data = aura.config;
+                break;
+        }
+        for (var i = 1; i < path.length; i++) {
+            data = data[path[i]];
+        }
+        return data;
+    };
+    ActionEffect.UpdateActionValue = function (scene, action, path, value) {
+        var data = action.data;
+        for (var i = 0; i < path.length - 1; i++) {
+            data = data[path[i]];
+        }
+        data[path[path.length - 1]] = value;
+        return action;
+    };
+    ActionEffect.ExecuteEffect = function (scene, effect, context) {
+        var _a;
+        var unit = context.unit, action = context.action, aura = context.aura;
+        var range = (_a = effect.range) !== null && _a !== void 0 ? _a : { max: 0, min: 0 };
+        if (effect.type === "UPDATE_ACTION_VALUE") {
+            var value = ActionEffect.GetFromPath(scene, context, effect.data.value);
+            action = ActionEffect.UpdateActionValue(scene, action, effect.data.value_src, value);
+            return GameBoard_1.GameBoard.UpdateAction(scene, 0, action);
+            ;
+        }
+        var target_tile = (action.data.target ? action.data.target : action.data.source).pos;
+        var tiles = GameBoard_1.GameBoard.GetTilesInRange(scene, target_tile, effect.range);
+        var count = tiles.count();
+        for (var i = 0; i < count; i++) {
+            var tile = tiles.get(i);
+            var data = _.cloneDeep(effect.data);
+            var keys = Object.keys(data);
+            for (var n = 0; n < keys.length; n++) {
+                var key = keys[n];
+                data[key] = ActionEffect.GetFromPath(scene, context, data[key]);
+            }
+            data = _.defaults(data, { tile: tile, source: action.data.source });
+            var unit_1 = GameBoard_1.GameBoard.GetUnitAtPosition(scene, tile.pos);
+            if (unit_1) {
+                scene = GameBoard_1.GameBoard.AddActions(scene, {
+                    type: effect.type,
+                    data: _.defaults(data, { entity_id: unit_1.id })
+                });
+            }
+            else {
+                scene = GameBoard_1.GameBoard.AddActions(scene, {
+                    type: effect.type,
+                    data: data
+                });
+            }
+        }
+        return scene;
+    };
+    return ActionEffect;
+}());
+exports.ActionEffect = ActionEffect;
+
+},{"../../board/GameBoard":15,"lodash":85}],33:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _ = require("lodash");
@@ -2307,33 +2594,76 @@ function GetAbilityDef(ability_name) {
 }
 exports.GetAbilityDef = GetAbilityDef;
 
-},{"../../../board/Loader":13,"lodash":79}],30:[function(require,module,exports){
+},{"../../../board/Loader":16,"lodash":85}],34:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var _ = require("lodash");
+var GameBoard_1 = require("../../../board/GameBoard");
+var ActionEffect_1 = require("../ActionEffect");
+var GameAura = (function () {
+    function GameAura() {
+    }
+    GameAura.RegisterAura = function (scene, aura) {
+        var aura_entity = GameBoard_1.CreateAura(aura);
+        GameBoard_1.GameBoard.AddElement(scene, null);
+        return scene;
+    };
+    GameAura.UnregisterAura = function (scene, aura) {
+        return scene;
+    };
+    GameAura.ExecuteAuraListener = function (scene, aura) {
+        var action = GameBoard_1.GameBoard.GetNextAction(scene);
+        var context = {
+            action: action,
+            aura: aura
+        };
+        if (action.type !== aura.trigger.action) {
+            return scene;
+        }
+        var conditions = aura.trigger.where;
+        for (var i = 0; i < conditions.length; i++) {
+            var where = conditions[i];
+            var from = where[0];
+            var comparison = where[1];
+            var to = where[2];
+            switch (comparison) {
+                case "EQUALS":
+                    var from_value = ActionEffect_1.ActionEffect.GetFromPath(scene, context, from);
+                    var to_value = ActionEffect_1.ActionEffect.GetFromPath(scene, context, to);
+                    var satisfied = from_value === to_value;
+                    if (!satisfied) {
+                        return scene;
+                    }
+                    break;
+            }
+        }
+        var effects = aura.effects;
+        for (var i = 0; i < effects.length; i++) {
+            var effect = effects[i];
+            scene = ActionEffect_1.ActionEffect.ExecuteEffect(scene, effect, context);
+        }
+        return scene;
+    };
+    GameAura.ParsePathAndSet = function (scene, action, aura, path, value) {
+        return scene;
+    };
+    return GameAura;
+}());
+exports.GameAura = GameAura;
+
+},{"../../../board/GameBoard":15,"../ActionEffect":32}],35:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var GameBoard_1 = require("../../../../board/GameBoard");
+var ActionEffect_1 = require("../../ActionEffect");
 function ExecuteAbility(action, scene) {
     var effects = action.data.ability.effects;
-    _.forEach(effects, function (effect) {
-        var tiles = GameBoard_1.GameBoard.GetTilesInRange(scene, action.data.target.pos, effect.range);
-        tiles.forEach(function (tile) {
-            var data = _.cloneDeep(effect.data);
-            data = _.defaults(data, { tile: tile, source: action.data.source });
-            var unit = GameBoard_1.GameBoard.GetUnitAtPosition(scene, tile.pos);
-            if (unit) {
-                scene = GameBoard_1.GameBoard.AddActions(scene, {
-                    type: effect.type,
-                    data: _.defaults(data, { entity_id: unit.id })
-                });
-            }
-            else {
-                scene = GameBoard_1.GameBoard.AddActions(scene, {
-                    type: effect.type,
-                    data: data
-                });
-            }
-        });
-    });
+    var context = {
+        action: action
+    };
+    for (var i = 0; i < effects.length; i++) {
+        var effect = effects[i];
+        scene = ActionEffect_1.ActionEffect.ExecuteEffect(scene, effect, context);
+    }
     var unit_id = action.data.source.id;
     var mana = action.data.source.status.mana;
     if (action.data.ability.cost > 0) {
@@ -2347,12 +2677,22 @@ function ExecuteAbility(action, scene) {
 }
 exports.ExecuteAbility = ExecuteAbility;
 
-},{"../../../../board/GameBoard":12,"lodash":79}],31:[function(require,module,exports){
+},{"../../../../board/GameBoard":15,"../../ActionEffect":32}],36:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var GameBoard_1 = require("../../../../board/GameBoard");
+var AuraLoader_1 = require("../../../../assets/AuraLoader");
 function ExecuteCreateUnit(action, scene) {
     var unit = action.data.unit;
+    if (unit.auras) {
+        for (var i = 0; i < unit.auras.length; i++) {
+            var aura_id = unit.auras[i];
+            var aura = GameBoard_1.CreateAura(AuraLoader_1.AuraLoader.GetAuraDefinition(aura_id));
+            aura.config.config.target_id = unit.id;
+            scene = GameBoard_1.GameBoard.AddListener(scene, aura.config.trigger.action, aura);
+            scene = GameBoard_1.GameBoard.AddElement(scene, aura);
+        }
+    }
     scene = GameBoard_1.GameBoard.AddElement(scene, unit);
     scene = GameBoard_1.GameBoard.AddActions(scene, {
         type: "UNIT_CREATED",
@@ -2364,7 +2704,7 @@ function ExecuteCreateUnit(action, scene) {
 }
 exports.ExecuteCreateUnit = ExecuteCreateUnit;
 
-},{"../../../../board/GameBoard":12}],32:[function(require,module,exports){
+},{"../../../../assets/AuraLoader":13,"../../../../board/GameBoard":15}],37:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var GameBoard_1 = require("../../../../board/GameBoard");
@@ -2380,11 +2720,12 @@ function ExecuteDamage(action, scene) {
     var new_hp = Math.max(starting_hp - action.data.amount, 0);
     var difference = starting_hp - new_hp;
     scene = GameBoard_1.GameBoard.SetHP(scene, unit.id, new_hp);
-    if (difference != 0) {
+    if (difference > 0) {
         scene = GameBoard_1.GameBoard.AddActions(scene, {
             type: "DAMAGE_DEALT",
             data: {
                 amount: difference,
+                target: unit,
                 entity_id: unit.id,
             }
         });
@@ -2393,7 +2734,8 @@ function ExecuteDamage(action, scene) {
         scene = GameBoard_1.GameBoard.AddActions(scene, {
             type: "UNIT_KILLED",
             data: {
-                entity_id: unit.id
+                entity_id: unit.id,
+                source: unit
             }
         });
     }
@@ -2401,7 +2743,7 @@ function ExecuteDamage(action, scene) {
 }
 exports.ExecuteDamage = ExecuteDamage;
 
-},{"../../../../board/GameBoard":12}],33:[function(require,module,exports){
+},{"../../../../board/GameBoard":15}],38:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Scene_1 = require("../../../../../engine/scene/Scene");
@@ -2411,17 +2753,17 @@ function ExecuteKilled(action, scene) {
 }
 exports.ExecuteKilled = ExecuteKilled;
 
-},{"../../../../../engine/scene/Scene":7}],34:[function(require,module,exports){
+},{"../../../../../engine/scene/Scene":8}],39:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var GameBoard_1 = require("../../../../board/GameBoard");
 function ExecuteMove(action, scene) {
-    scene = GameBoard_1.GameBoard.SetElementPosition(scene, action.data.entity_id, action.data.move.to);
+    scene = GameBoard_1.GameBoard.SetEntityPosition(scene, action.data.entity_id, action.data.move.to);
     return scene;
 }
 exports.ExecuteMove = ExecuteMove;
 
-},{"../../../../board/GameBoard":12}],35:[function(require,module,exports){
+},{"../../../../board/GameBoard":15}],40:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var GameBoard_1 = require("../../../../board/GameBoard");
@@ -2443,7 +2785,7 @@ function ExecuteSummonUnit(action, scene) {
 }
 exports.ExecuteSummonUnit = ExecuteSummonUnit;
 
-},{"../../../../assets/UnitLoader":11,"../../../../board/GameBoard":12}],36:[function(require,module,exports){
+},{"../../../../assets/UnitLoader":14,"../../../../board/GameBoard":15}],41:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
@@ -2465,7 +2807,79 @@ var GoldDisplay = (function () {
 }());
 exports.GoldDisplay = GoldDisplay;
 
-},{"pixi.js":83}],37:[function(require,module,exports){
+},{"pixi.js":89}],42:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var PIXI = require("pixi.js");
+var GameBoard_1 = require("../../board/GameBoard");
+var HealthBar = (function () {
+    function HealthBar(m_unit_id, animator, m_renderer) {
+        this.m_unit_id = m_unit_id;
+        this.m_renderer = m_renderer;
+        this.m_container = new PIXI.Container();
+        this.m_container.addChild(new PIXI.Graphics().beginFill(0x333333).drawRect(4, 4, 12, 4).endFill());
+        this.m_container.addChild(new PIXI.Graphics().beginFill(0x291f2e).drawRect(5, 5, 10, 2).endFill());
+        this.m_hp_graphic = new PIXI.Graphics();
+        this.m_hp_graphic.beginFill(0x00CC00).drawRect(5, 5, 10, 2).endFill();
+        this.m_container.addChild(this.m_hp_graphic);
+        this.m_container.visible = false;
+        var events = animator.events;
+        events.on("MOVE", this.onMoveAction, this);
+        events.on("DAMAGE_DEALT", this.onDamageDealtAction, this);
+        events.on("UNIT_KILLED", this.onUnitKilledAction, this);
+    }
+    HealthBar.prototype.updatePosition = function (pos, renderer) {
+        var screen_pos = renderer.getScreenPosition(pos);
+        this.m_container.position.set(screen_pos.x - 1, screen_pos.y - 10);
+    };
+    HealthBar.prototype.onDamageDealtAction = function (result) {
+        var unit_id = this.m_unit_id;
+        var container = this.m_container;
+        var hp_graphic = this.m_hp_graphic;
+        var data = result.action.data;
+        if (data.entity_id === unit_id) {
+            container.visible = true;
+            var unit = GameBoard_1.GameBoard.GetUnit(result.scene, unit_id);
+            var bar_width = Math.floor(unit.status.hp / unit.stats.hp * 10);
+            var color = 0x00CC00;
+            if (bar_width <= 3) {
+                color = 0xCC0000;
+            }
+            else if (bar_width <= 6) {
+                color = 0xCCCC00;
+            }
+            hp_graphic.clear().beginFill(color).drawRect(5, 5, bar_width, 2).endFill();
+            this.updatePosition(unit.pos, this.m_renderer);
+        }
+    };
+    HealthBar.prototype.onMoveAction = function (result) {
+        var unit_id = this.m_unit_id;
+        if (result.action.data.entity_id === unit_id) {
+            var renderer = this.m_renderer;
+            var unit = GameBoard_1.GameBoard.GetUnit(result.scene, unit_id);
+            this.updatePosition(unit.pos, renderer);
+        }
+    };
+    HealthBar.prototype.onUnitKilledAction = function (result) {
+        var unit_id = this.m_unit_id;
+        var container = this.m_container;
+        var data = result.action.data;
+        if (data.entity_id === unit_id) {
+            container.visible = false;
+        }
+    };
+    Object.defineProperty(HealthBar.prototype, "sprite", {
+        get: function () {
+            return this.m_container;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    return HealthBar;
+}());
+exports.HealthBar = HealthBar;
+
+},{"../../board/GameBoard":15,"pixi.js":89}],43:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
@@ -2474,8 +2888,6 @@ var AssetManager_1 = require("../assets/AssetManager");
 var GameBoard_1 = require("../board/GameBoard");
 var UnitLoader_1 = require("../assets/UnitLoader");
 var TIER_ONE = [
-    "guard",
-    "knight_green",
     "dwarf",
     "oldman",
     "basic_bow",
@@ -2705,7 +3117,7 @@ var RecruitableUnit = (function () {
 }());
 exports.RecruitableUnit = RecruitableUnit;
 
-},{"../assets/AssetManager":10,"../assets/UnitLoader":11,"../board/GameBoard":12,"lodash":79,"pixi.js":83}],38:[function(require,module,exports){
+},{"../assets/AssetManager":12,"../assets/UnitLoader":14,"../board/GameBoard":15,"lodash":85,"pixi.js":89}],44:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var PIXI = require("pixi.js");
@@ -2734,7 +3146,7 @@ AssetManager_1.default.init(function () {
     });
 });
 
-},{"./engine/render/render":3,"./game/GameController":8,"./game/assets/AssetManager":10,"./game/extras/plugins":21,"pixi.js":83}],39:[function(require,module,exports){
+},{"./engine/render/render":3,"./game/GameController":9,"./game/assets/AssetManager":12,"./game/extras/plugins":24,"pixi.js":89}],45:[function(require,module,exports){
 /*!
  * @pixi/accessibility - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -3385,7 +3797,7 @@ exports.AccessibilityManager = AccessibilityManager;
 exports.accessibleTarget = accessibleTarget;
 
 
-},{"@pixi/display":43,"@pixi/utils":72}],40:[function(require,module,exports){
+},{"@pixi/display":49,"@pixi/utils":78}],46:[function(require,module,exports){
 /*!
  * @pixi/app - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -3620,7 +4032,7 @@ Application.registerPlugin(ResizePlugin);
 exports.Application = Application;
 
 
-},{"@pixi/core":42,"@pixi/display":43}],41:[function(require,module,exports){
+},{"@pixi/core":48,"@pixi/display":49}],47:[function(require,module,exports){
 /*!
  * @pixi/constants - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -3970,7 +4382,7 @@ exports.TYPES = TYPES;
 exports.WRAP_MODES = WRAP_MODES;
 
 
-},{}],42:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 /*!
  * @pixi/core - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -16450,7 +16862,7 @@ exports.resources = index;
 exports.systems = systems;
 
 
-},{"@pixi/constants":41,"@pixi/display":43,"@pixi/math":54,"@pixi/runner":63,"@pixi/settings":64,"@pixi/ticker":71,"@pixi/utils":72}],43:[function(require,module,exports){
+},{"@pixi/constants":47,"@pixi/display":49,"@pixi/math":60,"@pixi/runner":69,"@pixi/settings":70,"@pixi/ticker":77,"@pixi/utils":78}],49:[function(require,module,exports){
 /*!
  * @pixi/display - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -18258,7 +18670,7 @@ exports.Container = Container;
 exports.DisplayObject = DisplayObject;
 
 
-},{"@pixi/math":54,"@pixi/settings":64,"@pixi/utils":72}],44:[function(require,module,exports){
+},{"@pixi/math":60,"@pixi/settings":70,"@pixi/utils":78}],50:[function(require,module,exports){
 /*!
  * @pixi/extract - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -18561,7 +18973,7 @@ Extract.arrayPostDivide = function arrayPostDivide (pixels, out)
 exports.Extract = Extract;
 
 
-},{"@pixi/core":42,"@pixi/math":54,"@pixi/utils":72}],45:[function(require,module,exports){
+},{"@pixi/core":48,"@pixi/math":60,"@pixi/utils":78}],51:[function(require,module,exports){
 /*!
  * @pixi/filter-alpha - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -18634,7 +19046,7 @@ var AlphaFilter = /*@__PURE__*/(function (Filter) {
 exports.AlphaFilter = AlphaFilter;
 
 
-},{"@pixi/core":42}],46:[function(require,module,exports){
+},{"@pixi/core":48}],52:[function(require,module,exports){
 /*!
  * @pixi/filter-blur - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -19070,7 +19482,7 @@ exports.BlurFilter = BlurFilter;
 exports.BlurFilterPass = BlurFilterPass;
 
 
-},{"@pixi/core":42,"@pixi/settings":64}],47:[function(require,module,exports){
+},{"@pixi/core":48,"@pixi/settings":70}],53:[function(require,module,exports){
 /*!
  * @pixi/filter-color-matrix - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -19677,7 +20089,7 @@ ColorMatrixFilter.prototype.grayscale = ColorMatrixFilter.prototype.greyscale;
 exports.ColorMatrixFilter = ColorMatrixFilter;
 
 
-},{"@pixi/core":42}],48:[function(require,module,exports){
+},{"@pixi/core":48}],54:[function(require,module,exports){
 /*!
  * @pixi/filter-displacement - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -19804,7 +20216,7 @@ var DisplacementFilter = /*@__PURE__*/(function (Filter) {
 exports.DisplacementFilter = DisplacementFilter;
 
 
-},{"@pixi/core":42,"@pixi/math":54}],49:[function(require,module,exports){
+},{"@pixi/core":48,"@pixi/math":60}],55:[function(require,module,exports){
 /*!
  * @pixi/filter-fxaa - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -19850,7 +20262,7 @@ var FXAAFilter = /*@__PURE__*/(function (Filter) {
 exports.FXAAFilter = FXAAFilter;
 
 
-},{"@pixi/core":42}],50:[function(require,module,exports){
+},{"@pixi/core":48}],56:[function(require,module,exports){
 /*!
  * @pixi/filter-noise - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -19938,7 +20350,7 @@ var NoiseFilter = /*@__PURE__*/(function (Filter) {
 exports.NoiseFilter = NoiseFilter;
 
 
-},{"@pixi/core":42}],51:[function(require,module,exports){
+},{"@pixi/core":48}],57:[function(require,module,exports){
 /*!
  * @pixi/graphics - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -23466,7 +23878,7 @@ exports.GraphicsGeometry = GraphicsGeometry;
 exports.LineStyle = LineStyle;
 
 
-},{"@pixi/constants":41,"@pixi/core":42,"@pixi/display":43,"@pixi/math":54,"@pixi/utils":72}],52:[function(require,module,exports){
+},{"@pixi/constants":47,"@pixi/core":48,"@pixi/display":49,"@pixi/math":60,"@pixi/utils":78}],58:[function(require,module,exports){
 /*!
  * @pixi/interaction - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -25944,7 +26356,7 @@ exports.InteractionTrackingData = InteractionTrackingData;
 exports.interactiveTarget = interactiveTarget;
 
 
-},{"@pixi/display":43,"@pixi/math":54,"@pixi/ticker":71,"@pixi/utils":72}],53:[function(require,module,exports){
+},{"@pixi/display":49,"@pixi/math":60,"@pixi/ticker":77,"@pixi/utils":78}],59:[function(require,module,exports){
 /*!
  * @pixi/loaders - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -26259,7 +26671,7 @@ exports.LoaderResource = LoaderResource;
 exports.TextureLoader = TextureLoader;
 
 
-},{"@pixi/core":42,"@pixi/utils":72,"resource-loader":89}],54:[function(require,module,exports){
+},{"@pixi/core":48,"@pixi/utils":78,"resource-loader":95}],60:[function(require,module,exports){
 /*!
  * @pixi/math - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -28381,7 +28793,7 @@ exports.SHAPES = SHAPES;
 exports.Transform = Transform;
 
 
-},{}],55:[function(require,module,exports){
+},{}],61:[function(require,module,exports){
 /*!
  * @pixi/mesh-extras - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -29151,7 +29563,7 @@ exports.SimplePlane = SimplePlane;
 exports.SimpleRope = SimpleRope;
 
 
-},{"@pixi/core":42,"@pixi/mesh":56}],56:[function(require,module,exports){
+},{"@pixi/core":48,"@pixi/mesh":62}],62:[function(require,module,exports){
 /*!
  * @pixi/mesh - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -29946,7 +30358,7 @@ exports.MeshGeometry = MeshGeometry;
 exports.MeshMaterial = MeshMaterial;
 
 
-},{"@pixi/constants":41,"@pixi/core":42,"@pixi/display":43,"@pixi/math":54,"@pixi/settings":64,"@pixi/utils":72}],57:[function(require,module,exports){
+},{"@pixi/constants":47,"@pixi/core":48,"@pixi/display":49,"@pixi/math":60,"@pixi/settings":70,"@pixi/utils":78}],63:[function(require,module,exports){
 /*!
  * @pixi/mixin-cache-as-bitmap - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -30381,7 +30793,7 @@ display.DisplayObject.prototype._cacheAsBitmapDestroy = function _cacheAsBitmapD
 };
 
 
-},{"@pixi/core":42,"@pixi/display":43,"@pixi/math":54,"@pixi/settings":64,"@pixi/sprite":67,"@pixi/utils":72}],58:[function(require,module,exports){
+},{"@pixi/core":48,"@pixi/display":49,"@pixi/math":60,"@pixi/settings":70,"@pixi/sprite":73,"@pixi/utils":78}],64:[function(require,module,exports){
 /*!
  * @pixi/mixin-get-child-by-name - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -30423,7 +30835,7 @@ display.Container.prototype.getChildByName = function getChildByName(name)
 };
 
 
-},{"@pixi/display":43}],59:[function(require,module,exports){
+},{"@pixi/display":49}],65:[function(require,module,exports){
 /*!
  * @pixi/mixin-get-global-position - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -30466,7 +30878,7 @@ display.DisplayObject.prototype.getGlobalPosition = function getGlobalPosition(p
 };
 
 
-},{"@pixi/display":43,"@pixi/math":54}],60:[function(require,module,exports){
+},{"@pixi/display":49,"@pixi/math":60}],66:[function(require,module,exports){
 /*!
  * @pixi/particles - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -31448,7 +31860,7 @@ exports.ParticleContainer = ParticleContainer;
 exports.ParticleRenderer = ParticleRenderer;
 
 
-},{"@pixi/constants":41,"@pixi/core":42,"@pixi/display":43,"@pixi/math":54,"@pixi/utils":72}],61:[function(require,module,exports){
+},{"@pixi/constants":47,"@pixi/core":48,"@pixi/display":49,"@pixi/math":60,"@pixi/utils":78}],67:[function(require,module,exports){
 (function (global){
 /*!
  * @pixi/polyfill - v5.1.6
@@ -31617,7 +32029,7 @@ if (!window.Int32Array)
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"es6-promise-polyfill":76,"object-assign":81}],62:[function(require,module,exports){
+},{"es6-promise-polyfill":82,"object-assign":87}],68:[function(require,module,exports){
 /*!
  * @pixi/prepare - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -32347,7 +32759,7 @@ exports.Prepare = Prepare;
 exports.TimeLimiter = TimeLimiter;
 
 
-},{"@pixi/core":42,"@pixi/display":43,"@pixi/graphics":51,"@pixi/settings":64,"@pixi/text":70,"@pixi/ticker":71}],63:[function(require,module,exports){
+},{"@pixi/core":48,"@pixi/display":49,"@pixi/graphics":57,"@pixi/settings":70,"@pixi/text":76,"@pixi/ticker":77}],69:[function(require,module,exports){
 /*!
  * @pixi/runner - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -32567,7 +32979,7 @@ Runner.prototype.run = Runner.prototype.emit;
 exports.Runner = Runner;
 
 
-},{}],64:[function(require,module,exports){
+},{}],70:[function(require,module,exports){
 /*!
  * @pixi/settings - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -32891,7 +33303,7 @@ exports.isMobile = isMobile;
 exports.settings = settings;
 
 
-},{"ismobilejs":78}],65:[function(require,module,exports){
+},{"ismobilejs":84}],71:[function(require,module,exports){
 /*!
  * @pixi/sprite-animated - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -33352,7 +33764,7 @@ var AnimatedSprite = /*@__PURE__*/(function (Sprite) {
 exports.AnimatedSprite = AnimatedSprite;
 
 
-},{"@pixi/core":42,"@pixi/sprite":67,"@pixi/ticker":71}],66:[function(require,module,exports){
+},{"@pixi/core":48,"@pixi/sprite":73,"@pixi/ticker":77}],72:[function(require,module,exports){
 /*!
  * @pixi/sprite-tiling - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -33862,7 +34274,7 @@ exports.TilingSprite = TilingSprite;
 exports.TilingSpriteRenderer = TilingSpriteRenderer;
 
 
-},{"@pixi/constants":41,"@pixi/core":42,"@pixi/math":54,"@pixi/sprite":67,"@pixi/utils":72}],67:[function(require,module,exports){
+},{"@pixi/constants":47,"@pixi/core":48,"@pixi/math":60,"@pixi/sprite":73,"@pixi/utils":78}],73:[function(require,module,exports){
 /*!
  * @pixi/sprite - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -34546,7 +34958,7 @@ var Sprite = /*@__PURE__*/(function (Container) {
 exports.Sprite = Sprite;
 
 
-},{"@pixi/constants":41,"@pixi/core":42,"@pixi/display":43,"@pixi/math":54,"@pixi/settings":64,"@pixi/utils":72}],68:[function(require,module,exports){
+},{"@pixi/constants":47,"@pixi/core":48,"@pixi/display":49,"@pixi/math":60,"@pixi/settings":70,"@pixi/utils":78}],74:[function(require,module,exports){
 /*!
  * @pixi/spritesheet - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -34967,7 +35379,7 @@ exports.Spritesheet = Spritesheet;
 exports.SpritesheetLoader = SpritesheetLoader;
 
 
-},{"@pixi/core":42,"@pixi/loaders":53,"@pixi/math":54,"@pixi/utils":72}],69:[function(require,module,exports){
+},{"@pixi/core":48,"@pixi/loaders":59,"@pixi/math":60,"@pixi/utils":78}],75:[function(require,module,exports){
 /*!
  * @pixi/text-bitmap - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -35808,7 +36220,7 @@ exports.BitmapFontLoader = BitmapFontLoader;
 exports.BitmapText = BitmapText;
 
 
-},{"@pixi/core":42,"@pixi/display":43,"@pixi/loaders":53,"@pixi/math":54,"@pixi/settings":64,"@pixi/sprite":67,"@pixi/utils":72}],70:[function(require,module,exports){
+},{"@pixi/core":48,"@pixi/display":49,"@pixi/loaders":59,"@pixi/math":60,"@pixi/settings":70,"@pixi/sprite":73,"@pixi/utils":78}],76:[function(require,module,exports){
 /*!
  * @pixi/text - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -38095,7 +38507,7 @@ exports.TextMetrics = TextMetrics;
 exports.TextStyle = TextStyle;
 
 
-},{"@pixi/core":42,"@pixi/math":54,"@pixi/settings":64,"@pixi/sprite":67,"@pixi/utils":72}],71:[function(require,module,exports){
+},{"@pixi/core":48,"@pixi/math":60,"@pixi/settings":70,"@pixi/sprite":73,"@pixi/utils":78}],77:[function(require,module,exports){
 /*!
  * @pixi/ticker - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -39058,7 +39470,7 @@ exports.TickerPlugin = TickerPlugin;
 exports.UPDATE_PRIORITY = UPDATE_PRIORITY;
 
 
-},{"@pixi/settings":64}],72:[function(require,module,exports){
+},{"@pixi/settings":70}],78:[function(require,module,exports){
 /*!
  * @pixi/utils - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -40085,7 +40497,7 @@ exports.trimCanvas = trimCanvas;
 exports.uid = uid;
 
 
-},{"@pixi/constants":41,"@pixi/settings":64,"earcut":75,"eventemitter3":73,"url":91}],73:[function(require,module,exports){
+},{"@pixi/constants":47,"@pixi/settings":70,"earcut":81,"eventemitter3":79,"url":97}],79:[function(require,module,exports){
 'use strict';
 
 var has = Object.prototype.hasOwnProperty
@@ -40423,7 +40835,7 @@ if ('undefined' !== typeof module) {
   module.exports = EventEmitter;
 }
 
-},{}],74:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -41393,7 +41805,7 @@ TWEEN.version = version;
 module.exports = TWEEN;
 
 }).call(this,require('_process'))
-},{"_process":84}],75:[function(require,module,exports){
+},{"_process":90}],81:[function(require,module,exports){
 'use strict';
 
 module.exports = earcut;
@@ -42074,7 +42486,7 @@ earcut.flatten = function (data) {
     return result;
 };
 
-},{}],76:[function(require,module,exports){
+},{}],82:[function(require,module,exports){
 (function (global,setImmediate){
 (function(global){
 
@@ -42424,7 +42836,7 @@ Promise.reject = function(reason){
 })(typeof window != 'undefined' ? window : typeof global != 'undefined' ? global : typeof self != 'undefined' ? self : this);
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("timers").setImmediate)
-},{"timers":90}],77:[function(require,module,exports){
+},{"timers":96}],83:[function(require,module,exports){
 /**
  * Copyright (c) 2014-present, Facebook, Inc.
  *
@@ -48290,9 +48702,9 @@ Promise.reject = function(reason){
 
 })));
 
-},{}],78:[function(require,module,exports){
+},{}],84:[function(require,module,exports){
 !function(e){var n=/iPhone/i,t=/iPod/i,r=/iPad/i,a=/\bAndroid(?:.+)Mobile\b/i,p=/Android/i,b=/\bAndroid(?:.+)SD4930UR\b/i,l=/\bAndroid(?:.+)(?:KF[A-Z]{2,4})\b/i,f=/Windows Phone/i,s=/\bWindows(?:.+)ARM\b/i,u=/BlackBerry/i,c=/BB10/i,h=/Opera Mini/i,v=/\b(CriOS|Chrome)(?:.+)Mobile/i,w=/Mobile(?:.+)Firefox\b/i;function m(e,i){return e.test(i)}function i(e){var i=e||("undefined"!=typeof navigator?navigator.userAgent:""),o=i.split("[FBAN");void 0!==o[1]&&(i=o[0]),void 0!==(o=i.split("Twitter"))[1]&&(i=o[0]);var d={apple:{phone:m(n,i)&&!m(f,i),ipod:m(t,i),tablet:!m(n,i)&&m(r,i)&&!m(f,i),device:(m(n,i)||m(t,i)||m(r,i))&&!m(f,i)},amazon:{phone:m(b,i),tablet:!m(b,i)&&m(l,i),device:m(b,i)||m(l,i)},android:{phone:!m(f,i)&&m(b,i)||!m(f,i)&&m(a,i),tablet:!m(f,i)&&!m(b,i)&&!m(a,i)&&(m(l,i)||m(p,i)),device:!m(f,i)&&(m(b,i)||m(l,i)||m(a,i)||m(p,i))||m(/\bokhttp\b/i,i)},windows:{phone:m(f,i),tablet:m(s,i),device:m(f,i)||m(s,i)},other:{blackberry:m(u,i),blackberry10:m(c,i),opera:m(h,i),firefox:m(w,i),chrome:m(v,i),device:m(u,i)||m(c,i)||m(h,i)||m(w,i)||m(v,i)}};return d.any=d.apple.device||d.android.device||d.windows.device||d.other.device,d.phone=d.apple.phone||d.android.phone||d.windows.phone,d.tablet=d.apple.tablet||d.android.tablet||d.windows.tablet,d}"undefined"!=typeof module&&module.exports&&"undefined"==typeof window?module.exports=i:"undefined"!=typeof module&&module.exports&&"undefined"!=typeof window?(module.exports=i(),module.exports.isMobile=i):"function"==typeof define&&define.amd?define([],e.isMobile=i()):e.isMobile=i()}(this);
-},{}],79:[function(require,module,exports){
+},{}],85:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -65408,7 +65820,7 @@ Promise.reject = function(reason){
 }.call(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],80:[function(require,module,exports){
+},{}],86:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -65575,7 +65987,7 @@ MiniSignal.MiniSignalBinding = MiniSignalBinding;
 exports['default'] = MiniSignal;
 module.exports = exports['default'];
 
-},{}],81:[function(require,module,exports){
+},{}],87:[function(require,module,exports){
 /*
 object-assign
 (c) Sindre Sorhus
@@ -65667,7 +66079,7 @@ module.exports = shouldUseNative() ? Object.assign : function (target, source) {
 	return to;
 };
 
-},{}],82:[function(require,module,exports){
+},{}],88:[function(require,module,exports){
 'use strict'
 
 module.exports = function parseURI (str, opts) {
@@ -65699,7 +66111,7 @@ module.exports = function parseURI (str, opts) {
   return uri
 }
 
-},{}],83:[function(require,module,exports){
+},{}],89:[function(require,module,exports){
 /*!
  * pixi.js - v5.1.6
  * Compiled Thu, 13 Feb 2020 04:58:13 UTC
@@ -67133,7 +67545,7 @@ exports.filters = filters;
 exports.useDeprecated = useDeprecated;
 
 
-},{"@pixi/accessibility":39,"@pixi/app":40,"@pixi/constants":41,"@pixi/core":42,"@pixi/display":43,"@pixi/extract":44,"@pixi/filter-alpha":45,"@pixi/filter-blur":46,"@pixi/filter-color-matrix":47,"@pixi/filter-displacement":48,"@pixi/filter-fxaa":49,"@pixi/filter-noise":50,"@pixi/graphics":51,"@pixi/interaction":52,"@pixi/loaders":53,"@pixi/math":54,"@pixi/mesh":56,"@pixi/mesh-extras":55,"@pixi/mixin-cache-as-bitmap":57,"@pixi/mixin-get-child-by-name":58,"@pixi/mixin-get-global-position":59,"@pixi/particles":60,"@pixi/polyfill":61,"@pixi/prepare":62,"@pixi/runner":63,"@pixi/settings":64,"@pixi/sprite":67,"@pixi/sprite-animated":65,"@pixi/sprite-tiling":66,"@pixi/spritesheet":68,"@pixi/text":70,"@pixi/text-bitmap":69,"@pixi/ticker":71,"@pixi/utils":72}],84:[function(require,module,exports){
+},{"@pixi/accessibility":45,"@pixi/app":46,"@pixi/constants":47,"@pixi/core":48,"@pixi/display":49,"@pixi/extract":50,"@pixi/filter-alpha":51,"@pixi/filter-blur":52,"@pixi/filter-color-matrix":53,"@pixi/filter-displacement":54,"@pixi/filter-fxaa":55,"@pixi/filter-noise":56,"@pixi/graphics":57,"@pixi/interaction":58,"@pixi/loaders":59,"@pixi/math":60,"@pixi/mesh":62,"@pixi/mesh-extras":61,"@pixi/mixin-cache-as-bitmap":63,"@pixi/mixin-get-child-by-name":64,"@pixi/mixin-get-global-position":65,"@pixi/particles":66,"@pixi/polyfill":67,"@pixi/prepare":68,"@pixi/runner":69,"@pixi/settings":70,"@pixi/sprite":73,"@pixi/sprite-animated":71,"@pixi/sprite-tiling":72,"@pixi/spritesheet":74,"@pixi/text":76,"@pixi/text-bitmap":75,"@pixi/ticker":77,"@pixi/utils":78}],90:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -67319,7 +67731,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],85:[function(require,module,exports){
+},{}],91:[function(require,module,exports){
 (function (global){
 /*! https://mths.be/punycode v1.4.1 by @mathias */
 ;(function(root) {
@@ -67856,7 +68268,7 @@ process.umask = function() { return 0; };
 }(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],86:[function(require,module,exports){
+},{}],92:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -67942,7 +68354,7 @@ var isArray = Array.isArray || function (xs) {
   return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{}],87:[function(require,module,exports){
+},{}],93:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -68029,13 +68441,13 @@ var objectKeys = Object.keys || function (obj) {
   return res;
 };
 
-},{}],88:[function(require,module,exports){
+},{}],94:[function(require,module,exports){
 'use strict';
 
 exports.decode = exports.parse = require('./decode');
 exports.encode = exports.stringify = require('./encode');
 
-},{"./decode":86,"./encode":87}],89:[function(require,module,exports){
+},{"./decode":92,"./encode":93}],95:[function(require,module,exports){
 /*!
  * resource-loader - v3.0.1
  * https://github.com/pixijs/pixi-sound
@@ -70386,7 +70798,7 @@ exports.encodeBinary = encodeBinary;
 exports.middleware = index;
 
 
-},{"mini-signals":80,"parse-uri":82}],90:[function(require,module,exports){
+},{"mini-signals":86,"parse-uri":88}],96:[function(require,module,exports){
 (function (setImmediate,clearImmediate){
 var nextTick = require('process/browser.js').nextTick;
 var apply = Function.prototype.apply;
@@ -70465,7 +70877,7 @@ exports.clearImmediate = typeof clearImmediate === "function" ? clearImmediate :
   delete immediateIds[id];
 };
 }).call(this,require("timers").setImmediate,require("timers").clearImmediate)
-},{"process/browser.js":84,"timers":90}],91:[function(require,module,exports){
+},{"process/browser.js":90,"timers":96}],97:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -71199,7 +71611,7 @@ Url.prototype.parseHost = function() {
   if (host) this.hostname = host;
 };
 
-},{"./util":92,"punycode":85,"querystring":88}],92:[function(require,module,exports){
+},{"./util":98,"punycode":91,"querystring":94}],98:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -71217,4 +71629,4 @@ module.exports = {
   }
 };
 
-},{}]},{},[38]);
+},{}]},{},[44]);

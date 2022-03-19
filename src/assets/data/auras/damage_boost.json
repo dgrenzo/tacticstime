@@ -2,7 +2,7 @@
   "trigger" : {
     "action" : "DAMAGE",
     "where" : [
-      ["ACTION.source.id", "EQUALS", "AURA_CONFIG.target_id"]
+      [["ACTION", "source", "id"], "EQUALS", ["AURA_CONFIG", "target_id"]]
     ]
   },
   "effects" : 
@@ -10,8 +10,8 @@
     {
       "type" : "UPDATE_ACTION_VALUE",
       "data" : {
-        "value_src" : "amount",
-        "value" : 10
+        "value_src" : ["amount"],
+        "value" : ["CONST", 10]
       }
     }
   ]

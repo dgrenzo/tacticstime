@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import { LoadJSON } from '../../../board/Loader';
+import { IEffectDef, ITargetDef } from '../ActionEffect';
 
-type TargetType = "ANY" | "EMPTY" | "UNIT" | "ENEMY" | "ALLY";
 enum TARGET_TYPE {
   ANY = 0,
   EMPTY,
@@ -12,20 +12,7 @@ enum TARGET_TYPE {
 
 type EffectType = "DAMAGE" | "HEAL";
 
-export interface IRangeDef {
-  min : number,
-  max : number,
-}
-export interface IEffectDef {
-  type : EffectType,
-  data : any,
-  range : IRangeDef,
-  target_type : TargetType,
-}
-export interface ITargetDef {
-  range : IRangeDef,
-  target_type : TargetType,
-}
+
 
 export interface IAbilityDef {
   name : string,

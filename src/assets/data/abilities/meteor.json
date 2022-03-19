@@ -1,17 +1,18 @@
 {
   "name" : "Meteor",
+  "cost" : 0,
   "target" : {
     "range" : {
       "min" : 0,
-      "max" : 4
+      "max" : 3
     },
-    "target_type" : "ANY"
+    "target_type" : "ENEMY"
   },
   "effects" : [
     {
       "type" : "DAMAGE",
       "data" : {
-        "amount" : 6
+        "amount" : ["CONST", 6]
       },
       "range" : {
         "min" : 0,
@@ -21,7 +22,7 @@
     {
       "type" : "DAMAGE",
       "data" : {
-        "amount" : 2
+        "amount" : ["CONST", 2]
       },
       "range" : {
         "min" : 1,

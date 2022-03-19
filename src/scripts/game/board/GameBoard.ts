@@ -4,7 +4,6 @@ import { ITile, TILE_DEF, isTile } from './Tile';
 import { IImmutableScene, Scene } from '../../engine/scene/Scene';
 import { IEntity, isEntity } from '../../engine/scene/Entity';
 import { IUnit, isUnit } from './Unit';
-import { IRangeDef } from '../play/action/abilities';
 import { IUnitDef } from '../assets/UnitLoader';
 import { ExecuteMove, IMoveAction } from '../play/action/executors/action/Movement';
 import { ExecuteAbility, IAbilityAction } from '../play/action/executors/action/Ability';
@@ -14,6 +13,7 @@ import { ExecuteCreateUnit, ICreateUnitAction, IUnitCreatedAction } from '../pla
 import { ExecuteSummonUnit, ISummonUnitAction } from '../play/action/executors/action/SummonUnit';
 import { TypedEventEmitter } from '../../engine/listener/TypedEventEmitter';
 import { GameAura, IAuraConfig, IAuraElement } from '../play/action/auras/GameAura';
+import { IRangeDef } from '../play/action/ActionEffect';
 
 
 export interface IActionData {

@@ -2,13 +2,16 @@
   "display" : {
     "sprite" : "basic_axe"
   },
+  "auras" : [
+    "deathrattle_summon"
+  ],
   "abilities" : [
     "strike"
   ],
   "stats" : {
     "speed": 4,
     "move" : 1,
-    "hp" : 12,
+    "hp" : 2,
     "magic" : 2
   }
 }

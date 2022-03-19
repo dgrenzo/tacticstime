@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js';
 import { SceneRenderer } from '../../../engine/render/scene/SceneRenderer';
 import { BoardAnimator } from '../../animation/BoardAnimator';
-import { GameBoard, IActionResult, IGameAction } from '../../board/GameBoard';
+import { GameBoard, IActionResult, IBoardPos, IGameAction } from '../../board/GameBoard';
 import { IDamageDealtAction } from '../action/executors/action/Damage';
 import { IMoveAction } from '../action/executors/action/Movement';
 
@@ -30,6 +30,11 @@ export class HealthBar {
     events.on("UNIT_KILLED", this.onUnitKilledAction, this);
   }
 
+  updatePosition(pos : IBoardPos, renderer : SceneRenderer) {
+    let screen_pos = renderer.getScreenPosition(pos);
+    this.m_container.position.set(screen_pos.x - 1, screen_pos.y - 10);
+  }
+
   onDamageDealtAction(result : IActionResult<IDamageDealtAction>) {
     const unit_id = this.m_unit_id;
     const container = this.m_container;
@@ -49,16 +54,20 @@ export class HealthBar {
       }
 
       hp_graphic.clear().beginFill(color).drawRect(5, 5, bar_width, 2).endFill();
+
+      this.updatePosition(unit.pos, this.m_renderer);
     }
   }
 
   onMoveAction(result : IActionResult<IMoveAction>) {
     const unit_id = this.m_unit_id;
-    const renderer = this.m_renderer;
 
     if (result.action.data.entity_id === unit_id) {
-      let screen_pos = renderer.getScreenPosition(result.action.data.move.to);
-      this.m_container.position.set(screen_pos.x - 1, screen_pos.y - 10);
+
+      const renderer = this.m_renderer;
+      const unit = GameBoard.GetUnit(result.scene, unit_id);
+
+      this.updatePosition(unit.pos, renderer)
     }
   }
 

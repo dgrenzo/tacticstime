@@ -1,6 +1,7 @@
 import { IImmutableScene } from "../../../../../engine/scene/Scene";
 import { GameBoard, IActionData, IBoardPos, IGameAction } from "../../../../board/GameBoard";
 import { IUnit } from "../../../../board/Unit";
+import { IKilledAction } from "./Killed";
 
 export interface IDamageAction extends IGameAction {
   type : "DAMAGE",
@@ -51,9 +52,10 @@ export function ExecuteDamage(action : IDamageAction, scene : IImmutableScene):I
     scene = GameBoard.AddActions(scene, {
       type : "UNIT_KILLED",
       data : {
-        entity_id : unit.id
+        entity_id : unit.id,
+        source : unit
       }
-    })
+    } as IKilledAction)
   }
 
   return scene;

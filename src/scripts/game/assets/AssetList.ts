@@ -20,11 +20,12 @@ const UNIT_ASSETS : IDataAssetMap<UNIT_TYPE> = {
   troll : 'assets/data/units/troll.json'
 };
 
-export const AURAS = ['cannibalize', 'damage_boost', 'holy_strength'] as const;
+export const AURAS = ['cannibalize', 'damage_boost', 'deathrattle_summon', 'holy_strength'] as const;
 export type AURA_TYPE = typeof AURAS[number];
 const AURA_ASSETS : IDataAssetMap<AURA_TYPE> = {
   cannibalize : 'assets/data/auras/cannibalize.json',
   damage_boost : 'assets/data/auras/damage_boost.json',
+  deathrattle_summon : 'assets/data/auras/deathrattle_summon.json',
   holy_strength : 'assets/data/auras/holy_strength.json'
 };
 

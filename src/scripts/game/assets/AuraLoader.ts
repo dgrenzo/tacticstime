@@ -26,6 +26,11 @@ export class AuraLoader {
 
       promises.push( LoadJSON<IAuraConfig>(asset_path)
         .then ( aura_data => { 
+
+          if (aura_data.value === undefined) {
+            aura_data.value = 10;
+          }
+
           AuraLoader.s_aura_defs = AuraLoader.s_aura_defs.set(aura_type, aura_data) 
         })
       );

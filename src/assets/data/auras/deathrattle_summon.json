@@ -1,0 +1,23 @@
+{
+  "value" : 100,
+  "trigger" : {
+    "action" : "UNIT_KILLED",
+    "where" : [
+      [["ACTION", "source", "id"], "EQUALS", ["AURA_CONFIG", "target_id"]]
+    ]
+  },
+  "effects" : 
+  [
+    {
+      "type" : "SUMMON_UNIT",
+      "data" : {
+        "unit_type" : ["CONST", "lizard"],
+        "tile" : ["ACTION", "source"]
+      },
+      "range" : {
+        "min" : 0,
+        "max" : 0
+      }
+    }
+  ]
+}

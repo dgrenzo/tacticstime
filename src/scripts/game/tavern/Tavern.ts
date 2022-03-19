@@ -12,8 +12,6 @@ import { UNIT_TYPE } from '../assets/AssetList';
 
 
 let TIER_ONE : UNIT_TYPE[] = [
- "guard",
- "knight_green",
  "dwarf",
  "oldman",
  "basic_bow",

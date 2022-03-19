@@ -117,7 +117,7 @@ export class GameController {
   }
 
   private startNextEncounter = () => {
-    let types : UNIT_TYPE[] = [].concat(UNITS);// ["lizard", "mooseman", "rhino"]
+    let types : UNIT_TYPE[] = ["lizard", "mooseman", "rhino"]
     let amount = Math.round(Math.random()*5) + 3;
     for (let i = 0; i < amount; i ++) {
       let enemy = CreateUnit(UnitLoader.GetUnitDefinition(types[Math.floor(Math.random() * 3)]), "ENEMY");

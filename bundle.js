@@ -862,7 +862,7 @@ var BoardAnimator = (function () {
                                 var action_target = (_a = action.data.target) !== null && _a !== void 0 ? _a : elements.get(action.data.entity_id);
                                 effect.setPosition(action_target.pos);
                             }
-                            setTimeout(resolve, 100);
+                            resolve();
                         })];
                     case 7: return [2];
                 }

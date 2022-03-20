@@ -187,7 +187,7 @@ function ScoreBoard (scene : IImmutableScene, unit_id : number) {
 
   GameBoard.GetUnits(scene).forEach( unit => {
     let unit_score = ScoreUnit(unit);
-    score += unit_score * (unit.data.faction === active_unit.data.faction ? 1 : -1);
+    score += unit_score * (unit.data.faction === active_unit.data.faction ? 1 : -5);
   });
 
   if (active_unit) {

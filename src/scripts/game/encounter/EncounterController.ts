@@ -4,7 +4,7 @@ import { List } from 'immutable';
 
 import { SceneRenderer } from "../../engine/render/scene/SceneRenderer";
 import { UnitQueue } from "../play/UnitQueue";
-import { GameConfig } from "../GameController";
+import { GameConfig, GameController } from "../GameController";
 import { LoadBoard } from "../board/Loader";
 import { CreateRenderer } from "../../engine/render/render";
 import { ICreateUnitAction } from "../play/action/executors/action/CreateUnit";
@@ -13,7 +13,7 @@ import { EnemyTurn } from "../play/EnemyTurn";
 import { IUnit } from '../board/Unit';
 import { BoardAnimator } from '../animation/BoardAnimator';
 import { HealthBar } from '../play/interface/HealthBar';
-import TilePointerEvents, { ITilePointerEvents } from '../extras/TilePointerEvents';
+import { ITilePointerEvents } from '../extras/TilePointerEvents';
 import { GameBoard, IActionResult } from '../board/GameBoard';
 import { IImmutableScene } from '../../engine/scene/Scene';
 import { TypedEventEmitter } from '../../engine/listener/TypedEventEmitter';
@@ -130,7 +130,9 @@ export class EncounterController {
   public async executeTurn(scene : IImmutableScene = this.m_board.scene) {
     let events = this.m_board.events;
 
+    GameController.DEBUG = true;
     scene = GameBoard.ExecuteActionStack(scene, events);
+    GameController.DEBUG = false;
 
     this.m_board.scene = scene;
 

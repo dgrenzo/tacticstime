@@ -1,6 +1,7 @@
 import { IElement } from "../../../../engine/scene/Entity";
 import { IImmutableScene } from "../../../../engine/scene/Scene";
 import { CreateAura, GameBoard, IGameAction } from "../../../board/GameBoard";
+import { GameController } from "../../../GameController";
 import { ActionEffect, IEffectDef } from "../ActionEffect";
 
 export interface IAuraElement extends IElement {
@@ -44,7 +45,6 @@ export class GameAura {
 
       switch (comparison) {
         case "EQUALS" :
-
           let from_value = ActionEffect.GetFromPath(scene, context, from);
           let to_value = ActionEffect.GetFromPath(scene, context, to);
 

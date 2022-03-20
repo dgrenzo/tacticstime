@@ -29,38 +29,6 @@ export interface IEffectDef {
   target_type ?: TargetType,
 }
 
-/**
- * {
-      "type" : "SUMMON_UNIT",
-      "data" : {
-        "unit_type" : ["CONST", "lizard"],
-        "tile" : ["ACTION", "tile"]
-      },
-      "range" : {
-        "min" : 0,
-        "max" : 0
-      }
-    }
-    {
-      "type" : "DAMAGE",
-      "data" : {
-        "amount" : 2
-      },
-      "range" : {
-        "min" : 0,
-        "max" : 0
-      }
-    }
-
-    {
-      "type" : "UPDATE_ACTION_VALUE",
-      "data" : {
-        "value_src" : "amount",
-        "value" : 10
-      }
-    }
- */
-
 export class ActionEffect {
 
   public static GetFromPath(scene : IImmutableScene, context : IEffectContext, path : IConfigPath) : any {
@@ -94,14 +62,13 @@ export class ActionEffect {
 
 
   public static ExecuteEffect (scene : IImmutableScene, effect : IEffectDef, context ?: IEffectContext) : IImmutableScene {
-
     let {unit, action, aura} = context;
     const range = effect.range ?? { max : 0, min : 0 };
 
     if (effect.type === "UPDATE_ACTION_VALUE") {
         const value = ActionEffect.GetFromPath(scene, context, effect.data.value);
         action = ActionEffect.UpdateActionValue(scene, action, effect.data.value_src, value);
-        return GameBoard.UpdateAction(scene, 0, action);;
+        return GameBoard.UpdateAction(scene, 0, action);
     }
 
     let target_tile = (action.data.target ? action.data.target : action.data.source).pos;

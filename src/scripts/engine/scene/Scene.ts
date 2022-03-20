@@ -51,7 +51,7 @@ export class Scene {
   public static AddListener(scene : IImmutableScene, event_name : string, aura : IAuraElement) {
     let listeners = Scene.GetListeners(scene);
 
-    let event_listeners = listeners.get(event_name, List());
+    let event_listeners = listeners.get(event_name, List<IAuraElement>());
 
     event_listeners = event_listeners.push(aura);
 

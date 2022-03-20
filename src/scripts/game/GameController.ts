@@ -46,6 +46,8 @@ export interface IGameControllerEvents {
 
 export class GameController {
 
+  public static DEBUG = false;
+
   private m_events = new TypedEventEmitter<IGameControllerEvents>();
   private m_player_party : PlayerParty;
   private m_encounter : EncounterController;
@@ -117,10 +119,10 @@ export class GameController {
   }
 
   private startNextEncounter = () => {
-    let types : UNIT_TYPE[] = ["lizard", "mooseman", "rhino"]
-    let amount = Math.round(Math.random()*5) + 3;
+    let types : UNIT_TYPE[] = ["rhino"];//["lizard", "mooseman", "rhino"]
+    let amount = 3;//Math.round(Math.random()*5) + 3;
     for (let i = 0; i < amount; i ++) {
-      let enemy = CreateUnit(UnitLoader.GetUnitDefinition(types[Math.floor(Math.random() * 3)]), "ENEMY");
+      let enemy = CreateUnit(UnitLoader.GetUnitDefinition(types[Math.floor(Math.random() * types.length)]), "ENEMY");
       enemy.pos.x = 7 + i;
       enemy.pos.y = 7;
       

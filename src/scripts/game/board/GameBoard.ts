@@ -14,6 +14,7 @@ import { ExecuteSummonUnit, ISummonUnitAction } from '../play/action/executors/a
 import { TypedEventEmitter } from '../../engine/listener/TypedEventEmitter';
 import { GameAura, IAuraConfig, IAuraElement } from '../play/action/auras/GameAura';
 import { IRangeDef } from '../play/action/ActionEffect';
+import { GameController } from '../GameController';
 
 
 export interface IActionData {
@@ -87,12 +88,7 @@ export class GameBoard extends Scene {
       if (!action) {
         return scene;
       }
-      scene = GameBoard.ExecuteNextAction(scene);
-
-      if (event_watcher) {
-        console.log(action.type, action.data);
-        event_watcher.emit(action.type, { action, scene });
-      }
+      scene = GameBoard.ExecuteNextAction(scene, event_watcher);
 
     } while (true);
   }
@@ -118,13 +114,12 @@ export class GameBoard extends Scene {
         if (sent_ids.indexOf(listener_id) > -1) {
           index ++;
         } else {
-
           scene = GameAura.ExecuteAuraListener(scene, next.config);
           sent = true;
 
           sent_ids.push(listener_id);
         }
-        if (index >= action_listeners.count() -1) {
+        if (index > action_listeners.count() - 1) {
           finished = true;
         }
 
@@ -134,21 +129,17 @@ export class GameBoard extends Scene {
 
     } while (!finished);
 
-
-
-
-
     return scene;
   }
 
-  public static ExecuteNextAction(scene : IImmutableScene) : IImmutableScene {
+  public static ExecuteNextAction(scene : IImmutableScene, event_watcher ?: TypedEventEmitter<IGameEvent>) : IImmutableScene {
     if (!GameBoard.GetNextAction(scene)) {
       return scene; 
     }
 
     scene = GameBoard.ExecuteActionListeners(scene);
 
-    const action = GameBoard.GetNextAction(scene);
+    let action = GameBoard.GetNextAction(scene);
     
     switch (action.type) {
       case "MOVE" :
@@ -169,6 +160,12 @@ export class GameBoard extends Scene {
       case "SUMMON_UNIT" :
         scene = ExecuteSummonUnit(action as ISummonUnitAction, scene);
         break;
+    }
+
+    action = GameBoard.GetNextAction(scene);
+    if (event_watcher) {
+      console.log(action.type, action.data);
+      event_watcher.emit(action.type, { action, scene });
     }
 
     scene = GameBoard.ShiftFirstAction(scene);
